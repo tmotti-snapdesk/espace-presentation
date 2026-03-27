@@ -37,5 +37,5 @@ next-env.d.ts
 /public/espaces/*
 !/public/espaces/.gitkeep
 
-# generated data
-/data/espaces/*.json
+# generated data (keep demo)
+# /data/espaces/*.json

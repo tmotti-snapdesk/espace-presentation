@@ -1,0 +1,47 @@
+{
+  "slug": "demo-marais-premium",
+  "name": "Le Marais Premium",
+  "tagline": "Un espace de travail d'exception au cœur du Marais, alliant charme historique et modernité.",
+  "address": "42 rue de Rivoli",
+  "city": "Paris",
+  "postalCode": "75004",
+  "latitude": 48.8556,
+  "longitude": 2.3522,
+  "workstations": 45,
+  "openSpaces": 2,
+  "meetingRooms": 3,
+  "hasLunchArea": true,
+  "hasEquippedKitchen": true,
+  "amenities": ["Climatisation", "Fibre optique", "Rack à vélos", "Terrasse", "Douche", "Accès 24/7"],
+  "metroStations": [
+    { "name": "Hôtel de Ville", "line": "1", "distance": "2 min à pied" },
+    { "name": "Saint-Paul", "line": "1", "distance": "5 min à pied" },
+    { "name": "Châtelet", "line": "4", "distance": "7 min à pied" }
+  ],
+  "availability": "Immédiate",
+  "pricePerMonth": "18 500€ HT",
+  "leaseDuration": "12 mois",
+  "noticePeriod": "3 mois",
+  "videoUrl": "",
+  "photos": [],
+  "floorPlanImage": "",
+  "contacts": [
+    {
+      "id": "1",
+      "name": "Marie Dupont",
+      "role": "Directrice Commerciale",
+      "email": "marie@snapdesk.fr",
+      "phone": "06 12 34 56 78",
+      "photo": ""
+    },
+    {
+      "id": "2",
+      "name": "Thomas Martin",
+      "role": "Chargé de Compte",
+      "email": "thomas@snapdesk.fr",
+      "phone": "06 98 76 54 32",
+      "photo": ""
+    }
+  ],
+  "createdAt": "2026-03-27T10:00:00.000Z"
+}

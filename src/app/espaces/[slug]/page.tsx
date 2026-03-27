@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { getEspaceBySlug, getAllEspaces } from "@/lib/espaces";
 import ShowcasePage from "./ShowcasePage";
 
+export const dynamic = "force-static";
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const espaces = getAllEspaces();
   return espaces.map((espace) => ({ slug: espace.slug }));
@@ -18,6 +21,10 @@ export async function generateMetadata({
   return {
     title: `${espace.name} | Snapdesk`,
     description: `Découvrez ${espace.name} - ${espace.workstations} postes à ${espace.city}`,
+    openGraph: {
+      title: `${espace.name} | Snapdesk`,
+      description: `${espace.workstations} postes - ${espace.address}, ${espace.city}`,
+    },
   };
 }
 

@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json(
+        { error: "Vercel Blob not configured. Please connect a Blob Store to this project in Vercel Dashboard > Storage." },
+        { status: 500 }
+      );
+    }
+
     const formData = await request.formData();
     const slug = formData.get("slug") as string;
     const files = formData.getAll("files") as File[];
@@ -32,9 +41,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ paths: uploadedPaths });
   } catch (error) {
-    console.error("Upload error:", error);
+    const message = error instanceof Error ? error.message : "Upload failed";
+    console.error("Upload error:", message);
     return NextResponse.json(
-      { error: "Upload failed" },
+      { error: message },
       { status: 500 }
     );
   }

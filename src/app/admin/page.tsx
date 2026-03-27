@@ -128,19 +128,26 @@ export default function AdminPage() {
   const uploadFiles = async (files: File[], slug: string, type: string): Promise<string[]> => {
     if (files.length === 0) return [];
 
-    const formData = new FormData();
-    formData.append("slug", slug);
-    formData.append("type", type);
-    files.forEach((file) => formData.append("files", file));
+    const allPaths: string[] = [];
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    // Upload files one by one to avoid body size limits
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("slug", slug);
+      formData.append("type", type);
+      formData.append("files", file);
 
-    if (!res.ok) throw new Error(`Upload ${type} failed`);
-    const data = await res.json();
-    return data.paths;
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Upload ${type} failed`);
+      allPaths.push(...data.paths);
+    }
+
+    return allPaths;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveEspace, slugify } from "@/lib/espaces";
+import { put } from "@vercel/blob";
+import { slugify } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
     const slug = slugify(body.name);
 
     const espaceData: EspaceData = {
@@ -40,7 +40,11 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    saveEspace(espaceData);
+    // Store the JSON data in Vercel Blob
+    await put(`espaces/${slug}.json`, JSON.stringify(espaceData, null, 2), {
+      access: "public",
+      contentType: "application/json",
+    });
 
     return NextResponse.json({
       success: true,

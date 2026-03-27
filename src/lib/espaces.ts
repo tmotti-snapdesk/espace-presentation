@@ -6,7 +6,6 @@ const DATA_DIR = path.join(process.cwd(), "data", "espaces");
 
 export function getAllEspaces(): EspaceData[] {
   if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
     return [];
   }
 
@@ -23,15 +22,6 @@ export function getEspaceBySlug(slug: string): EspaceData | null {
 
   const content = fs.readFileSync(filePath, "utf-8");
   return JSON.parse(content) as EspaceData;
-}
-
-export function saveEspace(data: EspaceData): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-
-  const filePath = path.join(DATA_DIR, `${data.slug}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 export function slugify(text: string): string {

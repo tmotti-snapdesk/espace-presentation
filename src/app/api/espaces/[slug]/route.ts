@@ -11,15 +11,11 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    // 1. Try local filesystem
-    const localData = getEspaceBySlug(params.slug);
-    if (localData) return NextResponse.json(localData);
-
-    // 2. Try Vercel Blob
+    // 1. Try Vercel Blob first (most up-to-date)
     try {
       const { blobs } = await list({ prefix: `espaces/${params.slug}.json` });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].url);
+        const res = await fetch(blobs[0].url, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           return NextResponse.json(data);
@@ -28,6 +24,10 @@ export async function GET(
     } catch {
       // Blob not configured
     }
+
+    // 2. Fallback to local filesystem
+    const localData = getEspaceBySlug(params.slug);
+    if (localData) return NextResponse.json(localData);
 
     return NextResponse.json({ error: "Espace non trouvé" }, { status: 404 });
   } catch (error) {

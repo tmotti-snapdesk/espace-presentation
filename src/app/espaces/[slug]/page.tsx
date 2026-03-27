@@ -25,22 +25,22 @@ export async function generateMetadata({
 }
 
 async function resolveEspace(slug: string): Promise<EspaceData | null> {
-  // 1. Try local filesystem first (for demo/bundled data)
-  const localData = getEspaceBySlug(slug);
-  if (localData) return localData;
-
-  // 2. Try Vercel Blob (for dynamically created espaces)
+  // 1. Try Vercel Blob first (for dynamically created/edited espaces)
   try {
     const { blobs } = await list({ prefix: `espaces/${slug}.json` });
     if (blobs.length > 0) {
-      const res = await fetch(blobs[0].url);
+      const res = await fetch(blobs[0].url, { cache: "no-store" });
       if (res.ok) {
         return (await res.json()) as EspaceData;
       }
     }
   } catch {
-    // Blob not configured or not found — that's fine
+    // Blob not configured or not found — fall through
   }
+
+  // 2. Fallback to local filesystem (for demo/bundled data)
+  const localData = getEspaceBySlug(slug);
+  if (localData) return localData;
 
   return null;
 }

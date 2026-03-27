@@ -33,7 +33,7 @@ export default function Header({ espace }: HeaderProps) {
         transition={{ duration: 1 }}
       >
         <Image
-          src="/images/snapdesk-logo.png"
+          src="/images/Logo Snapdesk Blanc.png"
           alt="Snapdesk"
           width={160}
           height={40}

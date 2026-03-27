@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { upload } from "@vercel/blob/client";
 import FileDropzone from "@/components/admin/FileDropzone";
 import { Contact, MetroStation, EspaceFormData, EspaceData } from "@/types/espace";
 
@@ -169,21 +170,18 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
 
     const allPaths: string[] = [];
 
-    // Upload files one by one to avoid body size limits
     for (const file of files) {
-      const formData = new FormData();
-      formData.append("slug", slug);
-      formData.append("type", type);
-      formData.append("files", file);
+      const sanitizedName = file.name
+        .replace(/[^a-zA-Z0-9._-]/g, "_")
+        .toLowerCase();
+      const pathname = `espaces/${slug}/${type}-${Date.now()}-${sanitizedName}`;
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const blob = await upload(pathname, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Upload ${type} failed`);
-      allPaths.push(...data.paths);
+      allPaths.push(blob.url);
     }
 
     return allPaths;

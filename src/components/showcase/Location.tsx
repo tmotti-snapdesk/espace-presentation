@@ -63,22 +63,35 @@ export default function Location({ espace }: LocationProps) {
           >
             <p className="luxury-label mb-6">Transports à proximité</p>
             <div className="space-y-5">
-              {espace.metroStations.map((station) => (
-                <div
-                  key={`${station.name}-${station.line}`}
-                  className="flex items-center gap-4 pb-5 border-b border-primary-100 last:border-0"
-                >
-                  <div className="w-10 h-10 rounded-full bg-luxury-charcoal text-white flex items-center justify-center text-sm font-medium shrink-0">
-                    {station.line}
+              {espace.metroStations.map((station) => {
+                const lines = (station.lines || (station as unknown as Record<string, string>).line || "")
+                  .split(",")
+                  .map((l: string) => l.trim())
+                  .filter(Boolean);
+                return (
+                  <div
+                    key={`${station.name}-${station.lines}`}
+                    className="flex items-center gap-4 pb-5 border-b border-primary-100 last:border-0"
+                  >
+                    <div className="flex gap-2 shrink-0">
+                      {lines.map((line) => (
+                        <div
+                          key={line}
+                          className="w-10 h-10 rounded-full bg-luxury-charcoal text-white flex items-center justify-center text-sm font-medium"
+                        >
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="font-medium text-luxury-charcoal">
+                        {station.name}
+                      </p>
+                      <p className="text-sm text-luxury-slate">{station.distance}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-luxury-charcoal">
-                      {station.name}
-                    </p>
-                    <p className="text-sm text-luxury-slate">{station.distance}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         </div>

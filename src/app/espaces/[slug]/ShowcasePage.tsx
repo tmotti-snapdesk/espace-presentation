@@ -23,7 +23,7 @@ export default function ShowcasePage({ espace }: ShowcasePageProps) {
       <FloorPlan floorPlanImage={espace.floorPlanImage} />
       <PhotoGallery photos={espace.photos} name={espace.name} />
       <KeyElements espace={espace} />
-      <Contacts contacts={espace.contacts} />
+      <Contacts />
       <Reassurance />
     </main>
   );

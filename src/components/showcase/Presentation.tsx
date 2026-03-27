@@ -49,6 +49,18 @@ export default function Presentation({ espace }: PresentationProps) {
     ...(espace.hasEquippedKitchen
       ? [{ icon: "◇", label: "Cuisine équipée", value: "Incluse" }]
       : []),
+    ...(espace.hasBalconFilant
+      ? [{ icon: "▭", label: "Balcon filant", value: "Inclus" }]
+      : []),
+    ...(espace.hasTerrace
+      ? [{ icon: "▢", label: "Terrasse", value: "Incluse" }]
+      : []),
+    ...(espace.hasAirConditioning
+      ? [{ icon: "❆", label: "Climatisation", value: "Incluse" }]
+      : []),
+    ...(espace.hasBikeRack
+      ? [{ icon: "⬡", label: "Rack à vélos", value: "Inclus" }]
+      : []),
   ];
 
   return (
@@ -67,9 +79,11 @@ export default function Presentation({ espace }: PresentationProps) {
           </h2>
           <div className="luxury-divider mx-auto mb-8" />
           {espace.tagline && (
-            <p className="text-lg text-luxury-slate max-w-2xl mx-auto font-light leading-relaxed">
-              {espace.tagline}
-            </p>
+            <div className="text-lg text-luxury-slate max-w-2xl mx-auto font-light leading-relaxed space-y-4">
+              {espace.tagline.split("\n").filter(Boolean).map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
+            </div>
           )}
         </motion.div>
 

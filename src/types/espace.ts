@@ -9,7 +9,7 @@ export interface Contact {
 
 export interface MetroStation {
   name: string;
-  line: string;
+  lines: string;
   distance: string;
 }
 
@@ -20,13 +20,15 @@ export interface EspaceData {
   address: string;
   city: string;
   postalCode: string;
-  latitude: number;
-  longitude: number;
   workstations: number;
   openSpaces: number;
   meetingRooms: number;
   hasLunchArea: boolean;
   hasEquippedKitchen: boolean;
+  hasBalconFilant: boolean;
+  hasTerrace: boolean;
+  hasAirConditioning: boolean;
+  hasBikeRack: boolean;
   amenities: string[];
   metroStations: MetroStation[];
   availability: string;
@@ -46,18 +48,19 @@ export interface EspaceFormData {
   address: string;
   city: string;
   postalCode: string;
-  latitude: string;
-  longitude: string;
   workstations: string;
   openSpaces: string;
   meetingRooms: string;
   hasLunchArea: boolean;
   hasEquippedKitchen: boolean;
+  hasBalconFilant: boolean;
+  hasTerrace: boolean;
+  hasAirConditioning: boolean;
+  hasBikeRack: boolean;
   amenities: string;
   metroStations: MetroStation[];
   availability: string;
   pricePerMonth: string;
   leaseDuration: string;
   noticePeriod: string;
-  contacts: Contact[];
 }

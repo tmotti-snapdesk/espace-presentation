@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 
 export default function Reassurance() {
   const stats = [
-    { value: "90+", label: "Clients satisfaits" },
-    { value: "150+", label: "Espaces gérés" },
+    { value: "90+", label: "Clients nous ont fait confiance" },
+    { value: "55+", label: "Espaces gérés" },
     { value: "8 ans", label: "D'expertise" },
     { value: "100%", label: "Sur-mesure" },
   ];
@@ -35,7 +35,7 @@ export default function Reassurance() {
               espaces, adaptés à vos besoins et à votre culture d&apos;entreprise.
             </p>
             <p className="text-luxury-slate leading-relaxed font-light text-lg">
-              Avec plus de 90 clients qui nous font confiance, nous mettons
+              Avec plus de 90 clients qui nous ont fait confiance, nous mettons
               notre savoir-faire à votre service pour vous offrir une
               expérience de bureaux sans compromis.
             </p>

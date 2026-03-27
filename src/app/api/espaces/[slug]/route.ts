@@ -52,13 +52,15 @@ export async function PUT(
       address: body.address,
       city: body.city,
       postalCode: body.postalCode,
-      latitude: parseFloat(body.latitude) || 48.8566,
-      longitude: parseFloat(body.longitude) || 2.3522,
       workstations: parseInt(body.workstations) || 0,
       openSpaces: parseInt(body.openSpaces) || 0,
       meetingRooms: parseInt(body.meetingRooms) || 0,
       hasLunchArea: body.hasLunchArea || false,
       hasEquippedKitchen: body.hasEquippedKitchen || false,
+      hasBalconFilant: body.hasBalconFilant || false,
+      hasTerrace: body.hasTerrace || false,
+      hasAirConditioning: body.hasAirConditioning || false,
+      hasBikeRack: body.hasBikeRack || false,
       amenities: typeof body.amenities === "string"
         ? body.amenities.split(",").map((a: string) => a.trim()).filter(Boolean)
         : body.amenities || [],
@@ -70,7 +72,10 @@ export async function PUT(
       videoUrl: body.videoUrl || "",
       photos: body.photos || [],
       floorPlanImage: body.floorPlanImage || "",
-      contacts: body.contacts || [],
+      contacts: [
+        { id: "manon", name: "Manon", role: "Chief Customer Officer", email: "", phone: "", photo: "" },
+        { id: "roger", name: "Roger", role: "Responsable Maintenance Technique", email: "", phone: "", photo: "" },
+      ],
       createdAt: body.createdAt || new Date().toISOString(),
     };
 

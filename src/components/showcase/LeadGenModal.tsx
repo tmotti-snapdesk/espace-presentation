@@ -158,13 +158,19 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                           />
                         </div>
                         <div>
-                          <input
-                            type="number"
+                          <select
                             value={form.headcount}
                             onChange={(e) => setForm((f) => ({ ...f, headcount: e.target.value }))}
-                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
-                            placeholder="Nombre de postes recherchés (facultatif)"
-                          />
+                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm text-luxury-slate appearance-none bg-white"
+                          >
+                            <option value="">Nombre de postes recherchés (facultatif)</option>
+                            <option value="Entre 1 à 5">Entre 1 à 5</option>
+                            <option value="5 à 10 postes">5 à 10 postes</option>
+                            <option value="10 à 20 postes">10 à 20 postes</option>
+                            <option value="20 à 50 postes">20 à 50 postes</option>
+                            <option value="50 à 100 postes">50 à 100 postes</option>
+                            <option value="> à 100 postes">&gt; à 100 postes</option>
+                          </select>
                         </div>
 
                         {error && (

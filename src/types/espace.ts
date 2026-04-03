@@ -39,6 +39,7 @@ export interface EspaceData {
   photos: string[];
   floorPlanImage: string;
   contacts: Contact[];
+  isLeadGen: boolean;
   createdAt: string;
 }
 
@@ -63,4 +64,5 @@ export interface EspaceFormData {
   pricePerMonth: string;
   leaseDuration: string;
   noticePeriod: string;
+  isLeadGen: boolean;
 }

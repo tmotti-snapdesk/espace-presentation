@@ -62,6 +62,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
         pricePerMonth: initialData.pricePerMonth,
         leaseDuration: initialData.leaseDuration,
         noticePeriod: initialData.noticePeriod,
+        isLeadGen: initialData.isLeadGen || false,
       };
     }
     return {
@@ -85,6 +86,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
       pricePerMonth: "",
       leaseDuration: "",
       noticePeriod: "",
+      isLeadGen: false,
     };
   });
 
@@ -550,7 +552,30 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
           </div>
         </section>
 
-        {/* Section 4: Médias */}
+        {/* Section 4: Lead Generation */}
+        <section className="mb-12">
+          <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
+            Lead Generation
+          </h2>
+          <label className="flex items-center gap-4 cursor-pointer p-6 border border-primary-200 rounded-lg hover:border-luxury-gold/50 transition-colors">
+            <input
+              type="checkbox"
+              checked={form.isLeadGen}
+              onChange={(e) => updateForm("isLeadGen", e.target.checked)}
+              className="w-5 h-5 accent-luxury-gold"
+            />
+            <div>
+              <span className="text-sm font-medium text-luxury-charcoal">
+                Passer au format lead generation
+              </span>
+              <p className="text-xs text-luxury-slate mt-1">
+                Un formulaire apparaîtra aux visiteurs pour collecter leur email et entreprise.
+              </p>
+            </div>
+          </label>
+        </section>
+
+        {/* Section 5: Médias */}
         <section className="mb-12">
           <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
             Médias

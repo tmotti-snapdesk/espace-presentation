@@ -76,6 +76,7 @@ export async function PUT(
         { id: "manon", name: "Manon", role: "Chief Customer Officer", email: "", phone: "", photo: "" },
         { id: "roger", name: "Roger", role: "Responsable Maintenance Technique", email: "", phone: "", photo: "" },
       ],
+      isLeadGen: body.isLeadGen || false,
       createdAt: body.createdAt || new Date().toISOString(),
     };
 

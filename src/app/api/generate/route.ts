@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       photos: body.photos || [],
       floorPlanImage: body.floorPlanImage || "",
       contacts: DEFAULT_CONTACTS,
+      isLeadGen: body.isLeadGen || false,
       createdAt: new Date().toISOString(),
     };
 

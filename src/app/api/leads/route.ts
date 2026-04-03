@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
               { name: "email", value: lead.email },
               { name: "company", value: lead.company },
               ...(lead.headcount
-                ? [{ name: "numemployees", value: lead.headcount }]
+                ? [{ name: "nombre_de_postes", value: lead.headcount }]
                 : []),
             ],
             context: {

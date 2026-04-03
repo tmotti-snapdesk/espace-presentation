@@ -1,54 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put, list } from "@vercel/blob";
 
-async function hubspotRequest(path: string, method: string, body?: Record<string, unknown>) {
-  const res = await fetch(`https://api.hubapi.com${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const data = await res.json();
-  return { ok: res.ok, status: res.status, data };
-}
-
-async function findContactByEmail(email: string): Promise<string | null> {
-  const res = await hubspotRequest("/crm/v3/objects/contacts/search", "POST", {
-    filterGroups: [
-      {
-        filters: [
-          { propertyName: "email", operator: "EQ", value: email },
-        ],
-      },
-    ],
-  });
-  if (res.ok && res.data.total > 0) {
-    return res.data.results[0].id;
-  }
-  return null;
-}
-
-async function createNote(contactId: string, noteBody: string) {
-  await hubspotRequest("/crm/v3/objects/notes", "POST", {
-    properties: {
-      hs_note_body: noteBody,
-      hs_timestamp: new Date().toISOString(),
-    },
-    associations: [
-      {
-        to: { id: contactId },
-        types: [
-          {
-            associationCategory: "HUBSPOT_DEFINED",
-            associationTypeId: 202,
-          },
-        ],
-      },
-    ],
-  });
-}
+const HUBSPOT_PORTAL_ID = "5180714";
+const HUBSPOT_FORM_GUID = "f07c5055-a3de-47d1-a1ae-5aced914d0ec";
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,56 +33,35 @@ export async function POST(request: NextRequest) {
       contentType: "application/json",
     });
 
-    // 2. Push to HubSpot
-    if (process.env.HUBSPOT_ACCESS_TOKEN) {
-      try {
-        const noteText = [
-          `<strong>Demande de présentation — ${lead.espaceName}</strong>`,
-          `<br/>Entreprise : ${lead.company}`,
-          lead.headcount ? `<br/>Postes recherchés : ${lead.headcount}` : "",
-          `<br/>Page : ${lead.source}`,
-          lead.utm ? `<br/>UTM : ${lead.utm}` : "",
-          `<br/>Date : ${new Date(lead.createdAt).toLocaleString("fr-FR")}`,
-        ].filter(Boolean).join("");
-
-        // Check if contact already exists
-        let contactId = await findContactByEmail(lead.email);
-
-        if (contactId) {
-          // Update existing contact
-          await hubspotRequest(`/crm/v3/objects/contacts/${contactId}`, "PATCH", {
-            properties: {
-              company: lead.company,
-              ...(lead.headcount ? { num_employees: lead.headcount } : {}),
+    // 2. Submit to HubSpot Form
+    try {
+      const hubspotRes = await fetch(
+        `https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fields: [
+              { name: "email", value: lead.email },
+              { name: "company", value: lead.company },
+              ...(lead.headcount
+                ? [{ name: "numemployees", value: lead.headcount }]
+                : []),
+            ],
+            context: {
+              pageUri: lead.source,
+              pageName: `Snapdesk — ${lead.espaceName}`,
             },
-          });
-        } else {
-          // Create new contact
-          const createRes = await hubspotRequest("/crm/v3/objects/contacts", "POST", {
-            properties: {
-              email: lead.email,
-              company: lead.company,
-              ...(lead.headcount ? { num_employees: lead.headcount } : {}),
-              hs_lead_status: "NEW",
-              lifecyclestage: "lead",
-            },
-          });
-
-          if (createRes.ok) {
-            contactId = createRes.data.id;
-          } else {
-            console.error("HubSpot create error:", JSON.stringify(createRes.data));
-          }
+          }),
         }
+      );
 
-        // Create a note on the contact
-        if (contactId) {
-          await createNote(contactId, noteText);
-        }
-      } catch (hubspotErr) {
-        console.error("HubSpot push failed:", hubspotErr);
-        // Don't fail the request — lead is saved in Blob
+      if (!hubspotRes.ok) {
+        const err = await hubspotRes.json();
+        console.error("HubSpot form submit error:", JSON.stringify(err));
       }
+    } catch (hubspotErr) {
+      console.error("HubSpot submit failed:", hubspotErr);
     }
 
     return NextResponse.json({ success: true });

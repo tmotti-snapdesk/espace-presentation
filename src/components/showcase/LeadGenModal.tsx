@@ -90,7 +90,6 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={handleClose}
             />
 
             {/* Modal */}
@@ -108,15 +107,6 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Close button */}
-                <button
-                  onClick={handleClose}
-                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-luxury-slate hover:text-luxury-charcoal transition-colors text-xl"
-                  aria-label="Fermer"
-                >
-                  &times;
-                </button>
-
                 <div className="p-8 md:p-12">
                   {isSubmitted ? (
                     <motion.div

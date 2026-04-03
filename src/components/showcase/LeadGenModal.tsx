@@ -86,7 +86,7 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black/60 z-50"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -100,14 +100,14 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="bg-white w-full max-w-lg relative"
+                className="bg-white w-full max-w-2xl relative"
                 initial={{ opacity: 0, y: 30, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.97 }}
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-8 md:p-12">
+                <div className="p-10 md:p-16">
                   {isSubmitted ? (
                     <motion.div
                       className="text-center py-8"
@@ -121,29 +121,29 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                         Merci !
                       </h3>
                       <p className="text-luxury-slate font-light">
-                        Vous allez recevoir la présentation complète de {espaceName} par email.
+                        Vous allez recevoir la présentation complète par email.
                       </p>
                     </motion.div>
                   ) : (
                     <>
                       {/* Header */}
-                      <div className="text-center mb-8">
-                        <p className="luxury-label mb-3">Intéressé par cet espace ?</p>
-                        <h3 className="font-serif text-2xl md:text-3xl text-luxury-charcoal mb-3">
-                          Recevez la présentation<br />complète de {espaceName}
+                      <div className="text-center mb-10">
+                        <p className="luxury-label mb-4">Intéressé par cet espace ?</p>
+                        <h3 className="font-serif text-3xl md:text-4xl text-luxury-charcoal mb-4">
+                          Recevez la présentation<br />complète
                         </h3>
                         <div className="luxury-divider mx-auto" />
                       </div>
 
                       {/* Form */}
-                      <form onSubmit={handleSubmit} className="space-y-4">
+                      <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto">
                         <div>
                           <input
                             type="email"
                             required
                             value={form.email}
                             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                            className="w-full px-4 py-3 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
                             placeholder="Email professionnel *"
                           />
                         </div>
@@ -153,7 +153,7 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                             required
                             value={form.company}
                             onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                            className="w-full px-4 py-3 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
                             placeholder="Entreprise *"
                           />
                         </div>
@@ -162,7 +162,7 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                             type="number"
                             value={form.headcount}
                             onChange={(e) => setForm((f) => ({ ...f, headcount: e.target.value }))}
-                            className="w-full px-4 py-3 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
                             placeholder="Nombre de postes recherchés (facultatif)"
                           />
                         </div>
@@ -174,7 +174,7 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                         <button
                           type="submit"
                           disabled={isSubmitting}
-                          className={`luxury-btn w-full text-sm py-4 ${
+                          className={`luxury-btn w-full text-sm py-5 ${
                             isSubmitting ? "opacity-50 cursor-not-allowed" : ""
                           }`}
                         >
@@ -182,10 +182,6 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                             ? "Envoi en cours..."
                             : "Recevoir la présentation complète"}
                         </button>
-
-                        <p className="text-xs text-luxury-slate/60 text-center">
-                          Vos données ne seront utilisées que pour vous envoyer cette présentation.
-                        </p>
                       </form>
                     </>
                   )}

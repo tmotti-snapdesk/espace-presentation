@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     await put(`espaces/${slug}.json`, JSON.stringify(espaceData, null, 2), {
       access: "public",
       contentType: "application/json",
+      addRandomSuffix: false,
     });
 
     return NextResponse.json({

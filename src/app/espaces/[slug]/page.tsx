@@ -27,9 +27,10 @@ export async function generateMetadata({
 async function resolveEspace(slug: string): Promise<EspaceData | null> {
   // 1. Try Vercel Blob first (for dynamically created/edited espaces)
   try {
-    const { blobs } = await list({ prefix: `espaces/${slug}.json` });
-    if (blobs.length > 0) {
-      const res = await fetch(blobs[0].url, { cache: "no-store" });
+    const { blobs } = await list({ prefix: `espaces/${slug}` });
+    const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
+    if (jsonBlob) {
+      const res = await fetch(jsonBlob.url, { cache: "no-store" });
       if (res.ok) {
         return (await res.json()) as EspaceData;
       }

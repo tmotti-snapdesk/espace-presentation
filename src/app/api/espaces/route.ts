@@ -8,28 +8,31 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const espaces: EspaceData[] = [];
+    const seenSlugs = new Set<string>();
 
-    // 1. Load from local filesystem (demo data)
-    const localEspaces = getAllEspaces();
-    espaces.push(...localEspaces);
-
-    // 2. Load from Vercel Blob
+    // 1. Load from Vercel Blob first (most up-to-date)
     try {
       const { blobs } = await list({ prefix: "espaces/" });
       const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
 
       for (const blob of jsonBlobs) {
-        const res = await fetch(blob.url);
+        const res = await fetch(blob.url, { cache: "no-store" });
         if (res.ok) {
           const data = (await res.json()) as EspaceData;
-          // Avoid duplicates (local takes precedence)
-          if (!espaces.find((e) => e.slug === data.slug)) {
-            espaces.push(data);
-          }
+          espaces.push(data);
+          seenSlugs.add(data.slug);
         }
       }
     } catch {
       // Blob not configured — skip
+    }
+
+    // 2. Fallback: local filesystem (demo data not yet in Blob)
+    const localEspaces = getAllEspaces();
+    for (const local of localEspaces) {
+      if (!seenSlugs.has(local.slug)) {
+        espaces.push(local);
+      }
     }
 
     // Sort by creation date (newest first)

@@ -13,9 +13,10 @@ export async function GET(
   try {
     // 1. Try Vercel Blob first (most up-to-date)
     try {
-      const { blobs } = await list({ prefix: `espaces/${params.slug}.json` });
-      if (blobs.length > 0) {
-        const res = await fetch(blobs[0].url, { cache: "no-store" });
+      const { blobs } = await list({ prefix: `espaces/${params.slug}` });
+      const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
+      if (jsonBlob) {
+        const res = await fetch(jsonBlob.url, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           return NextResponse.json(data);
@@ -82,8 +83,9 @@ export async function PUT(
 
     // Delete old blob if exists, then write new
     try {
-      const { blobs } = await list({ prefix: `espaces/${slug}.json` });
-      for (const blob of blobs) {
+      const { blobs } = await list({ prefix: `espaces/${slug}` });
+      const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
+      for (const blob of jsonBlobs) {
         await del(blob.url);
       }
     } catch {
@@ -93,6 +95,7 @@ export async function PUT(
     await put(`espaces/${slug}.json`, JSON.stringify(espaceData, null, 2), {
       access: "public",
       contentType: "application/json",
+      addRandomSuffix: false,
     });
 
     return NextResponse.json({

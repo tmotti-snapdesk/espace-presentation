@@ -23,12 +23,70 @@ export async function POST(request: NextRequest) {
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
+    // 1. Save to Vercel Blob (backup)
     const filename = `leads/${lead.espaceSlug}-${Date.now()}.json`;
-
     await put(filename, JSON.stringify(lead, null, 2), {
       access: "public",
       contentType: "application/json",
     });
+
+    // 2. Push to HubSpot
+    if (process.env.HUBSPOT_ACCESS_TOKEN) {
+      try {
+        const hubspotRes = await fetch(
+          "https://api.hubapi.com/crm/v3/objects/contacts",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+            },
+            body: JSON.stringify({
+              properties: {
+                email: lead.email,
+                company: lead.company,
+                num_employees: lead.headcount || undefined,
+                hs_lead_status: "NEW",
+                lifecyclestage: "lead",
+                leadsource: "Snapdesk Mini-Site",
+                notes_last_updated: `Espace: ${lead.espaceName} | Source: ${lead.source} | UTM: ${lead.utm}`,
+              },
+            }),
+          }
+        );
+
+        if (!hubspotRes.ok) {
+          const hubspotError = await hubspotRes.json();
+          console.error("HubSpot error:", JSON.stringify(hubspotError));
+
+          // If contact already exists, try to update
+          if (hubspotRes.status === 409 && hubspotError.message?.includes("already exists")) {
+            const existingId = hubspotError.message.match(/ID: (\d+)/)?.[1];
+            if (existingId) {
+              await fetch(
+                `https://api.hubapi.com/crm/v3/objects/contacts/${existingId}`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+                  },
+                  body: JSON.stringify({
+                    properties: {
+                      company: lead.company,
+                      notes_last_updated: `Espace: ${lead.espaceName} | Source: ${lead.source} | UTM: ${lead.utm}`,
+                    },
+                  }),
+                }
+              );
+            }
+          }
+        }
+      } catch (hubspotErr) {
+        console.error("HubSpot push failed:", hubspotErr);
+        // Don't fail the request — lead is saved in Blob
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -162,7 +162,7 @@ export async function POST(
     const duplicateData: EspaceData = {
       ...sourceData,
       slug: newSlug,
-      name: `${sourceData.name} (${suffix})`,
+      name: sourceData.name,
       createdAt: new Date().toISOString(),
     };
 

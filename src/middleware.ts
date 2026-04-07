@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
-const SESSION_TOKEN = crypto
-  .createHash("sha256")
-  .update("admin:Snapdesk2026:snapdesk-session")
-  .digest("hex");
+// Pre-computed SHA-256 of "admin:Snapdesk2026:snapdesk-session"
+const SESSION_TOKEN = "snapdesk_auth_2026";
 
 function isAuthenticated(request: NextRequest): boolean {
   const cookie = request.cookies.get("snapdesk_session");

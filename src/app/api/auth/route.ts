@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "Snapdesk2026";
-const SESSION_TOKEN = crypto
-  .createHash("sha256")
-  .update(`${ADMIN_USERNAME}:${ADMIN_PASSWORD}:snapdesk-session`)
-  .digest("hex");
+const SESSION_TOKEN = "snapdesk_auth_2026";
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,5 +39,3 @@ export async function DELETE() {
   return response;
 }
 
-// Export the token for middleware verification
-export { SESSION_TOKEN };

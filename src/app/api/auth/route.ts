@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "Snapdesk2026";
 const SESSION_TOKEN = "snapdesk_auth_2026";
+
+export async function GET() {
+  const cookieStore = cookies();
+  const session = cookieStore.get("snapdesk_session");
+  if (session?.value === SESSION_TOKEN) {
+    return NextResponse.json({ authenticated: true });
+  }
+  return NextResponse.json({ authenticated: false }, { status: 401 });
+}
 
 export async function POST(request: NextRequest) {
   try {

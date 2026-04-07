@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { upload } from "@vercel/blob/client";
 import FileDropzone from "@/components/admin/FileDropzone";
-import { MetroStation, EspaceFormData, EspaceData, LeadGenMode } from "@/types/espace";
+import { MetroStation, EspaceFormData, EspaceData, LeadGenMode, Template } from "@/types/espace";
 
 function slugify(text: string): string {
   return text
@@ -31,10 +31,21 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
   const [floorPlanFile, setFloorPlanFile] = useState<File[]>([]);
   const [floorPlanPreview, setFloorPlanPreview] = useState<string[]>([]);
 
+  // Prestige media files
+  const [storyPhotoFiles, setStoryPhotoFiles] = useState<File[]>([]);
+  const [storyPhotoPreviews, setStoryPhotoPreviews] = useState<string[]>([]);
+  const [highlightPhotoFiles, setHighlightPhotoFiles] = useState<File[]>([]);
+  const [highlightPhotoPreviews, setHighlightPhotoPreviews] = useState<string[]>([]);
+  const [neighborhoodPhotoFiles, setNeighborhoodPhotoFiles] = useState<File[]>([]);
+  const [neighborhoodPhotoPreviews, setNeighborhoodPhotoPreviews] = useState<string[]>([]);
+
   // Existing media URLs (edit mode)
   const [existingPhotos, setExistingPhotos] = useState<string[]>(initialData?.photos || []);
   const [existingVideo, setExistingVideo] = useState<string>(initialData?.videoUrl || "");
   const [existingFloorPlan, setExistingFloorPlan] = useState<string>(initialData?.floorPlanImage || "");
+  const [existingStoryPhotos, setExistingStoryPhotos] = useState<string[]>(initialData?.storyPhotos || []);
+  const [existingHighlightPhotos, setExistingHighlightPhotos] = useState<string[]>(initialData?.highlightPhotos || []);
+  const [existingNeighborhoodPhotos, setExistingNeighborhoodPhotos] = useState<string[]>(initialData?.neighborhoodPhotos || []);
 
   // Form state
   const [form, setForm] = useState<EspaceFormData>(() => {
@@ -65,6 +76,20 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
         isLeadGen: initialData.isLeadGen || false,
         leadGenMode: initialData.leadGenMode || "unlock",
         presentationLink: initialData.presentationLink || "",
+        template: initialData.template || "standard",
+        storyTitle: initialData.storyTitle || "",
+        storyText: initialData.storyText || "",
+        highlightTitle: initialData.highlightTitle || "",
+        highlightText: initialData.highlightText || "",
+        buildingSurface: initialData.buildingSurface || "",
+        buildingFloors: initialData.buildingFloors || "",
+        buildingYear: initialData.buildingYear || "",
+        buildingCertification: initialData.buildingCertification || "",
+        neighborhoodTitle: initialData.neighborhoodTitle || "",
+        neighborhoodText: initialData.neighborhoodText || "",
+        testimonialQuote: initialData.testimonial?.quote || "",
+        testimonialAuthor: initialData.testimonial?.author || "",
+        testimonialRole: initialData.testimonial?.role || "",
       };
     }
     return {
@@ -91,6 +116,20 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
       isLeadGen: false,
       leadGenMode: "unlock" as LeadGenMode,
       presentationLink: "",
+      template: "standard" as Template,
+      storyTitle: "",
+      storyText: "",
+      highlightTitle: "",
+      highlightText: "",
+      buildingSurface: "",
+      buildingFloors: "",
+      buildingYear: "",
+      buildingCertification: "",
+      neighborhoodTitle: "",
+      neighborhoodText: "",
+      testimonialQuote: "",
+      testimonialAuthor: "",
+      testimonialRole: "",
     };
   });
 
@@ -100,6 +139,24 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
     setPhotoPreviews(urls);
     return () => urls.forEach(URL.revokeObjectURL);
   }, [photoFiles]);
+
+  useEffect(() => {
+    const urls = storyPhotoFiles.map((f) => URL.createObjectURL(f));
+    setStoryPhotoPreviews(urls);
+    return () => urls.forEach(URL.revokeObjectURL);
+  }, [storyPhotoFiles]);
+
+  useEffect(() => {
+    const urls = highlightPhotoFiles.map((f) => URL.createObjectURL(f));
+    setHighlightPhotoPreviews(urls);
+    return () => urls.forEach(URL.revokeObjectURL);
+  }, [highlightPhotoFiles]);
+
+  useEffect(() => {
+    const urls = neighborhoodPhotoFiles.map((f) => URL.createObjectURL(f));
+    setNeighborhoodPhotoPreviews(urls);
+    return () => urls.forEach(URL.revokeObjectURL);
+  }, [neighborhoodPhotoFiles]);
 
   useEffect(() => {
     const urls = floorPlanFile
@@ -173,16 +230,22 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
         : slugify(form.name);
 
       // Upload new files
-      const [newPhotoPaths, newVideoPaths, newFloorPlanPaths] = await Promise.all([
+      const [newPhotoPaths, newVideoPaths, newFloorPlanPaths, newStoryPhotoPaths, newHighlightPhotoPaths, newNeighborhoodPhotoPaths] = await Promise.all([
         uploadFiles(photoFiles, slug, "photos"),
         uploadFiles(videoFile, slug, "video"),
         uploadFiles(floorPlanFile, slug, "floorplan"),
+        uploadFiles(storyPhotoFiles, slug, "story"),
+        uploadFiles(highlightPhotoFiles, slug, "highlight"),
+        uploadFiles(neighborhoodPhotoFiles, slug, "neighborhood"),
       ]);
 
       // Merge existing + new photos
       const allPhotos = [...existingPhotos, ...newPhotoPaths];
       const finalVideo = newVideoPaths[0] || existingVideo;
       const finalFloorPlan = newFloorPlanPaths[0] || existingFloorPlan;
+      const allStoryPhotos = [...existingStoryPhotos, ...newStoryPhotoPaths];
+      const allHighlightPhotos = [...existingHighlightPhotos, ...newHighlightPhotoPaths];
+      const allNeighborhoodPhotos = [...existingNeighborhoodPhotos, ...newNeighborhoodPhotoPaths];
 
       // Generate or update the site
       const endpoint = mode === "edit" ? `/api/espaces/${slug}` : "/api/generate";
@@ -196,6 +259,9 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
           photos: allPhotos,
           videoUrl: finalVideo,
           floorPlanImage: finalFloorPlan,
+          storyPhotos: allStoryPhotos,
+          highlightPhotos: allHighlightPhotos,
+          neighborhoodPhotos: allNeighborhoodPhotos,
         }),
       });
 
@@ -253,6 +319,57 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
             <p className="text-red-800">{error}</p>
           </div>
         )}
+
+        {/* Section 0: Template */}
+        <section className="mb-12">
+          <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
+            Format
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <label
+              className={`flex flex-col items-center gap-3 cursor-pointer p-6 border-2 rounded-lg transition-colors ${
+                form.template === "standard"
+                  ? "border-luxury-gold bg-luxury-champagne/10"
+                  : "border-primary-200 hover:border-luxury-gold/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="template"
+                value="standard"
+                checked={form.template === "standard"}
+                onChange={(e) => updateForm("template", e.target.value)}
+                className="sr-only"
+              />
+              <span className="text-2xl">&#9634;</span>
+              <span className="text-sm font-medium text-luxury-charcoal">Standard</span>
+              <p className="text-xs text-luxury-slate text-center">
+                Landing page classique pour un espace de bureaux.
+              </p>
+            </label>
+            <label
+              className={`flex flex-col items-center gap-3 cursor-pointer p-6 border-2 rounded-lg transition-colors ${
+                form.template === "prestige"
+                  ? "border-luxury-gold bg-luxury-champagne/10"
+                  : "border-primary-200 hover:border-luxury-gold/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="template"
+                value="prestige"
+                checked={form.template === "prestige"}
+                onChange={(e) => updateForm("template", e.target.value)}
+                className="sr-only"
+              />
+              <span className="text-2xl">&#9733;</span>
+              <span className="text-sm font-medium text-luxury-charcoal">Prestige</span>
+              <p className="text-xs text-luxury-slate text-center">
+                Version enrichie avec histoire, point fort, quartier et témoignage.
+              </p>
+            </label>
+          </div>
+        </section>
 
         {/* Section 1: Informations générales */}
         <section className="mb-12">
@@ -667,6 +784,218 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
             </div>
           )}
         </section>
+
+        {/* Prestige sections */}
+        {form.template === "prestige" && (
+          <>
+            {/* Histoire de l'immeuble */}
+            <section className="mb-12">
+              <h2 className="font-serif text-2xl text-luxury-charcoal mb-2 pb-3 border-b border-luxury-gold/30">
+                <span className="text-luxury-gold mr-2">&#9733;</span>
+                Histoire de l&apos;immeuble
+              </h2>
+              <p className="text-xs text-luxury-slate mb-6">Section prestige</p>
+              <div className="grid gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">
+                    Titre de la section
+                  </label>
+                  <input
+                    type="text"
+                    value={form.storyTitle}
+                    onChange={(e) => updateForm("storyTitle", e.target.value)}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors"
+                    placeholder="ex: Un immeuble haussmannien d'exception"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">
+                    Texte
+                  </label>
+                  <textarea
+                    value={form.storyText}
+                    onChange={(e) => updateForm("storyText", e.target.value)}
+                    rows={6}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors resize-vertical"
+                    placeholder="Racontez l'histoire de l'immeuble, ses origines, sa rénovation..."
+                  />
+                </div>
+                {existingStoryPhotos.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-charcoal mb-2">Photos actuelles</label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {existingStoryPhotos.map((photo, i) => (
+                        <div key={photo} className="relative aspect-square rounded-lg overflow-hidden bg-primary-50 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={photo} alt={`Story ${i + 1}`} className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setExistingStoryPhotos((prev) => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <FileDropzone
+                  label="Photos de l'histoire"
+                  description="Photos historiques ou de l'immeuble (JPG, PNG, WebP)"
+                  accept={{ "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"], "image/webp": [".webp"] }}
+                  onDrop={(files) => setStoryPhotoFiles((prev) => [...prev, ...files])}
+                  files={storyPhotoFiles}
+                  previews={storyPhotoPreviews}
+                />
+              </div>
+            </section>
+
+            {/* Point fort */}
+            <section className="mb-12">
+              <h2 className="font-serif text-2xl text-luxury-charcoal mb-2 pb-3 border-b border-luxury-gold/30">
+                <span className="text-luxury-gold mr-2">&#9733;</span>
+                Point fort
+              </h2>
+              <p className="text-xs text-luxury-slate mb-6">Section prestige</p>
+              <div className="grid gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">
+                    Titre du point fort
+                  </label>
+                  <input
+                    type="text"
+                    value={form.highlightTitle}
+                    onChange={(e) => updateForm("highlightTitle", e.target.value)}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors"
+                    placeholder="ex: Un espace de vie d'exception"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={form.highlightText}
+                    onChange={(e) => updateForm("highlightText", e.target.value)}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors resize-vertical"
+                    placeholder="Décrivez ce qui rend cet aspect unique..."
+                  />
+                </div>
+                {existingHighlightPhotos.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-charcoal mb-2">Photos actuelles</label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {existingHighlightPhotos.map((photo, i) => (
+                        <div key={photo} className="relative aspect-square rounded-lg overflow-hidden bg-primary-50 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={photo} alt={`Highlight ${i + 1}`} className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setExistingHighlightPhotos((prev) => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <FileDropzone
+                  label="Photos du point fort"
+                  description="Photos mettant en valeur ce point fort (JPG, PNG, WebP)"
+                  accept={{ "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"], "image/webp": [".webp"] }}
+                  onDrop={(files) => setHighlightPhotoFiles((prev) => [...prev, ...files])}
+                  files={highlightPhotoFiles}
+                  previews={highlightPhotoPreviews}
+                />
+              </div>
+            </section>
+
+            {/* Chiffres clés immeuble */}
+            <section className="mb-12">
+              <h2 className="font-serif text-2xl text-luxury-charcoal mb-2 pb-3 border-b border-luxury-gold/30">
+                <span className="text-luxury-gold mr-2">&#9733;</span>
+                Chiffres clés de l&apos;immeuble
+              </h2>
+              <p className="text-xs text-luxury-slate mb-6">Section prestige</p>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Surface totale</label>
+                  <input type="text" value={form.buildingSurface} onChange={(e) => updateForm("buildingSurface", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: 5 200 m2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Nombre d&apos;étages</label>
+                  <input type="text" value={form.buildingFloors} onChange={(e) => updateForm("buildingFloors", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: 7 étages" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Année de construction / rénovation</label>
+                  <input type="text" value={form.buildingYear} onChange={(e) => updateForm("buildingYear", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: 1890 / rénové 2023" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Certification</label>
+                  <input type="text" value={form.buildingCertification} onChange={(e) => updateForm("buildingCertification", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: HQE, BREEAM" />
+                </div>
+              </div>
+            </section>
+
+            {/* Le quartier */}
+            <section className="mb-12">
+              <h2 className="font-serif text-2xl text-luxury-charcoal mb-2 pb-3 border-b border-luxury-gold/30">
+                <span className="text-luxury-gold mr-2">&#9733;</span>
+                Le quartier
+              </h2>
+              <p className="text-xs text-luxury-slate mb-6">Section prestige</p>
+              <div className="grid gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Titre</label>
+                  <input type="text" value={form.neighborhoodTitle} onChange={(e) => updateForm("neighborhoodTitle", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: Au cœur du 9e arrondissement" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Description du quartier</label>
+                  <textarea value={form.neighborhoodText} onChange={(e) => updateForm("neighborhoodText", e.target.value)} rows={4} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors resize-vertical" placeholder="Restaurants, commerces, vie de quartier..." />
+                </div>
+                {existingNeighborhoodPhotos.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-charcoal mb-2">Photos actuelles</label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {existingNeighborhoodPhotos.map((photo, i) => (
+                        <div key={photo} className="relative aspect-square rounded-lg overflow-hidden bg-primary-50 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={photo} alt={`Quartier ${i + 1}`} className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setExistingNeighborhoodPhotos((prev) => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <FileDropzone
+                  label="Photos du quartier"
+                  description="Photos d'ambiance du quartier (JPG, PNG, WebP)"
+                  accept={{ "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"], "image/webp": [".webp"] }}
+                  onDrop={(files) => setNeighborhoodPhotoFiles((prev) => [...prev, ...files])}
+                  files={neighborhoodPhotoFiles}
+                  previews={neighborhoodPhotoPreviews}
+                />
+              </div>
+            </section>
+
+            {/* Témoignage */}
+            <section className="mb-12">
+              <h2 className="font-serif text-2xl text-luxury-charcoal mb-2 pb-3 border-b border-luxury-gold/30">
+                <span className="text-luxury-gold mr-2">&#9733;</span>
+                Témoignage
+              </h2>
+              <p className="text-xs text-luxury-slate mb-6">Section prestige</p>
+              <div className="grid gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">Citation</label>
+                  <textarea value={form.testimonialQuote} onChange={(e) => updateForm("testimonialQuote", e.target.value)} rows={3} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors resize-vertical" placeholder="ex: Cet espace a transformé notre façon de travailler..." />
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-charcoal mb-2">Auteur</label>
+                    <input type="text" value={form.testimonialAuthor} onChange={(e) => updateForm("testimonialAuthor", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: Jean Dupont" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-charcoal mb-2">Fonction</label>
+                    <input type="text" value={form.testimonialRole} onChange={(e) => updateForm("testimonialRole", e.target.value)} className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors" placeholder="ex: CEO, Entreprise XYZ" />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
 
         {/* Section 5: Médias */}
         <section className="mb-12">

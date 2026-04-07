@@ -14,6 +14,13 @@ export interface MetroStation {
 }
 
 export type LeadGenMode = "unlock" | "redirect" | "voir_suite";
+export type Template = "standard" | "prestige";
+
+export interface Testimonial {
+  quote: string;
+  author: string;
+  role: string;
+}
 
 export interface EspaceData {
   slug: string;
@@ -44,6 +51,22 @@ export interface EspaceData {
   isLeadGen: boolean;
   leadGenMode: LeadGenMode;
   presentationLink: string;
+  // Prestige template fields
+  template: Template;
+  storyTitle: string;
+  storyText: string;
+  storyPhotos: string[];
+  highlightTitle: string;
+  highlightText: string;
+  highlightPhotos: string[];
+  buildingSurface: string;
+  buildingFloors: string;
+  buildingYear: string;
+  buildingCertification: string;
+  neighborhoodTitle: string;
+  neighborhoodText: string;
+  neighborhoodPhotos: string[];
+  testimonial: Testimonial;
   createdAt: string;
 }
 
@@ -71,4 +94,19 @@ export interface EspaceFormData {
   isLeadGen: boolean;
   leadGenMode: LeadGenMode;
   presentationLink: string;
+  // Prestige template fields
+  template: Template;
+  storyTitle: string;
+  storyText: string;
+  highlightTitle: string;
+  highlightText: string;
+  buildingSurface: string;
+  buildingFloors: string;
+  buildingYear: string;
+  buildingCertification: string;
+  neighborhoodTitle: string;
+  neighborhoodText: string;
+  testimonialQuote: string;
+  testimonialAuthor: string;
+  testimonialRole: string;
 }

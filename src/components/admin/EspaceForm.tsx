@@ -269,13 +269,17 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
                 required
                 value={form.name}
                 onChange={(e) => updateForm("name", e.target.value)}
-                disabled={mode === "edit"}
-                className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors disabled:bg-primary-50 disabled:text-luxury-slate"
+                className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors"
                 placeholder="ex: Le Marais Premium"
               />
               {form.name && mode === "create" && (
                 <p className="text-xs text-luxury-slate mt-1">
                   Slug : {slugify(form.name)}
+                </p>
+              )}
+              {mode === "edit" && initialData && (
+                <p className="text-xs text-luxury-slate mt-1">
+                  URL : /espaces/{initialData.slug}
                 </p>
               )}
             </div>

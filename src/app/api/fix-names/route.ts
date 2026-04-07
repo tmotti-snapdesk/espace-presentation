@@ -25,6 +25,7 @@ export async function GET() {
           access: "public",
           contentType: "application/json",
           addRandomSuffix: false,
+          allowOverwrite: true,
         });
         fixed.push(`${data.slug}: "${match[0]}" → "${data.name}"`);
       } else {

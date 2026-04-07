@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Pre-computed SHA-256 of "admin:Snapdesk2026:snapdesk-session"
 const SESSION_TOKEN = "snapdesk_auth_2026";
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -17,7 +16,7 @@ export function middleware(request: NextRequest) {
   if (pathname === "/api/leads") return NextResponse.next();
 
   // Protected: /admin pages
-  if (pathname.startsWith("/admin")) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     if (!isAuthenticated(request)) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
@@ -40,5 +39,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/api/espaces/:path*", "/api/generate", "/api/upload"],
+  matcher: "/((?!_next/static|_next/image|favicon.ico|images|espaces).*)",
 };

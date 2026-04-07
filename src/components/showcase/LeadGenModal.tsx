@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LeadGenMode } from "@/types/espace";
 
 interface LeadGenModalProps {
   espaceName: string;
   espaceSlug: string;
+  leadGenMode?: LeadGenMode;
+  presentationLink?: string;
 }
 
-export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalProps) {
+export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "unlock", presentationLink = "" }: LeadGenModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenDismissed, setHasBeenDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,8 +70,14 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
 
       if (!res.ok) throw new Error("Erreur lors de l'envoi");
 
-      setIsSubmitted(true);
-      setTimeout(() => setIsOpen(false), 2500);
+      if (leadGenMode === "redirect" && presentationLink) {
+        window.open(presentationLink, "_blank");
+        setIsSubmitted(true);
+        setTimeout(() => setIsOpen(false), 2500);
+      } else {
+        setIsSubmitted(true);
+        setTimeout(() => setIsOpen(false), 2500);
+      }
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
@@ -121,7 +130,11 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                         Merci !
                       </h3>
                       <p className="text-luxury-slate font-light">
-                        Vous allez recevoir la présentation complète par email.
+                        {leadGenMode === "voir_suite"
+                          ? "Bonne découverte de l'espace !"
+                          : leadGenMode === "redirect"
+                            ? "La présentation s'ouvre dans un nouvel onglet."
+                            : "Vous allez recevoir la présentation complète par email."}
                       </p>
                     </motion.div>
                   ) : (
@@ -186,7 +199,9 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                         >
                           {isSubmitting
                             ? "Envoi en cours..."
-                            : "Recevoir la présentation complète"}
+                            : leadGenMode === "voir_suite"
+                              ? "Voir la suite"
+                              : "Recevoir la présentation complète"}
                         </button>
                       </form>
                     </>

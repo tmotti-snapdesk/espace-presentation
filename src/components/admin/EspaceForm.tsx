@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { upload } from "@vercel/blob/client";
 import FileDropzone from "@/components/admin/FileDropzone";
-import { MetroStation, EspaceFormData, EspaceData } from "@/types/espace";
+import { MetroStation, EspaceFormData, EspaceData, LeadGenMode } from "@/types/espace";
 
 function slugify(text: string): string {
   return text
@@ -63,6 +63,8 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
         leaseDuration: initialData.leaseDuration,
         noticePeriod: initialData.noticePeriod,
         isLeadGen: initialData.isLeadGen || false,
+        leadGenMode: initialData.leadGenMode || "unlock",
+        presentationLink: initialData.presentationLink || "",
       };
     }
     return {
@@ -87,6 +89,8 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
       leaseDuration: "",
       noticePeriod: "",
       isLeadGen: false,
+      leadGenMode: "unlock" as LeadGenMode,
+      presentationLink: "",
     };
   });
 
@@ -557,7 +561,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
           <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
             Lead Generation
           </h2>
-          <label className="flex items-center gap-4 cursor-pointer p-6 border border-primary-200 rounded-lg hover:border-luxury-gold/50 transition-colors">
+          <label className="flex items-center gap-4 cursor-pointer p-6 border border-primary-200 rounded-lg hover:border-luxury-gold/50 transition-colors mb-6">
             <input
               type="checkbox"
               checked={form.isLeadGen}
@@ -573,6 +577,91 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
               </p>
             </div>
           </label>
+
+          {form.isLeadGen && (
+            <div className="space-y-6 p-6 bg-primary-50 rounded-lg border border-primary-200">
+              <div>
+                <label className="block text-sm font-medium text-luxury-charcoal mb-3">
+                  Mode du call-to-action
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="leadGenMode"
+                      value="unlock"
+                      checked={form.leadGenMode === "unlock"}
+                      onChange={(e) => updateForm("leadGenMode", e.target.value)}
+                      className="mt-1 accent-luxury-gold"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-luxury-charcoal">
+                        &ldquo;Recevoir la présentation complète&rdquo; + accès à la suite de la page
+                      </span>
+                      <p className="text-xs text-luxury-slate mt-0.5">
+                        Après soumission, le visiteur peut continuer à naviguer sur la page.
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="leadGenMode"
+                      value="redirect"
+                      checked={form.leadGenMode === "redirect"}
+                      onChange={(e) => updateForm("leadGenMode", e.target.value)}
+                      className="mt-1 accent-luxury-gold"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-luxury-charcoal">
+                        &ldquo;Recevoir la présentation complète&rdquo; + redirection vers un lien
+                      </span>
+                      <p className="text-xs text-luxury-slate mt-0.5">
+                        Après soumission, le visiteur est redirigé vers le lien de la présentation.
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="leadGenMode"
+                      value="voir_suite"
+                      checked={form.leadGenMode === "voir_suite"}
+                      onChange={(e) => updateForm("leadGenMode", e.target.value)}
+                      className="mt-1 accent-luxury-gold"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-luxury-charcoal">
+                        &ldquo;Voir la suite&rdquo; + accès à la suite de la page
+                      </span>
+                      <p className="text-xs text-luxury-slate mt-0.5">
+                        CTA simplifié, pas de mention de présentation. Le visiteur continue sur la page.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {form.leadGenMode === "redirect" && (
+                <div>
+                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">
+                    Lien de la présentation *
+                  </label>
+                  <input
+                    type="url"
+                    required={form.leadGenMode === "redirect"}
+                    value={form.presentationLink}
+                    onChange={(e) => updateForm("presentationLink", e.target.value)}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors"
+                    placeholder="https://..."
+                  />
+                  <p className="text-xs text-luxury-slate mt-1">
+                    Le visiteur sera redirigé vers ce lien après soumission du formulaire.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Section 5: Médias */}

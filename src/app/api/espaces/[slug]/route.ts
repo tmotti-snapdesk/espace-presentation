@@ -78,6 +78,8 @@ export async function PUT(
         { id: "roger", name: "Roger", role: "Responsable Maintenance Technique", email: "", phone: "", photo: "" },
       ],
       isLeadGen: body.isLeadGen || false,
+      leadGenMode: body.leadGenMode || "unlock",
+      presentationLink: body.presentationLink || "",
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
@@ -106,6 +108,78 @@ export async function PUT(
   } catch (error) {
     const message = error instanceof Error ? error.message : "Update failed";
     console.error("Update espace error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+// DUPLICATE an espace
+export async function POST(
+  _request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    // 1. Resolve the source espace
+    let sourceData: EspaceData | null = null;
+
+    try {
+      const { blobs } = await list({ prefix: `espaces/${params.slug}` });
+      const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
+      if (jsonBlob) {
+        const res = await fetch(jsonBlob.url, { cache: "no-store" });
+        if (res.ok) sourceData = (await res.json()) as EspaceData;
+      }
+    } catch {
+      // fall through
+    }
+
+    if (!sourceData) {
+      sourceData = getEspaceBySlug(params.slug);
+    }
+
+    if (!sourceData) {
+      return NextResponse.json({ error: "Espace source non trouvé" }, { status: 404 });
+    }
+
+    // 2. Find next available slug suffix (-2, -3, etc.)
+    const baseSlug = sourceData.slug.replace(/-\d+$/, "");
+    let suffix = 2;
+    let newSlug = `${baseSlug}-${suffix}`;
+
+    while (true) {
+      let exists = false;
+      try {
+        const { blobs } = await list({ prefix: `espaces/${newSlug}.json` });
+        if (blobs.length > 0) exists = true;
+      } catch {
+        // blob not configured
+      }
+      if (!exists) break;
+      suffix++;
+      newSlug = `${baseSlug}-${suffix}`;
+    }
+
+    // 3. Create the duplicate
+    const duplicateData: EspaceData = {
+      ...sourceData,
+      slug: newSlug,
+      name: `${sourceData.name} (${suffix})`,
+      createdAt: new Date().toISOString(),
+    };
+
+    await put(`espaces/${newSlug}.json`, JSON.stringify(duplicateData, null, 2), {
+      access: "public",
+      contentType: "application/json",
+      addRandomSuffix: false,
+    });
+
+    return NextResponse.json({
+      success: true,
+      slug: newSlug,
+      url: `/espaces/${newSlug}`,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Duplicate failed";
+    console.error("Duplicate espace error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

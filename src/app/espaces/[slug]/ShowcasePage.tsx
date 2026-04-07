@@ -22,7 +22,12 @@ export default function ShowcasePage({ espace }: ShowcasePageProps) {
       <Presentation espace={espace} />
       <Location espace={espace} />
       {espace.isLeadGen && (
-        <LeadGenModal espaceName={espace.name} espaceSlug={espace.slug} />
+        <LeadGenModal
+          espaceName={espace.name}
+          espaceSlug={espace.slug}
+          leadGenMode={espace.leadGenMode || "unlock"}
+          presentationLink={espace.presentationLink || ""}
+        />
       )}
       <FloorPlan floorPlanImage={espace.floorPlanImage} />
       <PhotoGallery photos={espace.photos} name={espace.name} />

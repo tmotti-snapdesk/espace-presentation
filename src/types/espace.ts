@@ -13,6 +13,8 @@ export interface MetroStation {
   distance: string;
 }
 
+export type LeadGenMode = "unlock" | "redirect" | "voir_suite";
+
 export interface EspaceData {
   slug: string;
   name: string;
@@ -40,6 +42,8 @@ export interface EspaceData {
   floorPlanImage: string;
   contacts: Contact[];
   isLeadGen: boolean;
+  leadGenMode: LeadGenMode;
+  presentationLink: string;
   createdAt: string;
 }
 
@@ -65,4 +69,6 @@ export interface EspaceFormData {
   leaseDuration: string;
   noticePeriod: string;
   isLeadGen: boolean;
+  leadGenMode: LeadGenMode;
+  presentationLink: string;
 }

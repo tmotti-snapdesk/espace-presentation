@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const [espaces, setEspaces] = useState<EspaceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
 
   const fetchEspaces = async () => {
     try {
@@ -26,6 +27,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchEspaces();
   }, []);
+
+  const handleDuplicate = async (slug: string) => {
+    setDuplicating(slug);
+    try {
+      const res = await fetch(`/api/espaces/${slug}`, { method: "POST" });
+      if (res.ok) {
+        await fetchEspaces();
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setDuplicating(null);
+    }
+  };
 
   const handleDelete = async (slug: string) => {
     if (!confirm(`Supprimer l'espace "${slug}" ? Cette action est irréversible.`)) return;
@@ -106,6 +121,13 @@ export default function AdminDashboard() {
                   >
                     Modifier
                   </Link>
+                  <button
+                    onClick={() => handleDuplicate(espace.slug)}
+                    disabled={duplicating === espace.slug}
+                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded disabled:opacity-50"
+                  >
+                    {duplicating === espace.slug ? "..." : "Dupliquer"}
+                  </button>
                   <button
                     onClick={() => handleDelete(espace.slug)}
                     disabled={deleting === espace.slug}

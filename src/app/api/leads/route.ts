@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const lead = {
       email: body.email,
       company: body.company,
-      headcount: body.headcount || "",
+      searchingForOffice: body.searchingForOffice || false,
       espaceName: body.espaceName || "",
       espaceSlug: body.espaceSlug || "",
       source: body.source || "",
@@ -44,9 +44,7 @@ export async function POST(request: NextRequest) {
             fields: [
               { name: "email", value: lead.email },
               { name: "company", value: lead.company },
-              ...(lead.headcount
-                ? [{ name: "nombre_de_postes", value: lead.headcount }]
-                : []),
+              { name: "declare_etre_en_recherche", value: lead.searchingForOffice ? "true" : "false" },
             ],
             context: {
               pageUri: lead.source,

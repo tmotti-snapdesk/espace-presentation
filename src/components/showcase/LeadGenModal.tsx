@@ -22,7 +22,7 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
   const [form, setForm] = useState({
     email: "",
     company: "",
-    headcount: "",
+    searchingForOffice: false,
   });
 
   // Trigger modal on scroll (when the trigger div enters viewport)
@@ -170,21 +170,27 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
                             placeholder="Entreprise *"
                           />
                         </div>
-                        <div>
-                          <select
-                            value={form.headcount}
-                            onChange={(e) => setForm((f) => ({ ...f, headcount: e.target.value }))}
-                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm text-luxury-slate appearance-none bg-white"
+                        <label
+                          className={`flex items-center gap-3 px-5 py-4 border cursor-pointer transition-colors text-sm ${
+                            form.searchingForOffice
+                              ? "border-luxury-gold bg-luxury-champagne/20 text-luxury-charcoal"
+                              : "border-primary-200 text-luxury-slate"
+                          }`}
+                          onClick={() => setForm((f) => ({ ...f, searchingForOffice: !f.searchingForOffice }))}
+                        >
+                          <div
+                            className={`w-10 h-6 rounded-full relative transition-colors shrink-0 ${
+                              form.searchingForOffice ? "bg-luxury-gold" : "bg-primary-200"
+                            }`}
                           >
-                            <option value="">Nombre de postes recherchés (facultatif)</option>
-                            <option value="Entre 1 à 5">Entre 1 à 5</option>
-                            <option value="5 à 10 postes">5 à 10 postes</option>
-                            <option value="10 à 20 postes">10 à 20 postes</option>
-                            <option value="20 à 50 postes">20 à 50 postes</option>
-                            <option value="50 à 100 postes">50 à 100 postes</option>
-                            <option value="> à 100 postes">&gt; à 100 postes</option>
-                          </select>
-                        </div>
+                            <div
+                              className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                                form.searchingForOffice ? "translate-x-5" : "translate-x-1"
+                              }`}
+                            />
+                          </div>
+                          <span>Je recherche actuellement des bureaux</span>
+                        </label>
 
                         {error && (
                           <p className="text-red-500 text-sm text-center">{error}</p>

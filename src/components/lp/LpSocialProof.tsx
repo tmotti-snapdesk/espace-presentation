@@ -15,30 +15,23 @@ export default function LpSocialProof({ title, logos = [] }: LpSocialProofProps)
     <section className="bg-luxury-cream section-padding">
       <div className="max-w-5xl mx-auto">
         {title && (
-          <motion.p
-            className="luxury-label text-center mb-12"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            {title}
-          </motion.p>
+          <p className="luxury-label text-center mb-12">{title}</p>
         )}
 
         {logos.length > 0 && (
+          // Motion only shifts `y` — logos are always rendered at full
+          // opacity so a missed IntersectionObserver can't hide them.
           <motion.div
             className="flex flex-wrap items-center justify-center gap-10 md:gap-16"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ y: 16 }}
+            whileInView={{ y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.6 }}
           >
             {logos.map((logo, i) => (
-              // Plain <img> — next/image with `fill` was silently hiding
-              // logos when URLs had edge cases. Blob assets are already
-              // served via CDN and `unoptimized: true` is set globally,
-              // so there is no perf loss compared to next/image here.
+              // Plain <img> — next/image with `fill` was unreliable for
+              // Blob-hosted logos with varying aspect ratios. Since
+              // unoptimized: true is set globally, there is no perf loss.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={i}

@@ -11,7 +11,11 @@ interface LpMissionProps {
 }
 
 export default function LpMission({ label, title, subtitle, cards = [] }: LpMissionProps) {
-  if (!title && cards.length === 0) return null;
+  // Render as soon as any content is present. Previously the section
+  // was hidden when only label/subtitle/cards were provided without a
+  // title — which matched the original bug report.
+  const hasContent = !!(label || title || subtitle || cards.length > 0);
+  if (!hasContent) return null;
 
   return (
     <section className="bg-white section-padding">
@@ -20,26 +24,22 @@ export default function LpMission({ label, title, subtitle, cards = [] }: LpMiss
         <div className="text-center mb-16">
           {label && <p className="luxury-label mb-4">{label}</p>}
           {title && (
+            // Only `y` animates — opacity stays at 1, so the content
+            // is never invisible if IntersectionObserver misfires.
             <motion.h2
               className="luxury-subheading text-luxury-charcoal mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.6 }}
             >
               {title}
             </motion.h2>
           )}
           {subtitle && (
-            <motion.p
-              className="text-luxury-slate font-light max-w-xl mx-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
+            <p className="text-luxury-slate font-light max-w-xl mx-auto">
               {subtitle}
-            </motion.p>
+            </p>
           )}
           <div className="luxury-divider mx-auto mt-6" />
         </div>
@@ -51,9 +51,9 @@ export default function LpMission({ label, title, subtitle, cards = [] }: LpMiss
               <motion.div
                 key={i}
                 className="luxury-card text-center"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                initial={{ y: 24 }}
+                whileInView={{ y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
               >
                 {card.icon && (

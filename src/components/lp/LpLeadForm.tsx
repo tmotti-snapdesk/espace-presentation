@@ -98,9 +98,9 @@ export default function LpLeadForm({
           {title && (
             <motion.h2
               className="luxury-subheading text-white mb-2"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.6 }}
             >
               {title}
@@ -127,9 +127,9 @@ export default function LpLeadForm({
           <motion.form
             onSubmit={handleSubmit}
             className="space-y-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ y: 20 }}
+            whileInView={{ y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.6 }}
           >
             {/* Row 1 : prénom / nom */}

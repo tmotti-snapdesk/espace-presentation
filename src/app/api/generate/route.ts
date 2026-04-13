@@ -60,6 +60,27 @@ export async function POST(request: NextRequest) {
       floorPlanImage: body.floorPlanImage || "",
       contacts: DEFAULT_CONTACTS,
       isLeadGen: body.isLeadGen || false,
+      leadGenMode: body.leadGenMode || "unlock",
+      presentationLink: body.presentationLink || "",
+      template: body.template || "standard",
+      storyTitle: body.storyTitle || "",
+      storyText: body.storyText || "",
+      storyPhotos: body.storyPhotos || [],
+      highlightTitle: body.highlightTitle || "",
+      highlightText: body.highlightText || "",
+      highlightPhotos: body.highlightPhotos || [],
+      buildingSurface: body.buildingSurface || "",
+      buildingFloors: body.buildingFloors || "",
+      buildingYear: body.buildingYear || "",
+      buildingCertification: body.buildingCertification || "",
+      neighborhoodTitle: body.neighborhoodTitle || "",
+      neighborhoodText: body.neighborhoodText || "",
+      neighborhoodPhotos: body.neighborhoodPhotos || [],
+      testimonial: {
+        quote: body.testimonialQuote || "",
+        author: body.testimonialAuthor || "",
+        role: body.testimonialRole || "",
+      },
       createdAt: new Date().toISOString(),
     };
 
@@ -67,6 +88,7 @@ export async function POST(request: NextRequest) {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
 
     // Invalidate caches so the dashboard and the new public page reflect

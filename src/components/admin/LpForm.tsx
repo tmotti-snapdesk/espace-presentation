@@ -4,6 +4,7 @@ import { useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { LandingPageData, LpMissionCard, LpLogo } from "@/types/lp";
 import Image from "next/image";
+import AssetPicker from "@/components/admin/AssetPicker";
 
 interface LpFormProps {
   mode: "create" | "edit";
@@ -23,6 +24,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | null>(null);
 
   // ── Hero ──
   const [form, setForm] = useState({
@@ -235,8 +237,14 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                       className="shrink-0 text-red-400 hover:text-red-600">Retirer</button>
                   </div>
                 )}
-                <input type="file" accept="video/mp4,video/quicktime" onChange={handleVideoChange}
-                  className="w-full text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                <div className="flex items-center gap-3">
+                  <input type="file" accept="video/mp4,video/quicktime" onChange={handleVideoChange}
+                    className="flex-1 text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                  <button type="button" onClick={() => setPickerOpen("hero")}
+                    className="shrink-0 px-4 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                    Bibliothèque
+                  </button>
+                </div>
                 {uploadingVideo && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
               </div>
               <div>
@@ -335,9 +343,15 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                     ))}
                   </div>
                 )}
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  onChange={handleLogoUpload}
-                  className="w-full text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                <div className="flex items-center gap-3">
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                    onChange={handleLogoUpload}
+                    className="flex-1 text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                  <button type="button" onClick={() => setPickerOpen("logo")}
+                    className="shrink-0 px-4 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                    Bibliothèque
+                  </button>
+                </div>
                 {uploadingLogo && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
                 <p className="text-xs text-luxury-slate/60 mt-1">Cliquez plusieurs fois pour ajouter plusieurs logos.</p>
               </div>
@@ -383,6 +397,21 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
           </button>
         </form>
       </div>
+
+      <AssetPicker
+        open={pickerOpen !== null}
+        kind={pickerOpen === "hero" ? "video" : "image"}
+        onClose={() => setPickerOpen(null)}
+        onSelect={(asset) => {
+          if (pickerOpen === "hero") {
+            setForm((f) => ({ ...f, heroVideoUrl: asset.url }));
+          } else if (pickerOpen === "logo") {
+            const alt = asset.pathname.split("/").pop()?.replace(/\.[^.]+$/, "") || "";
+            setSocialProofLogos((prev) => [...prev, { url: asset.url, alt }]);
+          }
+          setPickerOpen(null);
+        }}
+      />
     </main>
   );
 }

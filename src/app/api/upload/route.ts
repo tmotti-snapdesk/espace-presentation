@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 
 export async function POST(request: NextRequest) {
@@ -22,8 +23,10 @@ export async function POST(request: NextRequest) {
           ],
         };
       },
-      onUploadCompleted: async ({ blob }) => {
-        // nothing to do here
+      onUploadCompleted: async () => {
+        // Invalidate the asset library so the freshly-uploaded file
+        // shows up in the picker without waiting for the 5-min TTL.
+        revalidateTag("assets-list");
       },
     });
 

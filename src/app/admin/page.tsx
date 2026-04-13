@@ -66,12 +66,14 @@ export default function AdminDashboard() {
             <p className="luxury-label text-luxury-gold mb-1">Snapdesk</p>
             <h1 className="font-serif text-2xl">Dashboard</h1>
           </div>
-          <Link
-            href="/admin/nouveau"
-            className="luxury-btn text-sm"
-          >
-            + Créer un espace
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/lp" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
+              Landing Pages
+            </Link>
+            <Link href="/admin/nouveau" className="luxury-btn text-sm">
+              + Créer un espace
+            </Link>
+          </div>
         </div>
       </div>
 

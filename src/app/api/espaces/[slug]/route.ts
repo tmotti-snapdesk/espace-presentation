@@ -120,17 +120,8 @@ export async function PUT(
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
-    // Delete old blob if exists, then write new
-    try {
-      const { blobs } = await list({ prefix: `espaces/${slug}` });
-      const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
-      for (const blob of jsonBlobs) {
-        await del(blob.url);
-      }
-    } catch {
-      // OK if nothing to delete
-    }
-
+    // With allowOverwrite + addRandomSuffix: false, put() overwrites
+    // in place — no need to list+del first (saves 2 Blob ops per save).
     await put(`espaces/${slug}.json`, JSON.stringify(espaceData, null, 2), {
       access: "public",
       contentType: "application/json",
@@ -158,42 +149,31 @@ export async function POST(
   { params }: { params: { slug: string } }
 ) {
   try {
-    // 1. Resolve the source espace
-    let sourceData: EspaceData | null = null;
-
-    try {
-      const { blobs } = await list({ prefix: `espaces/${params.slug}` });
-      const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
-      if (jsonBlob) {
-        const res = await fetch(jsonBlob.url, { cache: "no-store" });
-        if (res.ok) sourceData = (await res.json()) as EspaceData;
-      }
-    } catch {
-      // fall through
-    }
-
-    if (!sourceData) {
-      sourceData = getEspaceBySlug(params.slug);
-    }
+    // 1. Resolve the source espace via the cached loader (handles both
+    //    Blob and the local-filesystem fallback).
+    const sourceData = await loadEspace(params.slug);
 
     if (!sourceData) {
       return NextResponse.json({ error: "Espace source non trouvé" }, { status: 404 });
     }
 
-    // 2. Find next available slug suffix (-2, -3, etc.)
+    // 2. Find next available slug suffix (-2, -3, ...) with a single
+    //    list() instead of one per attempted suffix.
     const baseSlug = sourceData.slug.replace(/-\d+$/, "");
+    const existingSlugs = new Set<string>();
+    try {
+      const { blobs } = await list({ prefix: `espaces/${baseSlug}` });
+      for (const b of blobs) {
+        const match = b.pathname.match(/^espaces\/(.+)\.json$/);
+        if (match) existingSlugs.add(match[1]);
+      }
+    } catch {
+      // Blob not configured — assume no collisions
+    }
+
     let suffix = 2;
     let newSlug = `${baseSlug}-${suffix}`;
-
-    while (true) {
-      let exists = false;
-      try {
-        const { blobs } = await list({ prefix: `espaces/${newSlug}.json` });
-        if (blobs.length > 0) exists = true;
-      } catch {
-        // blob not configured
-      }
-      if (!exists) break;
+    while (existingSlugs.has(newSlug)) {
       suffix++;
       newSlug = `${baseSlug}-${suffix}`;
     }
@@ -212,6 +192,8 @@ export async function POST(
       addRandomSuffix: false,
       allowOverwrite: true,
     });
+
+    invalidate(newSlug);
 
     return NextResponse.json({
       success: true,

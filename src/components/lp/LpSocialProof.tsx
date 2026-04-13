@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { LpLogo } from "@/types/lp";
-import Image from "next/image";
 
 interface LpSocialProofProps {
   title?: string;
@@ -36,17 +35,17 @@ export default function LpSocialProof({ title, logos = [] }: LpSocialProofProps)
             transition={{ duration: 0.6 }}
           >
             {logos.map((logo, i) => (
-              <div
+              // Plain <img> — next/image with `fill` was silently hiding
+              // logos when URLs had edge cases. Blob assets are already
+              // served via CDN and `unoptimized: true` is set globally,
+              // so there is no perf loss compared to next/image here.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 key={i}
-                className="relative h-8 w-28 opacity-50 grayscale hover:opacity-80 hover:grayscale-0 transition-all duration-300"
-              >
-                <Image
-                  src={logo.url}
-                  alt={logo.alt || ""}
-                  fill
-                  className="object-contain"
-                />
-              </div>
+                src={logo.url}
+                alt={logo.alt || ""}
+                className="h-10 md:h-12 w-auto max-w-[160px] object-contain opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300"
+              />
             ))}
           </motion.div>
         )}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { put } from "@vercel/blob";
 import { slugify } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
@@ -67,6 +68,12 @@ export async function POST(request: NextRequest) {
       contentType: "application/json",
       addRandomSuffix: false,
     });
+
+    // Invalidate caches so the dashboard and the new public page reflect
+    // the freshly created espace immediately.
+    revalidateTag("espaces-list");
+    revalidatePath(`/espaces/${slug}`);
+    revalidatePath("/admin");
 
     return NextResponse.json({
       success: true,

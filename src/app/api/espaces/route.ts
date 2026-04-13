@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { list } from "@vercel/blob";
 import { getAllEspaces } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
+// Cached dashboard listing. Tagged so admin write routes can invalidate
+// it instantly via revalidateTag('espaces-list'). The 5-minute TTL is a
+// safety net in case a tag invalidation is missed.
+const loadEspaces = unstable_cache(
+  async (): Promise<EspaceData[]> => {
     const espaces: EspaceData[] = [];
     const seenSlugs = new Set<string>();
 
@@ -16,7 +20,7 @@ export async function GET() {
       const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
 
       for (const blob of jsonBlobs) {
-        const res = await fetch(blob.url, { cache: "no-store" });
+        const res = await fetch(blob.url);
         if (res.ok) {
           const data = (await res.json()) as EspaceData;
           espaces.push(data);
@@ -36,8 +40,19 @@ export async function GET() {
     }
 
     // Sort by creation date (newest first)
-    espaces.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    espaces.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
+    return espaces;
+  },
+  ["espaces-list"],
+  { tags: ["espaces-list"], revalidate: 300 }
+);
+
+export async function GET() {
+  try {
+    const espaces = await loadEspaces();
     return NextResponse.json({ espaces });
   } catch (error) {
     console.error("List espaces error:", error);

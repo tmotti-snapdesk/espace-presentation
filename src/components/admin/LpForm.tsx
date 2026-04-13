@@ -58,16 +58,25 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // Build a unique Blob pathname so repeated uploads with identical
+  // filenames don't collide (Blob refuses overwrite by default).
+  const buildUploadPath = (kind: string, file: File) => {
+    const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").toLowerCase();
+    const lpSlug = form.slug || "new";
+    return `lp/${lpSlug}/${kind}-${Date.now()}-${sanitized}`;
+  };
+
   // ── Video upload ──
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingVideo(true);
     try {
-      const blob = await upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" });
+      const blob = await upload(buildUploadPath("hero", file), file, { access: "public", handleUploadUrl: "/api/upload" });
       setForm((f) => ({ ...f, heroVideoUrl: blob.url }));
-    } catch {
-      setError("Erreur lors de l'upload de la vidéo.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload de la vidéo : ${msg}`);
     } finally {
       setUploadingVideo(false);
     }
@@ -79,7 +88,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     if (!file) return;
     setUploadingLogo(true);
     try {
-      const blob = await upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" });
+      const blob = await upload(buildUploadPath("logo", file), file, { access: "public", handleUploadUrl: "/api/upload" });
       setSocialProofLogos((prev) => [...prev, { url: blob.url, alt: file.name.replace(/\.[^.]+$/, "") }]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";

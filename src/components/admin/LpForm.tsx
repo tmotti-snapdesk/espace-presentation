@@ -2,18 +2,29 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
-import { LandingPageData } from "@/types/lp";
+import { LandingPageData, LpMissionCard, LpLogo } from "@/types/lp";
+import Image from "next/image";
 
 interface LpFormProps {
   mode: "create" | "edit";
   initialData?: LandingPageData;
 }
 
+const DEFAULT_CARDS: LpMissionCard[] = [
+  { icon: "⭐", title: "Contrat flexible", text: "Un engagement adapté à la croissance de votre entreprise." },
+  { icon: "👑", title: "100% chez vous", text: "Nous ne sommes pas un coworking, une seule entreprise par espace." },
+  { icon: "🛎️", title: "Comme à l'hôtel", text: "Nous gérons les soucis du quotidien liés à votre bureau." },
+  { icon: "💛", title: "Tout est inclus", text: "Taxe bureaux, taxe foncière, charges, EDF, entretien et réparations." },
+];
+
 export default function LpForm({ mode, initialData }: LpFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  // ── Hero ──
   const [form, setForm] = useState({
     slug: initialData?.slug || "",
     internalTitle: initialData?.internalTitle || "",
@@ -23,23 +34,37 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     heroVideoUrl: initialData?.heroVideoUrl || "",
   });
 
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
+  // ── Notre métier ──
+  const [missionLabel, setMissionLabel] = useState(initialData?.missionLabel || "");
+  const [missionTitle, setMissionTitle] = useState(initialData?.missionTitle || "");
+  const [missionSubtitle, setMissionSubtitle] = useState(initialData?.missionSubtitle || "");
+  const [missionCards, setMissionCards] = useState<LpMissionCard[]>(
+    initialData?.missionCards || DEFAULT_CARDS
+  );
 
-  const set = (key: keyof typeof form) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  // ── Social proof ──
+  const [socialProofTitle, setSocialProofTitle] = useState(initialData?.socialProofTitle || "");
+  const [socialProofLogos, setSocialProofLogos] = useState<LpLogo[]>(
+    initialData?.socialProofLogos || []
+  );
 
+  // ── Formulaire ──
+  const [formTitle, setFormTitle] = useState(initialData?.formTitle || "");
+  const [formLabel, setFormLabel] = useState(initialData?.formLabel || "");
+  const [formCtaText, setFormCtaText] = useState(initialData?.formCtaText || "Envoyer ma demande");
+  const [formHubspotFormId, setFormHubspotFormId] = useState(initialData?.formHubspotFormId || "");
+
+  const set = (key: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // ── Video upload ──
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setVideoFile(file);
     setUploadingVideo(true);
     try {
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
+      const blob = await upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" });
       setForm((f) => ({ ...f, heroVideoUrl: blob.url }));
     } catch {
       setError("Erreur lors de l'upload de la vidéo.");
@@ -48,11 +73,50 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     }
   };
 
+  // ── Logo upload ──
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const blob = await upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" });
+      setSocialProofLogos((prev) => [...prev, { url: blob.url, alt: file.name.replace(/\.[^.]+$/, "") }]);
+    } catch {
+      setError("Erreur lors de l'upload du logo.");
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = "";
+    }
+  };
+
+  // ── Mission cards helpers ──
+  const updateCard = (i: number, field: keyof LpMissionCard, value: string) =>
+    setMissionCards((prev) => prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c));
+  const addCard = () =>
+    setMissionCards((prev) => [...prev, { icon: "✨", title: "", text: "" }]);
+  const removeCard = (i: number) =>
+    setMissionCards((prev) => prev.filter((_, idx) => idx !== i));
+
+  // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.slug) { setError("Le slug est requis."); return; }
     setIsSaving(true);
     setError(null);
+
+    const payload: Partial<LandingPageData> = {
+      ...form,
+      missionLabel: missionLabel || undefined,
+      missionTitle: missionTitle || undefined,
+      missionSubtitle: missionSubtitle || undefined,
+      missionCards: missionCards.filter((c) => c.title),
+      socialProofTitle: socialProofTitle || undefined,
+      socialProofLogos: socialProofLogos.length > 0 ? socialProofLogos : undefined,
+      formTitle: formTitle || undefined,
+      formLabel: formLabel || undefined,
+      formCtaText: formCtaText || undefined,
+      formHubspotFormId: formHubspotFormId || undefined,
+    };
 
     try {
       let res: Response;
@@ -60,13 +124,13 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
         res = await fetch("/api/lp/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, ...initialData }),
+          body: JSON.stringify(payload),
         });
       } else {
         res = await fetch(`/api/lp/${initialData!.slug}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...initialData, ...form }),
+          body: JSON.stringify({ ...initialData, ...payload }),
         });
       }
 
@@ -84,13 +148,30 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     }
   };
 
-  const inputClass =
-    "w-full px-4 py-3 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm bg-white";
+  const inputClass = "w-full px-4 py-3 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm bg-white";
   const labelClass = "block text-xs uppercase tracking-[0.15em] text-luxury-slate mb-2 font-medium";
+
+  if (savedUrl) {
+    return (
+      <main className="min-h-screen bg-luxury-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-green-50 flex items-center justify-center">
+            <span className="text-green-600 text-2xl">✓</span>
+          </div>
+          <h2 className="font-serif text-2xl text-luxury-charcoal mb-4">
+            {mode === "create" ? "LP créée !" : "LP mise à jour !"}
+          </h2>
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <a href={savedUrl} target="_blank" rel="noopener noreferrer" className="luxury-btn">Voir la LP</a>
+            <a href="/admin/lp" className="luxury-btn-outline">Retour au dashboard</a>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      {/* Header */}
       <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
@@ -99,174 +180,208 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
               {mode === "create" ? "Nouvelle Landing Page" : "Modifier la LP"}
             </h1>
           </div>
-          <a href="/admin/lp" className="text-white/60 text-sm hover:text-white transition-colors">
-            ← Retour
-          </a>
+          <a href="/admin/lp" className="text-white/60 text-sm hover:text-white transition-colors">← Retour</a>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto py-12 px-6 md:px-12">
-        {savedUrl ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-green-50 flex items-center justify-center">
-              <span className="text-green-600 text-2xl">✓</span>
-            </div>
-            <h2 className="font-serif text-2xl text-luxury-charcoal mb-4">
-              {mode === "create" ? "LP créée !" : "LP mise à jour !"}
-            </h2>
-            <div className="flex items-center justify-center gap-4 mt-6">
-              <a href={savedUrl} target="_blank" rel="noopener noreferrer" className="luxury-btn">
-                Voir la LP
-              </a>
-              <a href="/admin/lp" className="luxury-btn-outline">
-                Retour au dashboard
-              </a>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-10">
+        <form onSubmit={handleSubmit} className="space-y-14">
 
-            {/* ── Identité ── */}
-            <section>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="luxury-divider" />
-                <h2 className="font-serif text-xl text-luxury-charcoal">Identité</h2>
+          {/* ── Identité ── */}
+          <section>
+            <SectionTitle>Identité</SectionTitle>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Titre interne (admin uniquement)</label>
+                <input type="text" value={form.internalTitle} onChange={set("internalTitle")}
+                  className={inputClass} placeholder="Campagne Office Manager Q2 2026" required />
               </div>
-              <div className="space-y-5">
-                <div>
-                  <label className={labelClass}>Titre interne (usage admin uniquement)</label>
-                  <input
-                    type="text"
-                    value={form.internalTitle}
-                    onChange={set("internalTitle")}
-                    className={inputClass}
-                    placeholder="Campagne Office Manager Q2 2026"
-                    required
-                  />
+              <div>
+                <label className={labelClass}>
+                  Slug URL{mode === "edit" && <span className="text-luxury-slate/60 normal-case tracking-normal"> (non modifiable)</span>}
+                </label>
+                <div className="flex items-center border border-primary-200 focus-within:border-luxury-gold transition-colors bg-white">
+                  <span className="px-4 py-3 text-sm text-luxury-slate/60 border-r border-primary-200 shrink-0">/lp/</span>
+                  <input type="text" value={form.slug} onChange={set("slug")}
+                    className="flex-1 px-4 py-3 text-sm focus:outline-none"
+                    placeholder="campagne-office-manager" required
+                    disabled={mode === "edit"}
+                    pattern="[a-z0-9-]+" title="Minuscules, chiffres et tirets uniquement" />
                 </div>
-                <div>
-                  <label className={labelClass}>
-                    Slug URL{" "}
-                    {mode === "edit" && (
-                      <span className="text-luxury-slate/60 normal-case tracking-normal">
-                        (non modifiable après création)
-                      </span>
-                    )}
-                  </label>
-                  <div className="flex items-center border border-primary-200 focus-within:border-luxury-gold transition-colors bg-white">
-                    <span className="px-4 py-3 text-sm text-luxury-slate/60 border-r border-primary-200 shrink-0">
-                      /lp/
-                    </span>
-                    <input
-                      type="text"
-                      value={form.slug}
-                      onChange={set("slug")}
-                      className="flex-1 px-4 py-3 text-sm focus:outline-none"
-                      placeholder="campagne-office-manager"
-                      required
-                      disabled={mode === "edit"}
-                      pattern="[a-z0-9-]+"
-                      title="Minuscules, chiffres et tirets uniquement"
-                    />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Hero ── */}
+          <section>
+            <SectionTitle>Hero</SectionTitle>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Vidéo de fond</label>
+                {form.heroVideoUrl && (
+                  <div className="mb-3 flex items-center gap-3 p-3 bg-primary-50 border border-primary-100 text-xs text-luxury-slate">
+                    <span className="truncate flex-1">{form.heroVideoUrl}</span>
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, heroVideoUrl: "" }))}
+                      className="shrink-0 text-red-400 hover:text-red-600">Retirer</button>
                   </div>
-                </div>
+                )}
+                <input type="file" accept="video/mp4,video/quicktime" onChange={handleVideoChange}
+                  className="w-full text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                {uploadingVideo && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
               </div>
-            </section>
+              <div>
+                <label className={labelClass}>Titre principal</label>
+                <input type="text" value={form.heroTitle} onChange={set("heroTitle")}
+                  className={inputClass} placeholder="Faites le plein de vitamines au bureau !" required />
+              </div>
+              <div>
+                <label className={labelClass}>Sous-titre</label>
+                <textarea value={form.heroSubtitle} onChange={set("heroSubtitle")}
+                  className={inputClass} rows={3}
+                  placeholder="Gagnez 1 mois de corbeilles de fruits frais livrées dans vos locaux..." />
+              </div>
+              <div>
+                <label className={labelClass}>Texte du CTA</label>
+                <input type="text" value={form.heroCtaText} onChange={set("heroCtaText")}
+                  className={inputClass} placeholder="J'inscris mon équipe" required />
+                <p className="text-xs text-luxury-slate/60 mt-1">Ancre automatiquement vers le formulaire.</p>
+              </div>
+            </div>
+          </section>
 
-            {/* ── Hero ── */}
-            <section>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="luxury-divider" />
-                <h2 className="font-serif text-xl text-luxury-charcoal">Hero</h2>
+          {/* ── Notre métier ── */}
+          <section>
+            <SectionTitle>Notre métier</SectionTitle>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Label (texte au-dessus du titre)</label>
+                <input type="text" value={missionLabel} onChange={(e) => setMissionLabel(e.target.value)}
+                  className={inputClass} placeholder="Snapdesk — des bureaux mais pas que..." />
               </div>
-              <div className="space-y-5">
-                <div>
-                  <label className={labelClass}>Vidéo de fond</label>
-                  {form.heroVideoUrl && (
-                    <div className="mb-3 flex items-center gap-3 p-3 bg-primary-50 border border-primary-100 text-xs text-luxury-slate">
-                      <span className="truncate flex-1">{form.heroVideoUrl}</span>
-                      <button
-                        type="button"
-                        onClick={() => setForm((f) => ({ ...f, heroVideoUrl: "" }))}
-                        className="shrink-0 text-red-400 hover:text-red-600"
-                      >
-                        Retirer
-                      </button>
+              <div>
+                <label className={labelClass}>Titre de section</label>
+                <input type="text" value={missionTitle} onChange={(e) => setMissionTitle(e.target.value)}
+                  className={inputClass} placeholder="Notre métier : le bureau 2.0" />
+              </div>
+              <div>
+                <label className={labelClass}>Sous-titre</label>
+                <input type="text" value={missionSubtitle} onChange={(e) => setMissionSubtitle(e.target.value)}
+                  className={inputClass} placeholder="Des bureaux canons, c'est super. Des bureaux clés en main, full services, c'est encore mieux." />
+              </div>
+
+              {/* Cards */}
+              <div>
+                <label className={labelClass}>Cards bénéfices</label>
+                <div className="space-y-3">
+                  {missionCards.map((card, i) => (
+                    <div key={i} className="grid grid-cols-[48px_1fr_1fr_32px] gap-2 items-start">
+                      <input type="text" value={card.icon}
+                        onChange={(e) => updateCard(i, "icon", e.target.value)}
+                        className={`${inputClass} text-center text-xl`} placeholder="⭐" />
+                      <input type="text" value={card.title}
+                        onChange={(e) => updateCard(i, "title", e.target.value)}
+                        className={inputClass} placeholder="Titre de la card" />
+                      <input type="text" value={card.text}
+                        onChange={(e) => updateCard(i, "text", e.target.value)}
+                        className={inputClass} placeholder="Description courte" />
+                      <button type="button" onClick={() => removeCard(i)}
+                        className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
                     </div>
-                  )}
-                  <input
-                    type="file"
-                    accept="video/mp4,video/quicktime"
-                    onChange={handleVideoChange}
-                    className="w-full text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer"
-                  />
-                  {uploadingVideo && (
-                    <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>
-                  )}
+                  ))}
                 </div>
-
-                <div>
-                  <label className={labelClass}>Titre principal</label>
-                  <input
-                    type="text"
-                    value={form.heroTitle}
-                    onChange={set("heroTitle")}
-                    className={inputClass}
-                    placeholder="Faites le plein de vitamines au bureau !"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>Sous-titre</label>
-                  <textarea
-                    value={form.heroSubtitle}
-                    onChange={set("heroSubtitle")}
-                    className={inputClass}
-                    rows={3}
-                    placeholder="Gagnez 1 mois de corbeilles de fruits frais livrées dans vos locaux..."
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>Texte du bouton CTA</label>
-                  <input
-                    type="text"
-                    value={form.heroCtaText}
-                    onChange={set("heroCtaText")}
-                    className={inputClass}
-                    placeholder="J'inscris mon équipe"
-                    required
-                  />
-                  <p className="text-xs text-luxury-slate/60 mt-1">
-                    Ce bouton descend automatiquement vers le formulaire.
-                  </p>
-                </div>
+                <button type="button" onClick={addCard}
+                  className="mt-3 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
+                  + Ajouter une card
+                </button>
               </div>
-            </section>
+            </div>
+          </section>
 
-            {/* ── Futures sections ── */}
-            <section className="border border-dashed border-primary-200 p-6 text-center">
-              <p className="text-sm text-luxury-slate/60">
-                Les sections <strong>Notre métier</strong>, <strong>Social proof</strong> et{" "}
-                <strong>Formulaire</strong> seront disponibles prochainement.
-              </p>
-            </section>
+          {/* ── Social proof ── */}
+          <section>
+            <SectionTitle>Social proof</SectionTitle>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Titre / label (ex. "90+ entreprises nous font confiance")</label>
+                <input type="text" value={socialProofTitle}
+                  onChange={(e) => setSocialProofTitle(e.target.value)}
+                  className={inputClass} placeholder="90+ entreprises nous font déjà confiance" />
+              </div>
+              <div>
+                <label className={labelClass}>Logos clients</label>
+                {socialProofLogos.length > 0 && (
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {socialProofLogos.map((logo, i) => (
+                      <div key={i} className="relative group">
+                        <div className="relative h-10 w-24 border border-primary-100 bg-white p-1">
+                          <Image src={logo.url} alt={logo.alt} fill className="object-contain" />
+                        </div>
+                        <button type="button"
+                          onClick={() => setSocialProofLogos((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={handleLogoUpload}
+                  className="w-full text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                {uploadingLogo && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
+                <p className="text-xs text-luxury-slate/60 mt-1">Cliquez plusieurs fois pour ajouter plusieurs logos.</p>
+              </div>
+            </div>
+          </section>
 
-            {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
-            )}
+          {/* ── Formulaire ── */}
+          <section>
+            <SectionTitle>Formulaire</SectionTitle>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Titre du formulaire</label>
+                <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
+                  className={inputClass} placeholder="30 secondes pour nous rejoindre !" />
+              </div>
+              <div>
+                <label className={labelClass}>Label (texte au-dessus du titre)</label>
+                <input type="text" value={formLabel} onChange={(e) => setFormLabel(e.target.value)}
+                  className={inputClass} placeholder="Rejoignez-nous" />
+              </div>
+              <div>
+                <label className={labelClass}>Texte du bouton de soumission</label>
+                <input type="text" value={formCtaText} onChange={(e) => setFormCtaText(e.target.value)}
+                  className={inputClass} placeholder="Envoyer ma demande" />
+              </div>
+              <div>
+                <label className={labelClass}>
+                  HubSpot Form GUID{" "}
+                  <span className="text-luxury-slate/60 normal-case tracking-normal">(optionnel — laissez vide pour utiliser le formulaire par défaut)</span>
+                </label>
+                <input type="text" value={formHubspotFormId}
+                  onChange={(e) => setFormHubspotFormId(e.target.value)}
+                  className={inputClass} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              </div>
+            </div>
+          </section>
 
-            <button
-              type="submit"
-              disabled={isSaving || uploadingVideo}
-              className={`luxury-btn w-full py-5 ${(isSaving || uploadingVideo) ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              {isSaving ? "Sauvegarde..." : mode === "create" ? "Créer la landing page" : "Enregistrer les modifications"}
-            </button>
-          </form>
-        )}
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+          <button type="submit" disabled={isSaving || uploadingVideo || uploadingLogo}
+            className={`luxury-btn w-full py-5 ${(isSaving || uploadingVideo || uploadingLogo) ? "opacity-50 cursor-not-allowed" : ""}`}>
+            {isSaving ? "Sauvegarde..." : mode === "create" ? "Créer la landing page" : "Enregistrer les modifications"}
+          </button>
+        </form>
       </div>
     </main>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-4 mb-6">
+      <div className="luxury-divider" />
+      <h2 className="font-serif text-xl text-luxury-charcoal whitespace-nowrap">{children}</h2>
+    </div>
   );
 }

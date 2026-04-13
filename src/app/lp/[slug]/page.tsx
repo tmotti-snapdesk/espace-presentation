@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { list } from "@vercel/blob";
 import { LandingPageData } from "@/types/lp";
 import LpHero from "@/components/lp/LpHero";
+import LpMission from "@/components/lp/LpMission";
+import LpSocialProof from "@/components/lp/LpSocialProof";
+import LpLeadForm from "@/components/lp/LpLeadForm";
 
 export const revalidate = 3600;
 
@@ -40,8 +43,26 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         ctaText={lp.heroCtaText}
       />
 
-      {/* Sections suivantes s'ajouteront ici (étapes 2, 3, 4) */}
-      <div id="form" />
+      <LpMission
+        label={lp.missionLabel}
+        title={lp.missionTitle}
+        subtitle={lp.missionSubtitle}
+        cards={lp.missionCards}
+      />
+
+      <LpSocialProof
+        title={lp.socialProofTitle}
+        logos={lp.socialProofLogos}
+      />
+
+      <LpLeadForm
+        title={lp.formTitle}
+        label={lp.formLabel}
+        ctaText={lp.formCtaText}
+        hubspotFormId={lp.formHubspotFormId}
+        lpSlug={lp.slug}
+        lpTitle={lp.heroTitle || lp.internalTitle}
+      />
     </main>
   );
 }

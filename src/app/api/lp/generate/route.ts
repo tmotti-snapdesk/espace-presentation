@@ -19,6 +19,18 @@ export async function POST(request: NextRequest) {
       heroTitle: body.heroTitle || "",
       heroSubtitle: body.heroSubtitle || "",
       heroCtaText: body.heroCtaText || "En savoir plus",
+      // Optional sections — preserve whatever the client sends so that
+      // filling the full form at creation time doesn't silently drop data.
+      missionLabel: body.missionLabel,
+      missionTitle: body.missionTitle,
+      missionSubtitle: body.missionSubtitle,
+      missionCards: body.missionCards,
+      socialProofTitle: body.socialProofTitle,
+      socialProofLogos: body.socialProofLogos,
+      formTitle: body.formTitle,
+      formLabel: body.formLabel,
+      formCtaText: body.formCtaText,
+      formHubspotFormId: body.formHubspotFormId,
       createdAt: new Date().toISOString(),
     };
 

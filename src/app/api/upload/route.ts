@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
             "image/jpeg",
             "image/png",
             "image/webp",
+            "image/svg+xml",
+            "image/gif",
             "video/mp4",
             "video/quicktime",
             "application/pdf",

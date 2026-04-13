@@ -81,8 +81,9 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     try {
       const blob = await upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" });
       setSocialProofLogos((prev) => [...prev, { url: blob.url, alt: file.name.replace(/\.[^.]+$/, "") }]);
-    } catch {
-      setError("Erreur lors de l'upload du logo.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload du logo : ${msg}`);
     } finally {
       setUploadingLogo(false);
       e.target.value = "";

@@ -9,23 +9,25 @@ interface LpSocialProofProps {
 }
 
 export default function LpSocialProof({ title, logos = [] }: LpSocialProofProps) {
-  if (!title && logos.length === 0) return null;
+  // Defensive: tolerate a non-array payload (legacy / corrupted JSON) and
+  // ignore any entry without a usable URL so the section never crashes
+  // and never renders a broken <img>.
+  const safeLogos = (Array.isArray(logos) ? logos : []).filter(
+    (l): l is LpLogo => Boolean(l && typeof l.url === "string" && l.url.trim())
+  );
+
+  if (!title && safeLogos.length === 0) return null;
 
   return (
     <section className="bg-luxury-cream section-padding">
       <div className="max-w-5xl mx-auto">
-        {/* DEBUG — temporary: shows what the component receives */}
-        <p className="text-xs text-red-500 text-center mb-4">
-          DEBUG: {logos.length} logo(s) reçus par le composant
-        </p>
-
         {title && (
           <p className="luxury-label text-center mb-12">{title}</p>
         )}
 
-        {logos.length > 0 && (
-          // Motion only shifts `y` — logos are always rendered at full
-          // opacity so a missed IntersectionObserver can't hide them.
+        {safeLogos.length > 0 && (
+          // Motion only shifts `y` — logos stay at full opacity so a
+          // missed IntersectionObserver can't hide them.
           <motion.div
             className="flex flex-wrap items-center justify-center gap-10 md:gap-16"
             initial={{ y: 16 }}
@@ -33,19 +35,17 @@ export default function LpSocialProof({ title, logos = [] }: LpSocialProofProps)
             viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.6 }}
           >
-            {logos.map((logo, i) => (
-              // DEBUG — red border so we can see the box even if image fails.
-              <div key={i} className="border-2 border-red-500 p-2 bg-yellow-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={logo.url}
-                  alt={logo.alt || ""}
-                  className="h-12 w-auto max-w-[160px] object-contain"
-                />
-                <p className="text-[10px] text-red-500 break-all max-w-[160px]">
-                  {logo.url}
-                </p>
-              </div>
+            {safeLogos.map((logo, i) => (
+              // Plain <img> — next/image with `fill` was unreliable for
+              // Blob-hosted logos with varying aspect ratios. Since
+              // unoptimized: true is set globally, there is no perf loss.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={logo.url}
+                alt={logo.alt || ""}
+                className="h-10 md:h-12 w-auto max-w-[160px] object-contain opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300"
+              />
             ))}
           </motion.div>
         )}

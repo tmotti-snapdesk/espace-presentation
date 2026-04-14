@@ -7,9 +7,7 @@ import LpMission from "@/components/lp/LpMission";
 import LpSocialProof from "@/components/lp/LpSocialProof";
 import LpLeadForm from "@/components/lp/LpLeadForm";
 
-// DEBUG — temporary: bypass ISR cache to confirm fresh data is rendered
-export const dynamic = "force-dynamic";
-// export const revalidate = 3600;
+export const revalidate = 3600;
 
 const resolveLp = cache(async (slug: string): Promise<LandingPageData | null> => {
   try {

@@ -58,6 +58,11 @@ export default function LpLeadForm({
     setError(null);
 
     try {
+      // Map the "projet de bureau" select onto HubSpot's
+      // `declare_etre_en_recherche` boolean: only the two "Oui ..."
+      // options count as an active search.
+      const searchingForOffice = form.project.startsWith("Oui");
+
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +74,7 @@ export default function LpLeadForm({
           address: form.address,
           headcount: form.headcount,
           project: form.project,
+          searchingForOffice,
           espaceName: lpTitle,
           espaceSlug: lpSlug,
           hubspotFormId: hubspotFormId || undefined,

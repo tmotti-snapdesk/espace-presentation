@@ -14,6 +14,11 @@ export default function LpSocialProof({ title, logos = [] }: LpSocialProofProps)
   return (
     <section className="bg-luxury-cream section-padding">
       <div className="max-w-5xl mx-auto">
+        {/* DEBUG — temporary: shows what the component receives */}
+        <p className="text-xs text-red-500 text-center mb-4">
+          DEBUG: {logos.length} logo(s) reçus par le composant
+        </p>
+
         {title && (
           <p className="luxury-label text-center mb-12">{title}</p>
         )}
@@ -29,16 +34,18 @@ export default function LpSocialProof({ title, logos = [] }: LpSocialProofProps)
             transition={{ duration: 0.6 }}
           >
             {logos.map((logo, i) => (
-              // Plain <img> — next/image with `fill` was unreliable for
-              // Blob-hosted logos with varying aspect ratios. Since
-              // unoptimized: true is set globally, there is no perf loss.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={logo.url}
-                alt={logo.alt || ""}
-                className="h-10 md:h-12 w-auto max-w-[160px] object-contain opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300"
-              />
+              // DEBUG — red border so we can see the box even if image fails.
+              <div key={i} className="border-2 border-red-500 p-2 bg-yellow-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logo.url}
+                  alt={logo.alt || ""}
+                  className="h-12 w-auto max-w-[160px] object-contain"
+                />
+                <p className="text-[10px] text-red-500 break-all max-w-[160px]">
+                  {logo.url}
+                </p>
+              </div>
             ))}
           </motion.div>
         )}

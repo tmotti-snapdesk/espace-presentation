@@ -35,6 +35,12 @@ export interface LandingPageData {
   socialProofTitle?: string;
   socialProofLogos?: LpLogo[];
 
+  // ── Testimonial (optional quote block) ────────────────────────────────────
+  testimonialQuote?: string;
+  testimonialAuthorName?: string;
+  testimonialAuthorCompany?: string;
+  testimonialAuthorRole?: string;
+
   // ── Form (Step 4) ─────────────────────────────────────────────────────────
   formTitle?: string;
   formLabel?: string;

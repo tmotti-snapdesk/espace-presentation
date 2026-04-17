@@ -50,6 +50,12 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     initialData?.socialProofLogos || []
   );
 
+  // ── Témoignage client ──
+  const [testimonialQuote, setTestimonialQuote] = useState(initialData?.testimonialQuote || "");
+  const [testimonialAuthorName, setTestimonialAuthorName] = useState(initialData?.testimonialAuthorName || "");
+  const [testimonialAuthorCompany, setTestimonialAuthorCompany] = useState(initialData?.testimonialAuthorCompany || "");
+  const [testimonialAuthorRole, setTestimonialAuthorRole] = useState(initialData?.testimonialAuthorRole || "");
+
   // ── Formulaire ──
   const [formTitle, setFormTitle] = useState(initialData?.formTitle || "");
   const [formLabel, setFormLabel] = useState(initialData?.formLabel || "");
@@ -124,6 +130,10 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       missionCards: missionCards.filter((c) => c.title),
       socialProofTitle: socialProofTitle || undefined,
       socialProofLogos: socialProofLogos.length > 0 ? socialProofLogos : undefined,
+      testimonialQuote: testimonialQuote || undefined,
+      testimonialAuthorName: testimonialAuthorName || undefined,
+      testimonialAuthorCompany: testimonialAuthorCompany || undefined,
+      testimonialAuthorRole: testimonialAuthorRole || undefined,
       formTitle: formTitle || undefined,
       formLabel: formLabel || undefined,
       formCtaText: formCtaText || undefined,
@@ -354,6 +364,42 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 </div>
                 {uploadingLogo && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
                 <p className="text-xs text-luxury-slate/60 mt-1">Cliquez plusieurs fois pour ajouter plusieurs logos.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Témoignage client ── */}
+          <section>
+            <SectionTitle>Témoignage client (optionnel)</SectionTitle>
+            <p className="text-xs text-luxury-slate/70 mb-5 -mt-2">
+              La section ne s'affiche que si une citation est renseignée. Le nom, l'entreprise et l'intitulé de poste sont tous facultatifs.
+            </p>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Citation</label>
+                <textarea value={testimonialQuote} onChange={(e) => setTestimonialQuote(e.target.value)}
+                  className={inputClass} rows={4}
+                  placeholder="Depuis qu'on a installé les équipes chez Snapdesk, on a gagné en sérénité au quotidien." />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Nom du client</label>
+                  <input type="text" value={testimonialAuthorName}
+                    onChange={(e) => setTestimonialAuthorName(e.target.value)}
+                    className={inputClass} placeholder="Marie Dupont" />
+                </div>
+                <div>
+                  <label className={labelClass}>Intitulé de poste</label>
+                  <input type="text" value={testimonialAuthorRole}
+                    onChange={(e) => setTestimonialAuthorRole(e.target.value)}
+                    className={inputClass} placeholder="Office Manager" />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Entreprise</label>
+                <input type="text" value={testimonialAuthorCompany}
+                  onChange={(e) => setTestimonialAuthorCompany(e.target.value)}
+                  className={inputClass} placeholder="Acme Corp" />
               </div>
             </div>
           </section>

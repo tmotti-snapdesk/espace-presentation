@@ -5,6 +5,7 @@ import { LandingPageData } from "@/types/lp";
 import LpHero from "@/components/lp/LpHero";
 import LpMission from "@/components/lp/LpMission";
 import LpSocialProof from "@/components/lp/LpSocialProof";
+import LpTestimonial from "@/components/lp/LpTestimonial";
 import LpLeadForm from "@/components/lp/LpLeadForm";
 
 export const revalidate = 3600;
@@ -53,6 +54,13 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
       <LpSocialProof
         title={lp.socialProofTitle}
         logos={lp.socialProofLogos}
+      />
+
+      <LpTestimonial
+        quote={lp.testimonialQuote}
+        authorName={lp.testimonialAuthorName}
+        authorCompany={lp.testimonialAuthorCompany}
+        authorRole={lp.testimonialAuthorRole}
       />
 
       <LpLeadForm

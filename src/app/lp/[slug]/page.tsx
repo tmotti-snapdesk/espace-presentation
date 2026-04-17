@@ -15,7 +15,10 @@ const resolveLp = cache(async (slug: string): Promise<LandingPageData | null> =>
     const { blobs } = await list({ prefix: `lp/${slug}` });
     const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
     if (jsonBlob) {
-      const res = await fetch(jsonBlob.url);
+      // Bypass Next's fetch cache — Vercel Blob serves the JSON with an
+      // `immutable` Cache-Control header, so the cached response can stick
+      // around even after revalidatePath() and mask fresh edits.
+      const res = await fetch(jsonBlob.url, { cache: "no-store" });
       if (res.ok) return (await res.json()) as LandingPageData;
     }
   } catch {}

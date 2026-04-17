@@ -28,13 +28,13 @@ export default function LpTestimonial({
       <div className="max-w-3xl mx-auto text-center">
         <div
           aria-hidden
-          className="font-serif text-6xl md:text-7xl text-luxury-gold leading-none mb-6"
+          className="font-serif text-4xl md:text-5xl text-luxury-gold leading-none mb-4"
         >
           &ldquo;
         </div>
 
         <motion.blockquote
-          className="font-serif italic text-2xl md:text-3xl text-luxury-charcoal leading-relaxed"
+          className="font-serif italic text-lg md:text-xl text-luxury-charcoal leading-relaxed"
           initial={{ y: 20 }}
           whileInView={{ y: 0 }}
           viewport={{ once: true, amount: 0.1 }}

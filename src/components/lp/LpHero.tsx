@@ -30,6 +30,9 @@ export default function LpHero({ videoUrl, title, subtitle, ctaText }: LpHeroPro
         <div className="absolute inset-0 bg-luxury-charcoal" />
       )}
 
+      {/* Gray tint layer for improved text contrast */}
+      <div className="absolute inset-0 bg-gray-900/25" />
+
       {/* Overlay */}
       <div className="video-overlay absolute inset-0" />
 

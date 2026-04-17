@@ -22,9 +22,6 @@ export default function Header({ espace }: HeaderProps) {
         <source src={espace.videoUrl} type="video/mp4" />
       </video>
 
-      {/* Gray tint layer for improved text contrast */}
-      <div className="absolute inset-0 bg-gray-900/25" />
-
       {/* Overlay */}
       <div className="absolute inset-0 video-overlay" />
 

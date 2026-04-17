@@ -170,11 +170,10 @@ export default function LpLeadForm({
               />
               <input
                 type="text"
-                required
                 value={form.company}
                 onChange={set("company")}
                 className={inputClass}
-                placeholder="Entreprise *"
+                placeholder="Entreprise"
               />
             </div>
 
@@ -189,12 +188,11 @@ export default function LpLeadForm({
                 placeholder="Adresse des bureaux *"
               />
               <select
-                required
                 value={form.headcount}
                 onChange={set("headcount")}
                 className={`${inputClass} cursor-pointer`}
               >
-                <option value="">Effectif *</option>
+                <option value="">Effectif</option>
                 {HEADCOUNT_OPTIONS.map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
@@ -203,11 +201,12 @@ export default function LpLeadForm({
 
             {/* Row 4 : projet bureau */}
             <select
+              required
               value={form.project}
               onChange={set("project")}
               className={`${inputClass} cursor-pointer`}
             >
-              <option value="">Projet de nouveaux bureaux ?</option>
+              <option value="">Projet de nouveaux bureaux ? *</option>
               {PROJECT_OPTIONS.map((o) => (
                 <option key={o} value={o}>{o}</option>
               ))}

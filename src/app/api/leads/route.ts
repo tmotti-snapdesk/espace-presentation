@@ -8,9 +8,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.email || !body.company) {
+    if (!body.email || !body.project) {
       return NextResponse.json(
-        { error: "Email et entreprise requis" },
+        { error: "Email et projet de bureau requis" },
         { status: 400 }
       );
     }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             fields: [
               { name: "email", value: lead.email },
-              { name: "company", value: lead.company },
+              ...(lead.company ? [{ name: "company", value: lead.company }] : []),
               ...(lead.firstname ? [{ name: "firstname", value: lead.firstname }] : []),
               ...(lead.lastname ? [{ name: "lastname", value: lead.lastname }] : []),
               ...(lead.address ? [{ name: "address", value: lead.address }] : []),

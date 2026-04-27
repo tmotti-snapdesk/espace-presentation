@@ -78,6 +78,7 @@ export async function PUT(
         { id: "roger", name: "Roger", role: "Responsable Maintenance Technique", email: "", phone: "", photo: "" },
       ],
       isLeadGen: body.isLeadGen || false,
+      leadGenClosable: body.leadGenClosable || false,
       createdAt: body.createdAt || new Date().toISOString(),
     };
 

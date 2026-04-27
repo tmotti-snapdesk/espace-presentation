@@ -63,6 +63,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
         leaseDuration: initialData.leaseDuration,
         noticePeriod: initialData.noticePeriod,
         isLeadGen: initialData.isLeadGen || false,
+        leadGenClosable: initialData.leadGenClosable || false,
       };
     }
     return {
@@ -87,6 +88,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
       leaseDuration: "",
       noticePeriod: "",
       isLeadGen: false,
+      leadGenClosable: false,
     };
   });
 
@@ -569,10 +571,28 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
                 Passer au format lead generation
               </span>
               <p className="text-xs text-luxury-slate mt-1">
-                Un formulaire apparaîtra aux visiteurs pour collecter leur email et entreprise.
+                Un formulaire apparaîtra aux visiteurs pour collecter leur email et entreprise, et une section &laquo;&nbsp;dossier / visite&nbsp;&raquo; sera ajoutée à la page.
               </p>
             </div>
           </label>
+          {form.isLeadGen && (
+            <label className="flex items-center gap-4 cursor-pointer p-6 mt-4 ml-8 border border-primary-200 rounded-lg hover:border-luxury-gold/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={form.leadGenClosable}
+                onChange={(e) => updateForm("leadGenClosable", e.target.checked)}
+                className="w-5 h-5 accent-luxury-gold"
+              />
+              <div>
+                <span className="text-sm font-medium text-luxury-charcoal">
+                  Modale fermable
+                </span>
+                <p className="text-xs text-luxury-slate mt-1">
+                  Ajoute un bouton de fermeture, la touche Échap et la fermeture au clic en dehors. À utiliser pour ne pas perdre de leads quand la modale bloque la lecture.
+                </p>
+              </div>
+            </label>
+          )}
         </section>
 
         {/* Section 5: Médias */}

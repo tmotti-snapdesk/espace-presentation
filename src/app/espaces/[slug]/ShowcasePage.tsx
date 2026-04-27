@@ -10,6 +10,7 @@ import KeyElements from "@/components/showcase/KeyElements";
 import Contacts from "@/components/showcase/Contacts";
 import Reassurance from "@/components/showcase/Reassurance";
 import LeadGenModal from "@/components/showcase/LeadGenModal";
+import LeadFormSection from "@/components/showcase/LeadFormSection";
 
 interface ShowcasePageProps {
   espace: EspaceData;
@@ -22,11 +23,18 @@ export default function ShowcasePage({ espace }: ShowcasePageProps) {
       <Presentation espace={espace} />
       <Location espace={espace} />
       {espace.isLeadGen && (
-        <LeadGenModal espaceName={espace.name} espaceSlug={espace.slug} />
+        <LeadGenModal
+          espaceName={espace.name}
+          espaceSlug={espace.slug}
+          closable={espace.leadGenClosable}
+        />
       )}
       <FloorPlan floorPlanImage={espace.floorPlanImage} />
       <PhotoGallery photos={espace.photos} name={espace.name} />
       <KeyElements espace={espace} />
+      {espace.isLeadGen && (
+        <LeadFormSection espaceName={espace.name} espaceSlug={espace.slug} />
+      )}
       <Contacts />
       <Reassurance />
     </main>

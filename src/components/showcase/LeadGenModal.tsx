@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from "framer-motion";
 interface LeadGenModalProps {
   espaceName: string;
   espaceSlug: string;
+  closable?: boolean;
 }
 
-export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalProps) {
+export default function LeadGenModal({ espaceName, espaceSlug, closable = false }: LeadGenModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenDismissed, setHasBeenDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +46,16 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
     setIsOpen(false);
     setHasBeenDismissed(true);
   };
+
+  // Escape key closes the modal in closable mode
+  useEffect(() => {
+    if (!closable || !isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closable, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +109,7 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onClick={closable ? handleClose : undefined}
             >
               <motion.div
                 className="bg-white w-full max-w-2xl relative"
@@ -107,6 +119,16 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()}
               >
+                {closable && !isSubmitted && (
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    aria-label="Fermer"
+                    className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-luxury-slate hover:text-luxury-charcoal transition-colors text-2xl leading-none"
+                  >
+                    &times;
+                  </button>
+                )}
                 <div className="p-10 md:p-16">
                   {isSubmitted ? (
                     <motion.div

@@ -15,10 +15,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const intentLabels: Record<string, string> = {
+      dossier: "Demande dossier",
+      visite: "Demande visite",
+    };
+    const intent = typeof body.intent === "string" ? body.intent : "";
+
     const lead = {
       email: body.email,
       company: body.company,
+      phone: body.phone || "",
       headcount: body.headcount || "",
+      intent,
       espaceName: body.espaceName || "",
       espaceSlug: body.espaceSlug || "",
       source: body.source || "",
@@ -44,13 +52,18 @@ export async function POST(request: NextRequest) {
             fields: [
               { name: "email", value: lead.email },
               { name: "company", value: lead.company },
+              ...(lead.phone
+                ? [{ name: "phone", value: lead.phone }]
+                : []),
               ...(lead.headcount
                 ? [{ name: "nombre_de_postes", value: lead.headcount }]
                 : []),
             ],
             context: {
               pageUri: lead.source,
-              pageName: `Snapdesk — ${lead.espaceName}`,
+              pageName: intentLabels[intent]
+                ? `Snapdesk — ${lead.espaceName} — ${intentLabels[intent]}`
+                : `Snapdesk — ${lead.espaceName}`,
             },
           }),
         }

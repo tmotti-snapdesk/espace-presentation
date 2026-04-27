@@ -40,6 +40,7 @@ export interface EspaceData {
   floorPlanImage: string;
   contacts: Contact[];
   isLeadGen: boolean;
+  leadGenClosable: boolean;
   createdAt: string;
 }
 
@@ -65,4 +66,5 @@ export interface EspaceFormData {
   leaseDuration: string;
   noticePeriod: string;
   isLeadGen: boolean;
+  leadGenClosable: boolean;
 }

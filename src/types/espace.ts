@@ -50,6 +50,7 @@ export interface EspaceData {
   contacts: Contact[];
   isLeadGen: boolean;
   leadGenMode: LeadGenMode;
+  leadGenDismissible: boolean;
   presentationLink: string;
   // Prestige template fields
   template: Template;
@@ -93,6 +94,7 @@ export interface EspaceFormData {
   noticePeriod: string;
   isLeadGen: boolean;
   leadGenMode: LeadGenMode;
+  leadGenDismissible: boolean;
   presentationLink: string;
   // Prestige template fields
   template: Template;

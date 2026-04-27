@@ -9,9 +9,10 @@ interface LeadGenModalProps {
   espaceSlug: string;
   leadGenMode?: LeadGenMode;
   presentationLink?: string;
+  dismissible?: boolean;
 }
 
-export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "unlock", presentationLink = "" }: LeadGenModalProps) {
+export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "unlock", presentationLink = "", dismissible = false }: LeadGenModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenDismissed, setHasBeenDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,6 +25,16 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
     company: "",
     searchingForOffice: false,
   });
+
+  const dismissalKey = `leadgen-dismissed:${espaceSlug}`;
+
+  // Restore dismissal from sessionStorage so the modal doesn't reopen mid-visit.
+  useEffect(() => {
+    if (!dismissible || typeof window === "undefined") return;
+    if (sessionStorage.getItem(dismissalKey) === "1") {
+      setHasBeenDismissed(true);
+    }
+  }, [dismissible, dismissalKey]);
 
   // Trigger modal on scroll (when the trigger div enters viewport)
   useEffect(() => {
@@ -47,7 +58,21 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
   const handleClose = () => {
     setIsOpen(false);
     setHasBeenDismissed(true);
+    if (dismissible && typeof window !== "undefined") {
+      sessionStorage.setItem(dismissalKey, "1");
+    }
   };
+
+  // ESC key closes the modal in dismissible mode
+  useEffect(() => {
+    if (!dismissible || !isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dismissible, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,27 +120,40 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+              className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-50 ${dismissible ? "cursor-pointer" : ""}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onClick={dismissible ? handleClose : undefined}
             />
 
             {/* Modal */}
             <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="bg-white w-full max-w-2xl relative"
+                className="bg-white w-full max-w-2xl relative pointer-events-auto"
                 initial={{ opacity: 0, y: 30, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.97 }}
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()}
               >
+                {dismissible && !isSubmitted && (
+                  <button
+                    type="button"
+                    aria-label="Fermer"
+                    onClick={handleClose}
+                    className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center text-luxury-slate hover:text-luxury-charcoal transition-colors z-10"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <path d="M3 3l12 12M15 3L3 15" />
+                    </svg>
+                  </button>
+                )}
                 <div className="p-10 md:p-16">
                   {isSubmitted ? (
                     <motion.div

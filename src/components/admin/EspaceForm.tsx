@@ -75,6 +75,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
         noticePeriod: initialData.noticePeriod,
         isLeadGen: initialData.isLeadGen || false,
         leadGenMode: initialData.leadGenMode || "unlock",
+        leadGenDismissible: initialData.leadGenDismissible || false,
         presentationLink: initialData.presentationLink || "",
         template: initialData.template || "standard",
         storyTitle: initialData.storyTitle || "",
@@ -115,6 +116,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
       noticePeriod: "",
       isLeadGen: false,
       leadGenMode: "unlock" as LeadGenMode,
+      leadGenDismissible: false,
       presentationLink: "",
       template: "standard" as Template,
       storyTitle: "",
@@ -781,6 +783,23 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
                   </p>
                 </div>
               )}
+
+              <label className="flex items-start gap-3 cursor-pointer pt-2 border-t border-primary-200">
+                <input
+                  type="checkbox"
+                  checked={form.leadGenDismissible}
+                  onChange={(e) => updateForm("leadGenDismissible", e.target.checked)}
+                  className="mt-1 w-5 h-5 accent-luxury-gold"
+                />
+                <div>
+                  <span className="text-sm font-medium text-luxury-charcoal">
+                    Modale fermable
+                  </span>
+                  <p className="text-xs text-luxury-slate mt-0.5">
+                    Le visiteur peut fermer la modale (croix, clic en dehors, touche Échap) et continuer à parcourir la page sans soumettre le formulaire.
+                  </p>
+                </div>
+              </label>
             </div>
           )}
         </section>

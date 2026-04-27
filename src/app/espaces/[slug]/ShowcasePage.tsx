@@ -10,6 +10,7 @@ import KeyElements from "@/components/showcase/KeyElements";
 import Contacts from "@/components/showcase/Contacts";
 import Reassurance from "@/components/showcase/Reassurance";
 import LeadGenModal from "@/components/showcase/LeadGenModal";
+import LeadCaptureSection from "@/components/showcase/LeadCaptureSection";
 import Story from "@/components/showcase/Story";
 import Highlight from "@/components/showcase/Highlight";
 import BuildingStats from "@/components/showcase/BuildingStats";
@@ -63,8 +64,10 @@ export default function ShowcasePage({ espace }: ShowcasePageProps) {
           espaceSlug={espace.slug}
           leadGenMode={espace.leadGenMode || "unlock"}
           presentationLink={espace.presentationLink || ""}
+          dismissible={espace.leadGenDismissible || false}
         />
       )}
+      <LeadCaptureSection espaceName={espace.name} espaceSlug={espace.slug} />
       <FloorPlan floorPlanImage={espace.floorPlanImage} />
       <PhotoGallery photos={espace.photos} name={espace.name} />
       {isPrestige && espace.testimonial?.quote && (

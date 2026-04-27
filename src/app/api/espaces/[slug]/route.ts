@@ -97,6 +97,7 @@ export async function PUT(
       ],
       isLeadGen: body.isLeadGen || false,
       leadGenMode: body.leadGenMode || "unlock",
+      leadGenDismissible: body.leadGenDismissible || false,
       presentationLink: body.presentationLink || "",
       template: body.template || "standard",
       storyTitle: body.storyTitle || "",

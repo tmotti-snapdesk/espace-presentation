@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       contacts: DEFAULT_CONTACTS,
       isLeadGen: body.isLeadGen || false,
       leadGenMode: body.leadGenMode || "unlock",
+      leadGenDismissible: body.leadGenDismissible || false,
       presentationLink: body.presentationLink || "",
       template: body.template || "standard",
       storyTitle: body.storyTitle || "",

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
-import { LandingPageData, LpMissionCard, LpLogo } from "@/types/lp";
+import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep } from "@/types/lp";
 import Image from "next/image";
 import AssetPicker from "@/components/admin/AssetPicker";
 
@@ -25,6 +25,8 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | null>(null);
+  const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
+  const [uploadingIconIndex, setUploadingIconIndex] = useState<number | null>(null);
 
   // ── Hero ──
   const [form, setForm] = useState({
@@ -42,6 +44,14 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [missionSubtitle, setMissionSubtitle] = useState(initialData?.missionSubtitle || "");
   const [missionCards, setMissionCards] = useState<LpMissionCard[]>(
     initialData?.missionCards || DEFAULT_CARDS
+  );
+
+  // ── Process / Comment ça marche ──
+  const [processLabel, setProcessLabel] = useState(initialData?.processLabel || "");
+  const [processTitle, setProcessTitle] = useState(initialData?.processTitle || "");
+  const [processSubtitle, setProcessSubtitle] = useState(initialData?.processSubtitle || "");
+  const [processSteps, setProcessSteps] = useState<LpProcessStep[]>(
+    initialData?.processSteps || []
   );
 
   // ── Social proof ──
@@ -115,6 +125,33 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const removeCard = (i: number) =>
     setMissionCards((prev) => prev.filter((_, idx) => idx !== i));
 
+  const handleCardIconUpload = async (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingIconIndex(i);
+    try {
+      const blob = await upload(buildUploadPath(`icon-${i}`, file), file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      updateCard(i, "iconImage", blob.url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload du picto : ${msg}`);
+    } finally {
+      setUploadingIconIndex(null);
+      e.target.value = "";
+    }
+  };
+
+  // ── Process steps helpers ──
+  const updateStep = (i: number, field: keyof LpProcessStep, value: string) =>
+    setProcessSteps((prev) => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
+  const addStep = () =>
+    setProcessSteps((prev) => [...prev, { title: "", text: "" }]);
+  const removeStep = (i: number) =>
+    setProcessSteps((prev) => prev.filter((_, idx) => idx !== i));
+
   // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +165,10 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       missionTitle: missionTitle || undefined,
       missionSubtitle: missionSubtitle || undefined,
       missionCards: missionCards.filter((c) => c.title),
+      processLabel: processLabel || undefined,
+      processTitle: processTitle || undefined,
+      processSubtitle: processSubtitle || undefined,
+      processSteps: processSteps.filter((s) => s.title || s.text),
       socialProofTitle: socialProofTitle || undefined,
       socialProofLogos: socialProofLogos.length > 0 ? socialProofLogos : undefined,
       testimonialQuote: testimonialQuote || undefined,
@@ -300,26 +341,108 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
               {/* Cards */}
               <div>
                 <label className={labelClass}>Cards bénéfices</label>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {missionCards.map((card, i) => (
-                    <div key={i} className="grid grid-cols-[48px_1fr_1fr_32px] gap-2 items-start">
-                      <input type="text" value={card.icon}
-                        onChange={(e) => updateCard(i, "icon", e.target.value)}
-                        className={`${inputClass} text-center text-xl`} placeholder="⭐" />
-                      <input type="text" value={card.title}
-                        onChange={(e) => updateCard(i, "title", e.target.value)}
-                        className={inputClass} placeholder="Titre de la card" />
-                      <input type="text" value={card.text}
-                        onChange={(e) => updateCard(i, "text", e.target.value)}
-                        className={inputClass} placeholder="Description courte" />
-                      <button type="button" onClick={() => removeCard(i)}
-                        className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                    <div key={i} className="border border-primary-100 p-3 bg-white">
+                      <div className="grid grid-cols-[1fr_1fr_32px] gap-2 items-start">
+                        <input type="text" value={card.title}
+                          onChange={(e) => updateCard(i, "title", e.target.value)}
+                          className={inputClass} placeholder="Titre de la card" />
+                        <input type="text" value={card.text}
+                          onChange={(e) => updateCard(i, "text", e.target.value)}
+                          className={inputClass} placeholder="Description courte" />
+                        <button type="button" onClick={() => removeCard(i)}
+                          className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                      </div>
+                      <div className="mt-3 flex items-center gap-3">
+                        {card.iconImage ? (
+                          <div className="flex items-center gap-2">
+                            <div className="relative h-10 w-10 border border-primary-100 bg-white">
+                              <Image src={card.iconImage} alt="" fill className="object-contain p-1" sizes="40px" />
+                            </div>
+                            <button type="button"
+                              onClick={() => updateCard(i, "iconImage", "")}
+                              className="text-xs text-red-400 hover:text-red-600">Retirer le picto</button>
+                          </div>
+                        ) : (
+                          <input type="text" value={card.icon}
+                            onChange={(e) => updateCard(i, "icon", e.target.value)}
+                            className="w-14 px-2 py-2 border border-primary-200 text-center text-xl bg-white focus:outline-none focus:border-luxury-gold"
+                            placeholder="⭐" title="Emoji de secours" />
+                        )}
+                        <label className="shrink-0 px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors cursor-pointer">
+                          {card.iconImage ? "Remplacer" : "Importer un picto"}
+                          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                            onChange={(e) => handleCardIconUpload(i, e)} className="hidden" />
+                        </label>
+                        <button type="button" onClick={() => setIconPickerIndex(i)}
+                          className="shrink-0 px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                          Bibliothèque
+                        </button>
+                        {uploadingIconIndex === i && (
+                          <span className="text-xs text-luxury-slate">Upload en cours...</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
                 <button type="button" onClick={addCard}
                   className="mt-3 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
                   + Ajouter une card
+                </button>
+                <p className="text-xs text-luxury-slate/60 mt-2">
+                  Utilisez un emoji ou importez un picto Snapdesk (PNG/SVG transparent recommandé).
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Process / Comment ça marche ── */}
+          <section>
+            <SectionTitle>Comment ça marche (optionnel)</SectionTitle>
+            <p className="text-xs text-luxury-slate/70 mb-5 -mt-2">
+              Section facultative présentant le déroulé de la campagne en étapes numérotées. Elle ne s&apos;affiche que si au moins un champ est renseigné.
+            </p>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Label (texte au-dessus du titre)</label>
+                <input type="text" value={processLabel} onChange={(e) => setProcessLabel(e.target.value)}
+                  className={inputClass} placeholder="Le déroulé" />
+              </div>
+              <div>
+                <label className={labelClass}>Titre de section</label>
+                <input type="text" value={processTitle} onChange={(e) => setProcessTitle(e.target.value)}
+                  className={inputClass} placeholder="Comment ça marche ?" />
+              </div>
+              <div>
+                <label className={labelClass}>Sous-titre</label>
+                <textarea value={processSubtitle} onChange={(e) => setProcessSubtitle(e.target.value)}
+                  className={inputClass} rows={2}
+                  placeholder="Une campagne pensée pour vous faciliter la vie, de l'inscription à la livraison." />
+              </div>
+
+              <div>
+                <label className={labelClass}>Étapes</label>
+                <div className="space-y-3">
+                  {processSteps.map((step, i) => (
+                    <div key={i} className="grid grid-cols-[40px_1fr_2fr_32px] gap-2 items-start">
+                      <div className="mt-3 text-center font-serif text-2xl text-luxury-gold italic">
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+                      <input type="text" value={step.title}
+                        onChange={(e) => updateStep(i, "title", e.target.value)}
+                        className={inputClass} placeholder="Titre de l'étape" />
+                      <input type="text" value={step.text}
+                        onChange={(e) => updateStep(i, "text", e.target.value)}
+                        className={inputClass} placeholder="Description de l'étape" />
+                      <button type="button" onClick={() => removeStep(i)}
+                        className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addStep}
+                  className="mt-3 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
+                  + Ajouter une étape
                 </button>
               </div>
             </div>
@@ -456,6 +579,18 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
             setSocialProofLogos((prev) => [...prev, { url: asset.url, alt }]);
           }
           setPickerOpen(null);
+        }}
+      />
+
+      <AssetPicker
+        open={iconPickerIndex !== null}
+        kind="image"
+        onClose={() => setIconPickerIndex(null)}
+        onSelect={(asset) => {
+          if (iconPickerIndex !== null) {
+            updateCard(iconPickerIndex, "iconImage", asset.url);
+          }
+          setIconPickerIndex(null);
         }}
       />
     </main>

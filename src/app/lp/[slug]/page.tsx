@@ -4,6 +4,7 @@ import { list } from "@vercel/blob";
 import { LandingPageData } from "@/types/lp";
 import LpHero from "@/components/lp/LpHero";
 import LpMission from "@/components/lp/LpMission";
+import LpProcess from "@/components/lp/LpProcess";
 import LpSocialProof from "@/components/lp/LpSocialProof";
 import LpTestimonial from "@/components/lp/LpTestimonial";
 import LpLeadForm from "@/components/lp/LpLeadForm";
@@ -52,6 +53,13 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         title={lp.missionTitle}
         subtitle={lp.missionSubtitle}
         cards={lp.missionCards}
+      />
+
+      <LpProcess
+        label={lp.processLabel}
+        title={lp.processTitle}
+        subtitle={lp.processSubtitle}
+        steps={lp.processSteps}
       />
 
       <LpSocialProof

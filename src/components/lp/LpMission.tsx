@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { LpMissionCard } from "@/types/lp";
 
 interface LpMissionProps {
@@ -56,9 +57,19 @@ export default function LpMission({ label, title, subtitle, cards = [] }: LpMiss
                 viewport={{ once: true, amount: 0.1 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
               >
-                {card.icon && (
+                {card.iconImage ? (
+                  <div className="relative h-12 w-12 mx-auto mb-4">
+                    <Image
+                      src={card.iconImage}
+                      alt={card.title || ""}
+                      fill
+                      className="object-contain"
+                      sizes="48px"
+                    />
+                  </div>
+                ) : card.icon ? (
                   <div className="text-4xl mb-4">{card.icon}</div>
-                )}
+                ) : null}
                 <h3 className="font-serif text-lg text-luxury-charcoal mb-3">
                   {card.title}
                 </h3>

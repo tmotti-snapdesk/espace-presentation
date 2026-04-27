@@ -4,7 +4,8 @@
 // once later sections are added.
 
 export interface LpMissionCard {
-  icon: string;   // emoji used as icon
+  icon: string;        // emoji used as icon — fallback when no image is set
+  iconImage?: string;  // optional Blob URL of a custom picto image
   title: string;
   text: string;
 }
@@ -12,6 +13,11 @@ export interface LpMissionCard {
 export interface LpLogo {
   url: string;    // Blob URL of the logo image
   alt: string;
+}
+
+export interface LpProcessStep {
+  title: string;
+  text: string;
 }
 
 export interface LandingPageData {
@@ -30,6 +36,12 @@ export interface LandingPageData {
   missionTitle?: string;
   missionSubtitle?: string;
   missionCards?: LpMissionCard[];
+
+  // ── Process / Comment ça marche (optional, between Mission and Social proof)
+  processLabel?: string;
+  processTitle?: string;
+  processSubtitle?: string;
+  processSteps?: LpProcessStep[];
 
   // ── Social proof (Step 3) ─────────────────────────────────────────────────
   socialProofTitle?: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface LpHeroProps {
   videoUrl: string;
@@ -35,6 +36,23 @@ export default function LpHero({ videoUrl, title, subtitle, ctaText }: LpHeroPro
 
       {/* Overlay */}
       <div className="video-overlay absolute inset-0" />
+
+      {/* Logo top-left */}
+      <motion.div
+        className="absolute top-8 left-6 md:left-12 lg:left-24 z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+      >
+        <Image
+          src="/images/Logo Snapdesk Blanc.png"
+          alt="Snapdesk"
+          width={160}
+          height={40}
+          className="h-8 md:h-10 w-auto"
+          priority
+        />
+      </motion.div>
 
       {/* Content */}
       <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">

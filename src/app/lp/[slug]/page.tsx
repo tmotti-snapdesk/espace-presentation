@@ -70,6 +70,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         title={lp.missionTitle}
         subtitle={lp.missionSubtitle}
         cards={lp.missionCards}
+        photos={lp.missionPhotos}
       />
       {missionVisible && <LpAnchorCta text={ctaText} />}
 

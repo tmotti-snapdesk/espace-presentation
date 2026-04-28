@@ -41,6 +41,7 @@ export interface LandingPageData {
   missionTitle?: string;
   missionSubtitle?: string;
   missionCards?: LpMissionCard[];
+  missionPhotos?: string[];  // optional carousel shown to the right of the cards
 
   // ── Process / Comment ça marche (optional, between Mission and Social proof)
   processLabel?: string;

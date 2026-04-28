@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       missionTitle: body.missionTitle,
       missionSubtitle: body.missionSubtitle,
       missionCards: body.missionCards,
+      missionPhotos: body.missionPhotos,
       processLabel: body.processLabel,
       processTitle: body.processTitle,
       processSubtitle: body.processSubtitle,

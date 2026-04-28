@@ -65,6 +65,7 @@ export async function PUT(
       missionTitle: body.missionTitle,
       missionSubtitle: body.missionSubtitle,
       missionCards: body.missionCards,
+      missionPhotos: body.missionPhotos,
       processLabel: body.processLabel,
       processTitle: body.processTitle,
       processSubtitle: body.processSubtitle,

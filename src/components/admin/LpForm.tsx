@@ -24,10 +24,11 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | "testimonial-photo" | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | "testimonial-photo" | "mission-photo" | null>(null);
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
   const [uploadingIconIndex, setUploadingIconIndex] = useState<number | null>(null);
   const [uploadingTestimonialPhoto, setUploadingTestimonialPhoto] = useState(false);
+  const [uploadingMissionPhoto, setUploadingMissionPhoto] = useState(false);
 
   // ── Hero ──
   const [form, setForm] = useState({
@@ -46,6 +47,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [missionCards, setMissionCards] = useState<LpMissionCard[]>(
     initialData?.missionCards || DEFAULT_CARDS
   );
+  const [missionPhotos, setMissionPhotos] = useState<string[]>(initialData?.missionPhotos || []);
 
   // ── Process / Comment ça marche ──
   const [processLabel, setProcessLabel] = useState(initialData?.processLabel || "");
@@ -125,6 +127,35 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     }
   };
 
+  // ── Mission carousel photos upload ──
+  const handleMissionPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingMissionPhoto(true);
+    try {
+      const blob = await upload(buildUploadPath("mission", file), file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      setMissionPhotos((prev) => [...prev, blob.url]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload de la photo : ${msg}`);
+    } finally {
+      setUploadingMissionPhoto(false);
+      e.target.value = "";
+    }
+  };
+
+  const moveMissionPhoto = (i: number, dir: -1 | 1) =>
+    setMissionPhotos((prev) => {
+      const next = [...prev];
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+
   // ── Testimonial photo upload ──
   const handleTestimonialPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,6 +232,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       missionTitle: missionTitle || undefined,
       missionSubtitle: missionSubtitle || undefined,
       missionCards: missionCards.filter((c) => c.title),
+      missionPhotos: missionPhotos.length > 0 ? missionPhotos : undefined,
       processLabel: processLabel || undefined,
       processTitle: processTitle || undefined,
       processSubtitle: processSubtitle || undefined,
@@ -434,6 +466,48 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 <p className="text-xs text-luxury-slate/60 mt-2">
                   Utilisez un emoji ou importez un picto Snapdesk (PNG/SVG transparent recommandé).
                 </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Carrousel de photos (optionnel)</label>
+                <p className="text-xs text-luxury-slate/70 mb-3">
+                  Affiche un petit carrousel à droite des cards (autoplay, ~4s par photo). Format carré recommandé. Ne s&apos;affiche pas si aucune photo n&apos;est ajoutée.
+                </p>
+                {missionPhotos.length > 0 && (
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {missionPhotos.map((url, i) => (
+                      <div key={i} className="relative group">
+                        <div className="relative h-20 w-20 border border-primary-100 bg-white">
+                          <Image src={url} alt="" fill className="object-cover" sizes="80px" />
+                        </div>
+                        <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button type="button" onClick={() => moveMissionPhoto(i, -1)}
+                            disabled={i === 0}
+                            aria-label="Reculer"
+                            className="w-5 h-5 rounded-full bg-luxury-charcoal text-white text-[10px] flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
+                          <button type="button" onClick={() => moveMissionPhoto(i, 1)}
+                            disabled={i === missionPhotos.length - 1}
+                            aria-label="Avancer"
+                            className="w-5 h-5 rounded-full bg-luxury-charcoal text-white text-[10px] flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+                          <button type="button"
+                            onClick={() => setMissionPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                            aria-label="Supprimer"
+                            className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">×</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <input type="file" accept="image/png,image/jpeg,image/webp"
+                    onChange={handleMissionPhotoUpload}
+                    className="flex-1 text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                  <button type="button" onClick={() => setPickerOpen("mission-photo")}
+                    className="shrink-0 px-4 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                    Bibliothèque
+                  </button>
+                </div>
+                {uploadingMissionPhoto && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
               </div>
             </div>
           </section>
@@ -701,6 +775,8 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
             setSocialProofLogos((prev) => [...prev, { url: asset.url, alt }]);
           } else if (pickerOpen === "testimonial-photo") {
             setTestimonialAuthorPhoto(asset.url);
+          } else if (pickerOpen === "mission-photo") {
+            setMissionPhotos((prev) => [...prev, asset.url]);
           }
           setPickerOpen(null);
         }}

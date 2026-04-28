@@ -50,10 +50,6 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
     lp.missionLabel || lp.missionTitle || lp.missionSubtitle ||
     (lp.missionCards && lp.missionCards.length > 0)
   );
-  const processVisible = !!(
-    lp.processLabel || lp.processTitle || lp.processSubtitle ||
-    (lp.processSteps && lp.processSteps.length > 0)
-  );
   const testimonialVisible = !!lp.testimonialQuote;
 
   return (
@@ -80,7 +76,6 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         subtitle={lp.processSubtitle}
         steps={lp.processSteps}
       />
-      {processVisible && <LpAnchorCta text={ctaText} />}
 
       <LpTestimonial
         quote={lp.testimonialQuote}

@@ -81,11 +81,6 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
       />
       {processVisible && <LpAnchorCta text={ctaText} />}
 
-      <LpSocialProof
-        title={lp.socialProofTitle}
-        logos={lp.socialProofLogos}
-      />
-
       <LpTestimonial
         quote={lp.testimonialQuote}
         authorName={lp.testimonialAuthorName}
@@ -94,6 +89,11 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         authorPhoto={lp.testimonialAuthorPhoto}
       />
       {testimonialVisible && <LpAnchorCta text={ctaText} />}
+
+      <LpSocialProof
+        title={lp.socialProofTitle}
+        logos={lp.socialProofLogos}
+      />
 
       <LpFaq
         label={lp.faqLabel}

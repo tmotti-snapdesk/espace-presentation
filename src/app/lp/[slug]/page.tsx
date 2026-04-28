@@ -72,6 +72,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         authorName={lp.testimonialAuthorName}
         authorCompany={lp.testimonialAuthorCompany}
         authorRole={lp.testimonialAuthorRole}
+        authorPhoto={lp.testimonialAuthorPhoto}
       />
 
       <LpLeadForm

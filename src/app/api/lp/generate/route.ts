@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
       testimonialAuthorName: body.testimonialAuthorName,
       testimonialAuthorCompany: body.testimonialAuthorCompany,
       testimonialAuthorRole: body.testimonialAuthorRole,
+      testimonialAuthorPhoto: body.testimonialAuthorPhoto,
       formTitle: body.formTitle,
       formLabel: body.formLabel,
       formCtaText: body.formCtaText,

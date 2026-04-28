@@ -52,6 +52,7 @@ export interface LandingPageData {
   testimonialAuthorName?: string;
   testimonialAuthorCompany?: string;
   testimonialAuthorRole?: string;
+  testimonialAuthorPhoto?: string;   // Blob URL of the author's portrait
 
   // ── Form (Step 4) ─────────────────────────────────────────────────────────
   formTitle?: string;

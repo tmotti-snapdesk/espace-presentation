@@ -24,9 +24,10 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | "testimonial-photo" | null>(null);
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
   const [uploadingIconIndex, setUploadingIconIndex] = useState<number | null>(null);
+  const [uploadingTestimonialPhoto, setUploadingTestimonialPhoto] = useState(false);
 
   // ── Hero ──
   const [form, setForm] = useState({
@@ -65,6 +66,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [testimonialAuthorName, setTestimonialAuthorName] = useState(initialData?.testimonialAuthorName || "");
   const [testimonialAuthorCompany, setTestimonialAuthorCompany] = useState(initialData?.testimonialAuthorCompany || "");
   const [testimonialAuthorRole, setTestimonialAuthorRole] = useState(initialData?.testimonialAuthorRole || "");
+  const [testimonialAuthorPhoto, setTestimonialAuthorPhoto] = useState(initialData?.testimonialAuthorPhoto || "");
 
   // ── Formulaire ──
   const [formTitle, setFormTitle] = useState(initialData?.formTitle || "");
@@ -113,6 +115,26 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       setError(`Erreur lors de l'upload du logo : ${msg}`);
     } finally {
       setUploadingLogo(false);
+      e.target.value = "";
+    }
+  };
+
+  // ── Testimonial photo upload ──
+  const handleTestimonialPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingTestimonialPhoto(true);
+    try {
+      const blob = await upload(buildUploadPath("testimonial", file), file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      setTestimonialAuthorPhoto(blob.url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload de la photo : ${msg}`);
+    } finally {
+      setUploadingTestimonialPhoto(false);
       e.target.value = "";
     }
   };
@@ -175,6 +197,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       testimonialAuthorName: testimonialAuthorName || undefined,
       testimonialAuthorCompany: testimonialAuthorCompany || undefined,
       testimonialAuthorRole: testimonialAuthorRole || undefined,
+      testimonialAuthorPhoto: testimonialAuthorPhoto || undefined,
       formTitle: formTitle || undefined,
       formLabel: formLabel || undefined,
       formCtaText: formCtaText || undefined,
@@ -504,6 +527,37 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                   className={inputClass} rows={4}
                   placeholder="Depuis qu'on a installé les équipes chez Snapdesk, on a gagné en sérénité au quotidien." />
               </div>
+              <div>
+                <label className={labelClass}>Photo de l&apos;auteur (optionnel)</label>
+                <div className="flex items-center gap-4">
+                  {testimonialAuthorPhoto ? (
+                    <div className="relative h-16 w-16 rounded-full overflow-hidden border border-primary-200 shrink-0">
+                      <Image src={testimonialAuthorPhoto} alt="" fill className="object-cover" sizes="64px" />
+                    </div>
+                  ) : (
+                    <div className="h-16 w-16 rounded-full border border-dashed border-primary-200 bg-primary-50 shrink-0" />
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors cursor-pointer">
+                      {testimonialAuthorPhoto ? "Remplacer" : "Importer"}
+                      <input type="file" accept="image/png,image/jpeg,image/webp"
+                        onChange={handleTestimonialPhotoUpload} className="hidden" />
+                    </label>
+                    <button type="button" onClick={() => setPickerOpen("testimonial-photo")}
+                      className="px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                      Bibliothèque
+                    </button>
+                    {testimonialAuthorPhoto && (
+                      <button type="button" onClick={() => setTestimonialAuthorPhoto("")}
+                        className="text-xs text-red-400 hover:text-red-600">Retirer</button>
+                    )}
+                    {uploadingTestimonialPhoto && (
+                      <span className="text-xs text-luxury-slate">Upload en cours...</span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-luxury-slate/60 mt-2">Affichée en cercle au-dessus de la citation. Format carré recommandé.</p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Nom du client</label>
@@ -577,6 +631,8 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
           } else if (pickerOpen === "logo") {
             const alt = asset.pathname.split("/").pop()?.replace(/\.[^.]+$/, "") || "";
             setSocialProofLogos((prev) => [...prev, { url: asset.url, alt }]);
+          } else if (pickerOpen === "testimonial-photo") {
+            setTestimonialAuthorPhoto(asset.url);
           }
           setPickerOpen(null);
         }}

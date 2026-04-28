@@ -45,13 +45,27 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
 
   const ctaText = lp.heroCtaText || "Je m'inscris";
 
+  // Prefer the new `testimonials` array; fall back to the legacy single-item
+  // fields so LPs saved before the slider was introduced still render.
+  const testimonialItems = (lp.testimonials && lp.testimonials.length > 0)
+    ? lp.testimonials
+    : lp.testimonialQuote
+      ? [{
+          quote: lp.testimonialQuote,
+          authorName: lp.testimonialAuthorName,
+          authorCompany: lp.testimonialAuthorCompany,
+          authorRole: lp.testimonialAuthorRole,
+          authorPhoto: lp.testimonialAuthorPhoto,
+        }]
+      : [];
+
   // Mirror each section's own visibility predicate so we don't render an
   // anchor CTA hanging in a vacuum after a section that didn't render.
   const missionVisible = !!(
     lp.missionLabel || lp.missionTitle || lp.missionSubtitle ||
     (lp.missionCards && lp.missionCards.length > 0)
   );
-  const testimonialVisible = !!lp.testimonialQuote;
+  const testimonialVisible = testimonialItems.length > 0;
 
   return (
     <main>
@@ -78,18 +92,13 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         steps={lp.processSteps}
       />
 
-      <LpTestimonial
-        quote={lp.testimonialQuote}
-        authorName={lp.testimonialAuthorName}
-        authorCompany={lp.testimonialAuthorCompany}
-        authorRole={lp.testimonialAuthorRole}
-        authorPhoto={lp.testimonialAuthorPhoto}
-      />
+      <LpTestimonial items={testimonialItems} />
       {testimonialVisible && <LpAnchorCta text={ctaText} />}
 
       <LpSocialProof
         title={lp.socialProofTitle}
         logos={lp.socialProofLogos}
+        showGoogleRating={lp.socialProofShowGoogleRating}
       />
 
       <LpUrgency

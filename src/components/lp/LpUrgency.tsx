@@ -94,9 +94,20 @@ export default function LpUrgency({
                   viewport={{ once: true, amount: 0.1 }}
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                 >
-                  <span className="absolute left-0 top-0 font-serif text-4xl text-luxury-gold leading-none italic">
-                    {pad(i + 1)}
-                  </span>
+                  {step.iconImage ? (
+                    // When a picto is set we drop the italic number and show the
+                    // image at roughly the same footprint so titles still align.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={step.iconImage}
+                      alt=""
+                      className="absolute left-0 top-0 w-10 h-10 object-contain"
+                    />
+                  ) : (
+                    <span className="absolute left-0 top-0 font-serif text-4xl text-luxury-gold leading-none italic">
+                      {pad(i + 1)}
+                    </span>
+                  )}
                   {step.title && (
                     <h3 className="font-serif text-lg text-white mb-2">
                       {step.title}

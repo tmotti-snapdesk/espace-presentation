@@ -18,11 +18,20 @@ export interface LpLogo {
 export interface LpProcessStep {
   title: string;
   text: string;
+  iconImage?: string;  // optional Blob URL — when set, replaces the step number with a picto
 }
 
 export interface LpFaqItem {
   question: string;
   answer: string;
+}
+
+export interface LpTestimonialItem {
+  quote: string;
+  authorName?: string;
+  authorCompany?: string;
+  authorRole?: string;
+  authorPhoto?: string;   // Blob URL of the author's portrait
 }
 
 export interface LandingPageData {
@@ -61,13 +70,18 @@ export interface LandingPageData {
   // ── Social proof (Step 3) ─────────────────────────────────────────────────
   socialProofTitle?: string;
   socialProofLogos?: LpLogo[];
+  socialProofShowGoogleRating?: boolean;  // when true, renders a "4,8/5 Google" block before the logos
 
-  // ── Testimonial (optional quote block) ────────────────────────────────────
+  // ── Testimonials (optional quote block, slider when more than one) ───────
+  testimonials?: LpTestimonialItem[];
+
+  // Legacy single-testimonial fields — still read for back-compat with LPs
+  // saved before the slider was introduced. New saves use `testimonials`.
   testimonialQuote?: string;
   testimonialAuthorName?: string;
   testimonialAuthorCompany?: string;
   testimonialAuthorRole?: string;
-  testimonialAuthorPhoto?: string;   // Blob URL of the author's portrait
+  testimonialAuthorPhoto?: string;
 
   // ── FAQ (optional, displayed just before the form) ────────────────────────
   faqLabel?: string;

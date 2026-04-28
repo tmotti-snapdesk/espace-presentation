@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
-import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep, LpFaqItem } from "@/types/lp";
+import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep, LpFaqItem, LpTestimonialItem } from "@/types/lp";
 import Image from "next/image";
 import AssetPicker from "@/components/admin/AssetPicker";
 
@@ -24,10 +24,13 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | "testimonial-photo" | "mission-photo" | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | "mission-photo" | null>(null);
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
+  const [testimonialPhotoPickerIndex, setTestimonialPhotoPickerIndex] = useState<number | null>(null);
+  const [urgencyIconPickerIndex, setUrgencyIconPickerIndex] = useState<number | null>(null);
   const [uploadingIconIndex, setUploadingIconIndex] = useState<number | null>(null);
-  const [uploadingTestimonialPhoto, setUploadingTestimonialPhoto] = useState(false);
+  const [uploadingTestimonialPhotoIndex, setUploadingTestimonialPhotoIndex] = useState<number | null>(null);
+  const [uploadingUrgencyIconIndex, setUploadingUrgencyIconIndex] = useState<number | null>(null);
   const [uploadingMissionPhoto, setUploadingMissionPhoto] = useState(false);
 
   // ── Hero ──
@@ -76,6 +79,9 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [socialProofLogos, setSocialProofLogos] = useState<LpLogo[]>(
     initialData?.socialProofLogos || []
   );
+  const [socialProofShowGoogleRating, setSocialProofShowGoogleRating] = useState<boolean>(
+    Boolean(initialData?.socialProofShowGoogleRating)
+  );
 
   // ── FAQ ──
   const [faqLabel, setFaqLabel] = useState(initialData?.faqLabel || "");
@@ -83,12 +89,24 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [faqSubtitle, setFaqSubtitle] = useState(initialData?.faqSubtitle || "");
   const [faqItems, setFaqItems] = useState<LpFaqItem[]>(initialData?.faqItems || []);
 
-  // ── Témoignage client ──
-  const [testimonialQuote, setTestimonialQuote] = useState(initialData?.testimonialQuote || "");
-  const [testimonialAuthorName, setTestimonialAuthorName] = useState(initialData?.testimonialAuthorName || "");
-  const [testimonialAuthorCompany, setTestimonialAuthorCompany] = useState(initialData?.testimonialAuthorCompany || "");
-  const [testimonialAuthorRole, setTestimonialAuthorRole] = useState(initialData?.testimonialAuthorRole || "");
-  const [testimonialAuthorPhoto, setTestimonialAuthorPhoto] = useState(initialData?.testimonialAuthorPhoto || "");
+  // ── Témoignages clients (un seul ou plusieurs en mode slider) ──
+  // Hydrate from the new array first; fall back to the legacy single-item
+  // fields so previously-saved LPs migrate transparently on first edit.
+  const [testimonials, setTestimonials] = useState<LpTestimonialItem[]>(() => {
+    if (initialData?.testimonials && initialData.testimonials.length > 0) {
+      return initialData.testimonials;
+    }
+    if (initialData?.testimonialQuote) {
+      return [{
+        quote: initialData.testimonialQuote,
+        authorName: initialData.testimonialAuthorName,
+        authorCompany: initialData.testimonialAuthorCompany,
+        authorRole: initialData.testimonialAuthorRole,
+        authorPhoto: initialData.testimonialAuthorPhoto,
+      }];
+    }
+    return [];
+  });
 
   // ── Formulaire ──
   const [formTitle, setFormTitle] = useState(initialData?.formTitle || "");
@@ -170,22 +188,37 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       return next;
     });
 
-  // ── Testimonial photo upload ──
-  const handleTestimonialPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── Testimonial helpers ──
+  const updateTestimonial = (i: number, field: keyof LpTestimonialItem, value: string) =>
+    setTestimonials((prev) => prev.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
+  const addTestimonial = () =>
+    setTestimonials((prev) => [...prev, { quote: "" }]);
+  const removeTestimonial = (i: number) =>
+    setTestimonials((prev) => prev.filter((_, idx) => idx !== i));
+  const moveTestimonial = (i: number, dir: -1 | 1) =>
+    setTestimonials((prev) => {
+      const next = [...prev];
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+
+  const handleTestimonialPhotoUpload = async (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingTestimonialPhoto(true);
+    setUploadingTestimonialPhotoIndex(i);
     try {
-      const blob = await upload(buildUploadPath("testimonial", file), file, {
+      const blob = await upload(buildUploadPath(`testimonial-${i}`, file), file, {
         access: "public",
         handleUploadUrl: "/api/upload",
       });
-      setTestimonialAuthorPhoto(blob.url);
+      updateTestimonial(i, "authorPhoto", blob.url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
       setError(`Erreur lors de l'upload de la photo : ${msg}`);
     } finally {
-      setUploadingTestimonialPhoto(false);
+      setUploadingTestimonialPhotoIndex(null);
       e.target.value = "";
     }
   };
@@ -233,6 +266,25 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const removeUrgencyStep = (i: number) =>
     setUrgencySteps((prev) => prev.filter((_, idx) => idx !== i));
 
+  const handleUrgencyStepIconUpload = async (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingUrgencyIconIndex(i);
+    try {
+      const blob = await upload(buildUploadPath(`urgency-icon-${i}`, file), file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      updateUrgencyStep(i, "iconImage", blob.url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload du picto : ${msg}`);
+    } finally {
+      setUploadingUrgencyIconIndex(null);
+      e.target.value = "";
+    }
+  };
+
   // ── FAQ helpers ──
   const updateFaqItem = (i: number, field: keyof LpFaqItem, value: string) =>
     setFaqItems((prev) => prev.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
@@ -267,11 +319,26 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       urgencyExpiredText: urgencyExpiredText || undefined,
       socialProofTitle: socialProofTitle || undefined,
       socialProofLogos: socialProofLogos.length > 0 ? socialProofLogos : undefined,
-      testimonialQuote: testimonialQuote || undefined,
-      testimonialAuthorName: testimonialAuthorName || undefined,
-      testimonialAuthorCompany: testimonialAuthorCompany || undefined,
-      testimonialAuthorRole: testimonialAuthorRole || undefined,
-      testimonialAuthorPhoto: testimonialAuthorPhoto || undefined,
+      socialProofShowGoogleRating: socialProofShowGoogleRating || undefined,
+      testimonials: (() => {
+        const cleaned = testimonials
+          .filter((t) => t.quote && t.quote.trim())
+          .map((t) => ({
+            quote: t.quote.trim(),
+            authorName: t.authorName || undefined,
+            authorCompany: t.authorCompany || undefined,
+            authorRole: t.authorRole || undefined,
+            authorPhoto: t.authorPhoto || undefined,
+          }));
+        return cleaned.length > 0 ? cleaned : undefined;
+      })(),
+      // Drop the legacy single-testimonial fields so they don't shadow the new
+      // `testimonials` array on subsequent reads.
+      testimonialQuote: undefined,
+      testimonialAuthorName: undefined,
+      testimonialAuthorCompany: undefined,
+      testimonialAuthorRole: undefined,
+      testimonialAuthorPhoto: undefined,
       faqLabel: faqLabel || undefined,
       faqTitle: faqTitle || undefined,
       faqSubtitle: faqSubtitle || undefined,
@@ -617,20 +684,51 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
 
               <div>
                 <label className={labelClass}>Étapes (2 ou 3 recommandées)</label>
+                <p className="text-xs text-luxury-slate/70 -mt-1 mb-3">
+                  Numérotation par défaut. Importez un picto par étape pour remplacer le numéro (ex. fruits, icônes thématiques).
+                </p>
                 <div className="space-y-3">
                   {urgencySteps.map((step, i) => (
-                    <div key={i} className="grid grid-cols-[40px_1fr_2fr_32px] gap-2 items-start">
-                      <div className="mt-3 text-center font-serif text-2xl text-luxury-gold italic">
-                        {String(i + 1).padStart(2, "0")}
+                    <div key={i} className="border border-primary-100 p-3 bg-white">
+                      <div className="grid grid-cols-[48px_1fr_2fr_32px] gap-2 items-start">
+                        <div className="mt-2 flex items-center justify-center">
+                          {step.iconImage ? (
+                            <div className="relative h-10 w-10">
+                              <Image src={step.iconImage} alt="" fill className="object-contain" sizes="40px" />
+                            </div>
+                          ) : (
+                            <div className="text-center font-serif text-2xl text-luxury-gold italic">
+                              {String(i + 1).padStart(2, "0")}
+                            </div>
+                          )}
+                        </div>
+                        <input type="text" value={step.title}
+                          onChange={(e) => updateUrgencyStep(i, "title", e.target.value)}
+                          className={inputClass} placeholder="Titre de l'étape" />
+                        <input type="text" value={step.text}
+                          onChange={(e) => updateUrgencyStep(i, "text", e.target.value)}
+                          className={inputClass} placeholder="Description de l'étape" />
+                        <button type="button" onClick={() => removeUrgencyStep(i)}
+                          className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
                       </div>
-                      <input type="text" value={step.title}
-                        onChange={(e) => updateUrgencyStep(i, "title", e.target.value)}
-                        className={inputClass} placeholder="Titre de l'étape" />
-                      <input type="text" value={step.text}
-                        onChange={(e) => updateUrgencyStep(i, "text", e.target.value)}
-                        className={inputClass} placeholder="Description de l'étape" />
-                      <button type="button" onClick={() => removeUrgencyStep(i)}
-                        className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <label className="shrink-0 px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors cursor-pointer">
+                          {step.iconImage ? "Remplacer le picto" : "Importer un picto"}
+                          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                            onChange={(e) => handleUrgencyStepIconUpload(i, e)} className="hidden" />
+                        </label>
+                        <button type="button" onClick={() => setUrgencyIconPickerIndex(i)}
+                          className="shrink-0 px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                          Bibliothèque
+                        </button>
+                        {step.iconImage && (
+                          <button type="button" onClick={() => updateUrgencyStep(i, "iconImage", "")}
+                            className="text-xs text-red-400 hover:text-red-600">Retirer le picto</button>
+                        )}
+                        {uploadingUrgencyIconIndex === i && (
+                          <span className="text-xs text-luxury-slate">Upload en cours...</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -675,6 +773,22 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                   className={inputClass} placeholder="90+ entreprises nous font déjà confiance" />
               </div>
               <div>
+                <label className="inline-flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox"
+                    checked={socialProofShowGoogleRating}
+                    onChange={(e) => setSocialProofShowGoogleRating(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-luxury-gold cursor-pointer" />
+                  <span>
+                    <span className="block text-sm text-luxury-charcoal">
+                      Afficher la note <strong>4,8/5 Google</strong> avant les logos
+                    </span>
+                    <span className="block text-xs text-luxury-slate/70 mt-0.5">
+                      Bloc épingle avec le logo Google et les étoiles, affiché au-dessus des logos clients.
+                    </span>
+                  </span>
+                </label>
+              </div>
+              <div>
                 <label className={labelClass}>Logos clients</label>
                 {socialProofLogos.length > 0 && (
                   <div className="flex flex-wrap gap-3 mb-3">
@@ -707,71 +821,102 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
             </div>
           </section>
 
-          {/* ── Témoignage client ── */}
+          {/* ── Témoignages clients ── */}
           <section>
-            <SectionTitle>Témoignage client (optionnel)</SectionTitle>
+            <SectionTitle>Témoignages clients (optionnel)</SectionTitle>
             <p className="text-xs text-luxury-slate/70 mb-5 -mt-2">
-              La section ne s'affiche que si une citation est renseignée. Le nom, l'entreprise et l'intitulé de poste sont tous facultatifs.
+              Ajoutez un ou plusieurs témoignages. Au-delà du premier, ils défilent en mode slider (auto-rotation, flèches et bullets). Le nom, l&apos;entreprise et le poste sont facultatifs.
             </p>
-            <div className="space-y-5">
-              <div>
-                <label className={labelClass}>Citation</label>
-                <textarea value={testimonialQuote} onChange={(e) => setTestimonialQuote(e.target.value)}
-                  className={inputClass} rows={4}
-                  placeholder="Depuis qu'on a installé les équipes chez Snapdesk, on a gagné en sérénité au quotidien." />
-              </div>
-              <div>
-                <label className={labelClass}>Photo de l&apos;auteur (optionnel)</label>
-                <div className="flex items-center gap-4">
-                  {testimonialAuthorPhoto ? (
-                    <div className="relative h-16 w-16 rounded-full overflow-hidden border border-primary-200 shrink-0">
-                      <Image src={testimonialAuthorPhoto} alt="" fill className="object-cover" sizes="64px" />
+
+            <div className="space-y-4">
+              {testimonials.map((t, i) => (
+                <div key={i} className="border border-primary-100 p-4 bg-white space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase tracking-[0.15em] text-luxury-slate/70">
+                      Témoignage {i + 1}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => moveTestimonial(i, -1)}
+                        disabled={i === 0}
+                        aria-label="Déplacer vers le haut"
+                        className="w-7 h-7 border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">↑</button>
+                      <button type="button" onClick={() => moveTestimonial(i, 1)}
+                        disabled={i === testimonials.length - 1}
+                        aria-label="Déplacer vers le bas"
+                        className="w-7 h-7 border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">↓</button>
+                      <button type="button" onClick={() => removeTestimonial(i)}
+                        aria-label="Supprimer le témoignage"
+                        className="w-7 h-7 border border-red-200 text-red-500 hover:bg-red-50 transition-colors">×</button>
                     </div>
-                  ) : (
-                    <div className="h-16 w-16 rounded-full border border-dashed border-primary-200 bg-primary-50 shrink-0" />
-                  )}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors cursor-pointer">
-                      {testimonialAuthorPhoto ? "Remplacer" : "Importer"}
-                      <input type="file" accept="image/png,image/jpeg,image/webp"
-                        onChange={handleTestimonialPhotoUpload} className="hidden" />
-                    </label>
-                    <button type="button" onClick={() => setPickerOpen("testimonial-photo")}
-                      className="px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
-                      Bibliothèque
-                    </button>
-                    {testimonialAuthorPhoto && (
-                      <button type="button" onClick={() => setTestimonialAuthorPhoto("")}
-                        className="text-xs text-red-400 hover:text-red-600">Retirer</button>
-                    )}
-                    {uploadingTestimonialPhoto && (
-                      <span className="text-xs text-luxury-slate">Upload en cours...</span>
-                    )}
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Citation</label>
+                    <textarea value={t.quote}
+                      onChange={(e) => updateTestimonial(i, "quote", e.target.value)}
+                      className={inputClass} rows={4}
+                      placeholder="Depuis qu'on a installé les équipes chez Snapdesk, on a gagné en sérénité au quotidien." />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Photo de l&apos;auteur (optionnel)</label>
+                    <div className="flex items-center gap-4">
+                      {t.authorPhoto ? (
+                        <div className="relative h-16 w-16 rounded-full overflow-hidden border border-primary-200 shrink-0">
+                          <Image src={t.authorPhoto} alt="" fill className="object-cover" sizes="64px" />
+                        </div>
+                      ) : (
+                        <div className="h-16 w-16 rounded-full border border-dashed border-primary-200 bg-primary-50 shrink-0" />
+                      )}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors cursor-pointer">
+                          {t.authorPhoto ? "Remplacer" : "Importer"}
+                          <input type="file" accept="image/png,image/jpeg,image/webp"
+                            onChange={(e) => handleTestimonialPhotoUpload(i, e)} className="hidden" />
+                        </label>
+                        <button type="button" onClick={() => setTestimonialPhotoPickerIndex(i)}
+                          className="px-3 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                          Bibliothèque
+                        </button>
+                        {t.authorPhoto && (
+                          <button type="button" onClick={() => updateTestimonial(i, "authorPhoto", "")}
+                            className="text-xs text-red-400 hover:text-red-600">Retirer</button>
+                        )}
+                        {uploadingTestimonialPhotoIndex === i && (
+                          <span className="text-xs text-luxury-slate">Upload en cours...</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClass}>Nom du client</label>
+                      <input type="text" value={t.authorName || ""}
+                        onChange={(e) => updateTestimonial(i, "authorName", e.target.value)}
+                        className={inputClass} placeholder="Marie Dupont" />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Intitulé de poste</label>
+                      <input type="text" value={t.authorRole || ""}
+                        onChange={(e) => updateTestimonial(i, "authorRole", e.target.value)}
+                        className={inputClass} placeholder="Office Manager" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Entreprise</label>
+                    <input type="text" value={t.authorCompany || ""}
+                      onChange={(e) => updateTestimonial(i, "authorCompany", e.target.value)}
+                      className={inputClass} placeholder="Acme Corp" />
                   </div>
                 </div>
-                <p className="text-xs text-luxury-slate/60 mt-2">Affichée en cercle au-dessus de la citation. Format carré recommandé.</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Nom du client</label>
-                  <input type="text" value={testimonialAuthorName}
-                    onChange={(e) => setTestimonialAuthorName(e.target.value)}
-                    className={inputClass} placeholder="Marie Dupont" />
-                </div>
-                <div>
-                  <label className={labelClass}>Intitulé de poste</label>
-                  <input type="text" value={testimonialAuthorRole}
-                    onChange={(e) => setTestimonialAuthorRole(e.target.value)}
-                    className={inputClass} placeholder="Office Manager" />
-                </div>
-              </div>
-              <div>
-                <label className={labelClass}>Entreprise</label>
-                <input type="text" value={testimonialAuthorCompany}
-                  onChange={(e) => setTestimonialAuthorCompany(e.target.value)}
-                  className={inputClass} placeholder="Acme Corp" />
-              </div>
+              ))}
             </div>
+
+            <button type="button" onClick={addTestimonial}
+              className="mt-4 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
+              + Ajouter un témoignage
+            </button>
           </section>
 
           {/* ── FAQ ── */}
@@ -874,8 +1019,6 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
           } else if (pickerOpen === "logo") {
             const alt = asset.pathname.split("/").pop()?.replace(/\.[^.]+$/, "") || "";
             setSocialProofLogos((prev) => [...prev, { url: asset.url, alt }]);
-          } else if (pickerOpen === "testimonial-photo") {
-            setTestimonialAuthorPhoto(asset.url);
           } else if (pickerOpen === "mission-photo") {
             setMissionPhotos((prev) => [...prev, asset.url]);
           }
@@ -892,6 +1035,30 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
             updateCard(iconPickerIndex, "iconImage", asset.url);
           }
           setIconPickerIndex(null);
+        }}
+      />
+
+      <AssetPicker
+        open={testimonialPhotoPickerIndex !== null}
+        kind="image"
+        onClose={() => setTestimonialPhotoPickerIndex(null)}
+        onSelect={(asset) => {
+          if (testimonialPhotoPickerIndex !== null) {
+            updateTestimonial(testimonialPhotoPickerIndex, "authorPhoto", asset.url);
+          }
+          setTestimonialPhotoPickerIndex(null);
+        }}
+      />
+
+      <AssetPicker
+        open={urgencyIconPickerIndex !== null}
+        kind="image"
+        onClose={() => setUrgencyIconPickerIndex(null)}
+        onSelect={(asset) => {
+          if (urgencyIconPickerIndex !== null) {
+            updateUrgencyStep(urgencyIconPickerIndex, "iconImage", asset.url);
+          }
+          setUrgencyIconPickerIndex(null);
         }}
       />
     </main>

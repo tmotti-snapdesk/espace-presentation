@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
-import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep } from "@/types/lp";
+import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep, LpFaqItem } from "@/types/lp";
 import Image from "next/image";
 import AssetPicker from "@/components/admin/AssetPicker";
 
@@ -60,6 +60,12 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [socialProofLogos, setSocialProofLogos] = useState<LpLogo[]>(
     initialData?.socialProofLogos || []
   );
+
+  // ── FAQ ──
+  const [faqLabel, setFaqLabel] = useState(initialData?.faqLabel || "");
+  const [faqTitle, setFaqTitle] = useState(initialData?.faqTitle || "");
+  const [faqSubtitle, setFaqSubtitle] = useState(initialData?.faqSubtitle || "");
+  const [faqItems, setFaqItems] = useState<LpFaqItem[]>(initialData?.faqItems || []);
 
   // ── Témoignage client ──
   const [testimonialQuote, setTestimonialQuote] = useState(initialData?.testimonialQuote || "");
@@ -174,6 +180,14 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const removeStep = (i: number) =>
     setProcessSteps((prev) => prev.filter((_, idx) => idx !== i));
 
+  // ── FAQ helpers ──
+  const updateFaqItem = (i: number, field: keyof LpFaqItem, value: string) =>
+    setFaqItems((prev) => prev.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
+  const addFaqItem = () =>
+    setFaqItems((prev) => [...prev, { question: "", answer: "" }]);
+  const removeFaqItem = (i: number) =>
+    setFaqItems((prev) => prev.filter((_, idx) => idx !== i));
+
   // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +212,10 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       testimonialAuthorCompany: testimonialAuthorCompany || undefined,
       testimonialAuthorRole: testimonialAuthorRole || undefined,
       testimonialAuthorPhoto: testimonialAuthorPhoto || undefined,
+      faqLabel: faqLabel || undefined,
+      faqTitle: faqTitle || undefined,
+      faqSubtitle: faqSubtitle || undefined,
+      faqItems: faqItems.filter((it) => it.question),
       formTitle: formTitle || undefined,
       formLabel: formLabel || undefined,
       formCtaText: formCtaText || undefined,
@@ -577,6 +595,56 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 <input type="text" value={testimonialAuthorCompany}
                   onChange={(e) => setTestimonialAuthorCompany(e.target.value)}
                   className={inputClass} placeholder="Acme Corp" />
+              </div>
+            </div>
+          </section>
+
+          {/* ── FAQ ── */}
+          <section>
+            <SectionTitle>FAQ (optionnel)</SectionTitle>
+            <p className="text-xs text-luxury-slate/70 mb-5 -mt-2">
+              Section accordéon affichée juste avant le formulaire. Idéale pour répondre aux objections (engagement, délai, prix...). Masquée tant qu&apos;aucune question n&apos;est ajoutée.
+            </p>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Label (texte au-dessus du titre)</label>
+                <input type="text" value={faqLabel} onChange={(e) => setFaqLabel(e.target.value)}
+                  className={inputClass} placeholder="Vos questions" />
+              </div>
+              <div>
+                <label className={labelClass}>Titre de section</label>
+                <input type="text" value={faqTitle} onChange={(e) => setFaqTitle(e.target.value)}
+                  className={inputClass} placeholder="Vous vous demandez peut-être..." />
+              </div>
+              <div>
+                <label className={labelClass}>Sous-titre</label>
+                <textarea value={faqSubtitle} onChange={(e) => setFaqSubtitle(e.target.value)}
+                  className={inputClass} rows={2}
+                  placeholder="Tout ce qu'il faut savoir avant de vous lancer." />
+              </div>
+
+              <div>
+                <label className={labelClass}>Questions / réponses</label>
+                <div className="space-y-3">
+                  {faqItems.map((item, i) => (
+                    <div key={i} className="border border-primary-100 p-3 bg-white">
+                      <div className="grid grid-cols-[1fr_32px] gap-2 items-start">
+                        <input type="text" value={item.question}
+                          onChange={(e) => updateFaqItem(i, "question", e.target.value)}
+                          className={inputClass} placeholder="Question" />
+                        <button type="button" onClick={() => removeFaqItem(i)}
+                          className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                      </div>
+                      <textarea value={item.answer}
+                        onChange={(e) => updateFaqItem(i, "answer", e.target.value)}
+                        className={`${inputClass} mt-2`} rows={3} placeholder="Réponse" />
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addFaqItem}
+                  className="mt-3 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
+                  + Ajouter une question
+                </button>
               </div>
             </div>
           </section>

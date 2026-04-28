@@ -20,6 +20,11 @@ export interface LpProcessStep {
   text: string;
 }
 
+export interface LpFaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface LandingPageData {
   slug: string;
   internalTitle: string;  // shown only in admin (e.g. "Campagne Office Manager Q2")
@@ -53,6 +58,12 @@ export interface LandingPageData {
   testimonialAuthorCompany?: string;
   testimonialAuthorRole?: string;
   testimonialAuthorPhoto?: string;   // Blob URL of the author's portrait
+
+  // ── FAQ (optional, displayed just before the form) ────────────────────────
+  faqLabel?: string;
+  faqTitle?: string;
+  faqSubtitle?: string;
+  faqItems?: LpFaqItem[];
 
   // ── Form (Step 4) ─────────────────────────────────────────────────────────
   formTitle?: string;

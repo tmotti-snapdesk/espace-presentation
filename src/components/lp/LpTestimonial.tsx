@@ -29,24 +29,6 @@ export default function LpTestimonial({
   return (
     <section className="bg-white section-padding">
       <div className="max-w-3xl mx-auto text-center">
-        {authorPhoto && (
-          <motion.div
-            className="relative w-20 h-20 md:w-24 md:h-24 mx-auto mb-8 rounded-full overflow-hidden ring-1 ring-luxury-gold/40"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Image
-              src={authorPhoto}
-              alt={authorName || ""}
-              fill
-              className="object-cover"
-              sizes="(min-width: 768px) 96px, 80px"
-            />
-          </motion.div>
-        )}
-
         <div
           aria-hidden
           className="font-serif text-4xl md:text-5xl text-luxury-gold leading-none mb-4"
@@ -69,6 +51,24 @@ export default function LpTestimonial({
             <div className="luxury-divider mx-auto mt-8 mb-5" />
             <p className="luxury-label text-luxury-slate">{attribution}</p>
           </>
+        )}
+
+        {authorPhoto && (
+          <motion.div
+            className="relative w-20 h-20 md:w-24 md:h-24 mx-auto mt-6 rounded-full overflow-hidden ring-1 ring-luxury-gold/40"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Image
+              src={authorPhoto}
+              alt={authorName || ""}
+              fill
+              className="object-cover"
+              sizes="(min-width: 768px) 96px, 80px"
+            />
+          </motion.div>
         )}
       </div>
     </section>

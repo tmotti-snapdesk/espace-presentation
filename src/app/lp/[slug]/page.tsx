@@ -7,6 +7,9 @@ import LpMission from "@/components/lp/LpMission";
 import LpProcess from "@/components/lp/LpProcess";
 import LpSocialProof from "@/components/lp/LpSocialProof";
 import LpTestimonial from "@/components/lp/LpTestimonial";
+import LpFaq from "@/components/lp/LpFaq";
+import LpAnchorCta from "@/components/lp/LpAnchorCta";
+import LpStickyCta from "@/components/lp/LpStickyCta";
 import LpLeadForm from "@/components/lp/LpLeadForm";
 
 export const revalidate = 3600;
@@ -39,6 +42,20 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
   const lp = await resolveLp(params.slug);
   if (!lp) notFound();
 
+  const ctaText = lp.heroCtaText || "Je m'inscris";
+
+  // Mirror each section's own visibility predicate so we don't render an
+  // anchor CTA hanging in a vacuum after a section that didn't render.
+  const missionVisible = !!(
+    lp.missionLabel || lp.missionTitle || lp.missionSubtitle ||
+    (lp.missionCards && lp.missionCards.length > 0)
+  );
+  const processVisible = !!(
+    lp.processLabel || lp.processTitle || lp.processSubtitle ||
+    (lp.processSteps && lp.processSteps.length > 0)
+  );
+  const testimonialVisible = !!lp.testimonialQuote;
+
   return (
     <main>
       <LpHero
@@ -54,6 +71,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         subtitle={lp.missionSubtitle}
         cards={lp.missionCards}
       />
+      {missionVisible && <LpAnchorCta text={ctaText} />}
 
       <LpProcess
         label={lp.processLabel}
@@ -61,6 +79,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         subtitle={lp.processSubtitle}
         steps={lp.processSteps}
       />
+      {processVisible && <LpAnchorCta text={ctaText} />}
 
       <LpSocialProof
         title={lp.socialProofTitle}
@@ -74,6 +93,14 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         authorRole={lp.testimonialAuthorRole}
         authorPhoto={lp.testimonialAuthorPhoto}
       />
+      {testimonialVisible && <LpAnchorCta text={ctaText} />}
+
+      <LpFaq
+        label={lp.faqLabel}
+        title={lp.faqTitle}
+        subtitle={lp.faqSubtitle}
+        items={lp.faqItems}
+      />
 
       <LpLeadForm
         title={lp.formTitle}
@@ -83,6 +110,8 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         lpSlug={lp.slug}
         lpTitle={lp.heroTitle || lp.internalTitle}
       />
+
+      <LpStickyCta text={ctaText} />
     </main>
   );
 }

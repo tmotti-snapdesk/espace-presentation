@@ -95,13 +95,6 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         logos={lp.socialProofLogos}
       />
 
-      <LpFaq
-        label={lp.faqLabel}
-        title={lp.faqTitle}
-        subtitle={lp.faqSubtitle}
-        items={lp.faqItems}
-      />
-
       <LpLeadForm
         title={lp.formTitle}
         label={lp.formLabel}
@@ -109,6 +102,13 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         hubspotFormId={lp.formHubspotFormId}
         lpSlug={lp.slug}
         lpTitle={lp.heroTitle || lp.internalTitle}
+      />
+
+      <LpFaq
+        label={lp.faqLabel}
+        title={lp.faqTitle}
+        subtitle={lp.faqSubtitle}
+        items={lp.faqItems}
       />
 
       <LpStickyCta text={ctaText} />

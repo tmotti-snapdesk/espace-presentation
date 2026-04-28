@@ -5,6 +5,7 @@ import { LandingPageData } from "@/types/lp";
 import LpHero from "@/components/lp/LpHero";
 import LpMission from "@/components/lp/LpMission";
 import LpProcess from "@/components/lp/LpProcess";
+import LpUrgency from "@/components/lp/LpUrgency";
 import LpSocialProof from "@/components/lp/LpSocialProof";
 import LpTestimonial from "@/components/lp/LpTestimonial";
 import LpFaq from "@/components/lp/LpFaq";
@@ -89,6 +90,15 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
       <LpSocialProof
         title={lp.socialProofTitle}
         logos={lp.socialProofLogos}
+      />
+
+      <LpUrgency
+        label={lp.urgencyLabel}
+        title={lp.urgencyTitle}
+        subtitle={lp.urgencySubtitle}
+        steps={lp.urgencySteps}
+        deadline={lp.urgencyDeadline}
+        expiredText={lp.urgencyExpiredText}
       />
 
       <LpLeadForm

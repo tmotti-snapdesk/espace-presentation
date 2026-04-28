@@ -57,6 +57,20 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     initialData?.processSteps || []
   );
 
+  // ── Urgency (steps + countdown) ──
+  const [urgencyLabel, setUrgencyLabel] = useState(initialData?.urgencyLabel || "");
+  const [urgencyTitle, setUrgencyTitle] = useState(initialData?.urgencyTitle || "");
+  const [urgencySubtitle, setUrgencySubtitle] = useState(initialData?.urgencySubtitle || "");
+  const [urgencySteps, setUrgencySteps] = useState<LpProcessStep[]>(
+    initialData?.urgencySteps || []
+  );
+  // The form binds to the local "YYYY-MM-DDTHH:mm" representation expected by
+  // <input type="datetime-local">; we serialise to a full ISO string on submit.
+  const [urgencyDeadline, setUrgencyDeadline] = useState(
+    initialData?.urgencyDeadline ? toLocalDatetimeInput(initialData.urgencyDeadline) : ""
+  );
+  const [urgencyExpiredText, setUrgencyExpiredText] = useState(initialData?.urgencyExpiredText || "");
+
   // ── Social proof ──
   const [socialProofTitle, setSocialProofTitle] = useState(initialData?.socialProofTitle || "");
   const [socialProofLogos, setSocialProofLogos] = useState<LpLogo[]>(
@@ -211,6 +225,14 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const removeStep = (i: number) =>
     setProcessSteps((prev) => prev.filter((_, idx) => idx !== i));
 
+  // ── Urgency steps helpers ──
+  const updateUrgencyStep = (i: number, field: keyof LpProcessStep, value: string) =>
+    setUrgencySteps((prev) => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
+  const addUrgencyStep = () =>
+    setUrgencySteps((prev) => [...prev, { title: "", text: "" }]);
+  const removeUrgencyStep = (i: number) =>
+    setUrgencySteps((prev) => prev.filter((_, idx) => idx !== i));
+
   // ── FAQ helpers ──
   const updateFaqItem = (i: number, field: keyof LpFaqItem, value: string) =>
     setFaqItems((prev) => prev.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
@@ -237,6 +259,12 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       processTitle: processTitle || undefined,
       processSubtitle: processSubtitle || undefined,
       processSteps: processSteps.filter((s) => s.title || s.text),
+      urgencyLabel: urgencyLabel || undefined,
+      urgencyTitle: urgencyTitle || undefined,
+      urgencySubtitle: urgencySubtitle || undefined,
+      urgencySteps: urgencySteps.filter((s) => s.title || s.text),
+      urgencyDeadline: urgencyDeadline ? new Date(urgencyDeadline).toISOString() : undefined,
+      urgencyExpiredText: urgencyExpiredText || undefined,
       socialProofTitle: socialProofTitle || undefined,
       socialProofLogos: socialProofLogos.length > 0 ? socialProofLogos : undefined,
       testimonialQuote: testimonialQuote || undefined,
@@ -563,6 +591,79 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
             </div>
           </section>
 
+          {/* ── Urgence (étapes + compte à rebours) ── */}
+          <section>
+            <SectionTitle>Urgence + compte à rebours (optionnel)</SectionTitle>
+            <p className="text-xs text-luxury-slate/70 mb-5 -mt-2">
+              Bloc affiché juste avant le formulaire pour créer de l&apos;urgence : étapes courtes à gauche, compteur jusqu&apos;à une date à droite. Ne s&apos;affiche que si au moins un champ est renseigné.
+            </p>
+            <div className="space-y-5">
+              <div>
+                <label className={labelClass}>Label (texte au-dessus du titre)</label>
+                <input type="text" value={urgencyLabel} onChange={(e) => setUrgencyLabel(e.target.value)}
+                  className={inputClass} placeholder="Offre limitée" />
+              </div>
+              <div>
+                <label className={labelClass}>Titre de section</label>
+                <input type="text" value={urgencyTitle} onChange={(e) => setUrgencyTitle(e.target.value)}
+                  className={inputClass} placeholder="Ne laissez pas passer cette opportunité" />
+              </div>
+              <div>
+                <label className={labelClass}>Sous-titre</label>
+                <textarea value={urgencySubtitle} onChange={(e) => setUrgencySubtitle(e.target.value)}
+                  className={inputClass} rows={2}
+                  placeholder="Inscrivez votre équipe avant la fin de l'offre pour profiter du tarif." />
+              </div>
+
+              <div>
+                <label className={labelClass}>Étapes (2 ou 3 recommandées)</label>
+                <div className="space-y-3">
+                  {urgencySteps.map((step, i) => (
+                    <div key={i} className="grid grid-cols-[40px_1fr_2fr_32px] gap-2 items-start">
+                      <div className="mt-3 text-center font-serif text-2xl text-luxury-gold italic">
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+                      <input type="text" value={step.title}
+                        onChange={(e) => updateUrgencyStep(i, "title", e.target.value)}
+                        className={inputClass} placeholder="Titre de l'étape" />
+                      <input type="text" value={step.text}
+                        onChange={(e) => updateUrgencyStep(i, "text", e.target.value)}
+                        className={inputClass} placeholder="Description de l'étape" />
+                      <button type="button" onClick={() => removeUrgencyStep(i)}
+                        className="mt-3 text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addUrgencyStep}
+                  className="mt-3 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
+                  + Ajouter une étape
+                </button>
+              </div>
+
+              <div>
+                <label className={labelClass}>Date & heure de fin (compte à rebours)</label>
+                <div className="flex items-center gap-3">
+                  <input type="datetime-local" value={urgencyDeadline}
+                    onChange={(e) => setUrgencyDeadline(e.target.value)}
+                    className={inputClass} />
+                  {urgencyDeadline && (
+                    <button type="button" onClick={() => setUrgencyDeadline("")}
+                      className="shrink-0 text-xs text-red-400 hover:text-red-600">Effacer</button>
+                  )}
+                </div>
+                <p className="text-xs text-luxury-slate/60 mt-1">
+                  Le compteur affiche jours / heures / minutes / secondes restants. Heure locale du visiteur convertie depuis cette date.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Message une fois la date dépassée (optionnel)</label>
+                <input type="text" value={urgencyExpiredText} onChange={(e) => setUrgencyExpiredText(e.target.value)}
+                  className={inputClass} placeholder="L'offre est terminée" />
+              </div>
+            </div>
+          </section>
+
           {/* ── Social proof ── */}
           <section>
             <SectionTitle>Social proof</SectionTitle>
@@ -795,6 +896,16 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       />
     </main>
   );
+}
+
+// `<input type="datetime-local">` only accepts the local "YYYY-MM-DDTHH:mm"
+// format, but we persist the deadline as a full ISO string. This converts an
+// ISO string back to the local-time representation the input expects.
+function toLocalDatetimeInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {

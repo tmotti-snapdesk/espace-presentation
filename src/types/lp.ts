@@ -49,6 +49,15 @@ export interface LandingPageData {
   processSubtitle?: string;
   processSteps?: LpProcessStep[];
 
+  // ── Urgency (optional, displayed before the lead form to drive conversion)
+  // Steps on the left, countdown ticking down to `urgencyDeadline` on the right.
+  urgencyLabel?: string;
+  urgencyTitle?: string;
+  urgencySubtitle?: string;
+  urgencySteps?: LpProcessStep[];
+  urgencyDeadline?: string;   // ISO datetime, e.g. "2026-06-30T23:59:00+02:00"
+  urgencyExpiredText?: string; // shown once the deadline is past
+
   // ── Social proof (Step 3) ─────────────────────────────────────────────────
   socialProofTitle?: string;
   socialProofLogos?: LpLogo[];

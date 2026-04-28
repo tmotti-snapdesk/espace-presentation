@@ -9,7 +9,7 @@ interface LpMissionCarouselProps {
   intervalMs?: number;
 }
 
-export default function LpMissionCarousel({ photos, intervalMs = 4000 }: LpMissionCarouselProps) {
+export default function LpMissionCarousel({ photos, intervalMs = 2500 }: LpMissionCarouselProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 

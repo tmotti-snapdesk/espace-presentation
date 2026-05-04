@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       urgencyExpiredText: body.urgencyExpiredText,
       socialProofTitle: body.socialProofTitle,
       socialProofLogos: body.socialProofLogos,
+      socialProofShowGoogleRating: body.socialProofShowGoogleRating,
+      testimonials: body.testimonials,
       testimonialQuote: body.testimonialQuote,
       testimonialAuthorName: body.testimonialAuthorName,
       testimonialAuthorCompany: body.testimonialAuthorCompany,

@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing ?id=<formGuid>" }, { status: 400 });
   }
 
-  const token = process.env.HUBSPOT_PRIVATE_APP_TOKEN;
+  const token = process.env.HUBSPOT_ACCESS_TOKEN || process.env.HUBSPOT_PRIVATE_APP_TOKEN;
   if (!token) {
     return NextResponse.json({
       tokenPresent: false,
-      message: "HUBSPOT_PRIVATE_APP_TOKEN missing in env. Add it in Vercel and redeploy.",
+      message: "HUBSPOT_ACCESS_TOKEN missing in env. Add it in Vercel and redeploy.",
     });
   }
 

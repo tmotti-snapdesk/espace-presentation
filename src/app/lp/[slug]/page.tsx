@@ -12,6 +12,7 @@ import LpFaq from "@/components/lp/LpFaq";
 import LpAnchorCta from "@/components/lp/LpAnchorCta";
 import LpStickyCta from "@/components/lp/LpStickyCta";
 import LpLeadForm from "@/components/lp/LpLeadForm";
+import { fetchHubspotFormFields } from "@/lib/hubspotFormSync";
 
 export const revalidate = 3600;
 
@@ -44,6 +45,15 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
   if (!lp) notFound();
 
   const ctaText = lp.heroCtaText || "Je m'inscris";
+
+  // Resolve which fields the lead form should display, in priority order:
+  //  1. Manual override saved in the LP admin (`lp.formFields`)
+  //  2. Auto-sync from the HubSpot form schema (when a GUID is set)
+  //  3. The legacy 7-field default (handled inside LpLeadForm)
+  let formFields = lp.formFields;
+  if ((!formFields || formFields.length === 0) && lp.formHubspotFormId) {
+    formFields = (await fetchHubspotFormFields(lp.formHubspotFormId)) || undefined;
+  }
 
   // Prefer the new `testimonials` array; fall back to the legacy single-item
   // fields so LPs saved before the slider was introduced still render.
@@ -115,7 +125,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         label={lp.formLabel}
         ctaText={lp.formCtaText}
         hubspotFormId={lp.formHubspotFormId}
-        fields={lp.formFields}
+        fields={formFields}
         lpSlug={lp.slug}
         lpTitle={lp.heroTitle || lp.internalTitle}
       />

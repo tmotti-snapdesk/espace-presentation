@@ -1027,17 +1027,24 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
 
               {/* ── Champs personnalisés ── */}
               <div className="pt-4 border-t border-primary-200">
-                <label className={labelClass}>
-                  Champs du formulaire{" "}
-                  <span className="text-luxury-slate/60 normal-case tracking-normal">
-                    (laissez vide pour utiliser les 7 champs par défaut)
-                  </span>
-                </label>
+                <label className={labelClass}>Champs du formulaire</label>
+
+                <div className="mb-4 p-3 bg-luxury-cream border border-primary-200 text-xs text-luxury-charcoal/80 leading-relaxed">
+                  <strong className="text-luxury-charcoal">Ordre de priorité :</strong>
+                  <ol className="list-decimal list-inside mt-1 space-y-0.5">
+                    <li>Si tu listes des champs ci-dessous → ils sont utilisés tels quels (override manuel).</li>
+                    <li>
+                      Sinon, si un <em>HubSpot Form GUID</em> est rempli ci-dessus → les champs sont{" "}
+                      <strong>importés automatiquement depuis HubSpot</strong>{" "}
+                      (sync toutes les heures, design de la LP appliqué).
+                    </li>
+                    <li>Sinon → formulaire par défaut (Prénom, Nom, Email, Entreprise, Adresse, Effectif, Projet).</li>
+                  </ol>
+                </div>
 
                 {formFields.length === 0 ? (
                   <p className="text-xs text-luxury-slate/60 mb-3">
-                    Aucun champ personnalisé — le formulaire par défaut (Prénom, Nom, Email,
-                    Entreprise, Adresse, Effectif, Projet) sera utilisé.
+                    Aucun champ manuel — la sync HubSpot ou le formulaire par défaut sera utilisé.
                   </p>
                 ) : (
                   <div className="space-y-3">

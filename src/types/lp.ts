@@ -26,6 +26,23 @@ export interface LpFaqItem {
   answer: string;
 }
 
+export type LpFormFieldType = "text" | "email" | "tel" | "date" | "textarea" | "select" | "checkbox";
+
+export interface LpFormField {
+  // HubSpot internal name (e.g. "email", "firstname", "phone").
+  // Picked from the catalog or "custom" then `customName` is used.
+  hubspotName: string;
+  label: string;            // placeholder / label visible to the visitor
+  type: LpFormFieldType;
+  required?: boolean;
+  options?: string[];       // for `select`
+  halfWidth?: boolean;      // when true, sits in a 2-column grid with its neighbour
+  // When set on a `select` field, the value starting with "Oui" flips
+  // HubSpot's `declare_etre_en_recherche` boolean to true (legacy mapping
+  // for the "projet_de_bureau" field).
+  mapToSearchingForOffice?: boolean;
+}
+
 export interface LpTestimonialItem {
   quote: string;
   authorName?: string;
@@ -94,4 +111,7 @@ export interface LandingPageData {
   formLabel?: string;
   formCtaText?: string;
   formHubspotFormId?: string;   // GUID of the HubSpot form for this campaign
+  // When set and non-empty, replaces the legacy 7-field form with a fully
+  // configurable list of fields (preserves back-compat for older LPs).
+  formFields?: LpFormField[];
 }

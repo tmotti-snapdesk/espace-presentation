@@ -4,26 +4,53 @@ import { put, list } from "@vercel/blob";
 const HUBSPOT_PORTAL_ID = "5180714";
 const HUBSPOT_FORM_GUID_DEFAULT = "f07c5055-a3de-47d1-a1ae-5aced914d0ec";
 
+interface IncomingField {
+  name: string;
+  value: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.email || !body.project) {
-      return NextResponse.json(
-        { error: "Email et projet de bureau requis" },
-        { status: 400 }
-      );
+    // Two payload shapes are accepted for back-compat:
+    //  - new: { fields: [{ name, value }], searchingForOffice, ... }
+    //  - legacy: { email, firstname, ..., project, searchingForOffice, ... }
+    // We normalise to a single `fields` array forwarded to HubSpot.
+    const incomingFields: IncomingField[] = Array.isArray(body.fields)
+      ? body.fields
+          .filter((f: unknown): f is IncomingField =>
+            !!f && typeof f === "object" &&
+            typeof (f as IncomingField).name === "string" &&
+            (f as IncomingField).name.length > 0 &&
+            typeof (f as IncomingField).value === "string"
+          )
+          .map((f: IncomingField) => ({ name: f.name, value: f.value }))
+      : [
+          ...(body.email     ? [{ name: "email",            value: String(body.email) }]            : []),
+          ...(body.firstname ? [{ name: "firstname",        value: String(body.firstname) }]        : []),
+          ...(body.lastname  ? [{ name: "lastname",         value: String(body.lastname) }]         : []),
+          ...(body.company   ? [{ name: "company",          value: String(body.company) }]          : []),
+          ...(body.address   ? [{ name: "address",          value: String(body.address) }]          : []),
+          ...(body.headcount ? [{ name: "nombre_de_postes", value: String(body.headcount) }]        : []),
+          ...(body.project   ? [{ name: "projet_de_bureau", value: String(body.project) }]          : []),
+        ];
+
+    const emailField = incomingFields.find((f) => f.name === "email");
+    if (!emailField || !emailField.value) {
+      return NextResponse.json({ error: "Email requis" }, { status: 400 });
     }
 
+    const searchingForOffice = Boolean(body.searchingForOffice);
+
+    // Build a flat object for the Blob backup so historical leads stay
+    // browsable even when their field set varies between LPs.
+    const fieldsRecord: Record<string, string> = Object.fromEntries(
+      incomingFields.map((f) => [f.name, f.value])
+    );
     const lead = {
-      email: body.email,
-      company: body.company,
-      firstname: body.firstname || "",
-      lastname: body.lastname || "",
-      address: body.address || "",
-      headcount: body.headcount || "",
-      project: body.project || "",
-      searchingForOffice: body.searchingForOffice || false,
+      ...fieldsRecord,
+      searchingForOffice,
       espaceName: body.espaceName || "",
       espaceSlug: body.espaceSlug || "",
       source: body.source || "",
@@ -32,14 +59,13 @@ export async function POST(request: NextRequest) {
     };
 
     // 1. Save to Vercel Blob (backup)
-    const filename = `leads/${lead.espaceSlug}-${Date.now()}.json`;
+    const filename = `leads/${lead.espaceSlug || "unknown"}-${Date.now()}.json`;
     await put(filename, JSON.stringify(lead, null, 2), {
       access: "public",
       contentType: "application/json",
     });
 
     // 2. Submit to HubSpot Form
-    // LP campaigns can pass their own form GUID via body.hubspotFormId
     const formGuid = body.hubspotFormId || HUBSPOT_FORM_GUID_DEFAULT;
     try {
       const hubspotRes = await fetch(
@@ -49,14 +75,8 @@ export async function POST(request: NextRequest) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             fields: [
-              { name: "email", value: lead.email },
-              ...(lead.company ? [{ name: "company", value: lead.company }] : []),
-              ...(lead.firstname ? [{ name: "firstname", value: lead.firstname }] : []),
-              ...(lead.lastname ? [{ name: "lastname", value: lead.lastname }] : []),
-              ...(lead.address ? [{ name: "address", value: lead.address }] : []),
-              ...(lead.headcount ? [{ name: "nombre_de_postes", value: lead.headcount }] : []),
-              ...(lead.project ? [{ name: "projet_de_bureau", value: lead.project }] : []),
-              { name: "declare_etre_en_recherche", value: lead.searchingForOffice ? "true" : "false" },
+              ...incomingFields,
+              { name: "declare_etre_en_recherche", value: searchingForOffice ? "true" : "false" },
             ],
             context: {
               pageUri: lead.source,

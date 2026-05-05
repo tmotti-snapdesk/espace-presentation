@@ -115,6 +115,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         label={lp.formLabel}
         ctaText={lp.formCtaText}
         hubspotFormId={lp.formHubspotFormId}
+        fields={lp.formFields}
         lpSlug={lp.slug}
         lpTitle={lp.heroTitle || lp.internalTitle}
       />

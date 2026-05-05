@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       formLabel: body.formLabel,
       formCtaText: body.formCtaText,
       formHubspotFormId: body.formHubspotFormId,
+      formFields: body.formFields,
       createdAt: new Date().toISOString(),
     };
 

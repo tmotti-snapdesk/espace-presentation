@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
-import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep, LpFaqItem, LpTestimonialItem } from "@/types/lp";
+import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep, LpFaqItem, LpTestimonialItem, LpFormField, LpFormFieldType } from "@/types/lp";
+import {
+  HUBSPOT_FIELD_PRESETS,
+  CUSTOM_PRESET_VALUE,
+  findPreset,
+  makeFieldFromPreset,
+} from "@/lib/hubspotFieldCatalog";
 import Image from "next/image";
 import AssetPicker from "@/components/admin/AssetPicker";
 
@@ -113,6 +119,26 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [formLabel, setFormLabel] = useState(initialData?.formLabel || "");
   const [formCtaText, setFormCtaText] = useState(initialData?.formCtaText || "Envoyer ma demande");
   const [formHubspotFormId, setFormHubspotFormId] = useState(initialData?.formHubspotFormId || "");
+  const [formFields, setFormFields] = useState<LpFormField[]>(initialData?.formFields || []);
+
+  const updateField = (index: number, patch: Partial<LpFormField>) => {
+    setFormFields((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+  };
+  const addField = () => {
+    setFormFields((prev) => [...prev, makeFieldFromPreset(HUBSPOT_FIELD_PRESETS[0])]);
+  };
+  const removeField = (index: number) => {
+    setFormFields((prev) => prev.filter((_, i) => i !== index));
+  };
+  const moveField = (index: number, direction: -1 | 1) => {
+    setFormFields((prev) => {
+      const next = [...prev];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
 
   const set = (key: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -347,6 +373,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       formLabel: formLabel || undefined,
       formCtaText: formCtaText || undefined,
       formHubspotFormId: formHubspotFormId || undefined,
+      formFields: formFields.length > 0 ? formFields : undefined,
     };
 
     try {
@@ -996,6 +1023,177 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 <input type="text" value={formHubspotFormId}
                   onChange={(e) => setFormHubspotFormId(e.target.value)}
                   className={inputClass} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              </div>
+
+              {/* ── Champs personnalisés ── */}
+              <div className="pt-4 border-t border-primary-200">
+                <label className={labelClass}>
+                  Champs du formulaire{" "}
+                  <span className="text-luxury-slate/60 normal-case tracking-normal">
+                    (laissez vide pour utiliser les 7 champs par défaut)
+                  </span>
+                </label>
+
+                {formFields.length === 0 ? (
+                  <p className="text-xs text-luxury-slate/60 mb-3">
+                    Aucun champ personnalisé — le formulaire par défaut (Prénom, Nom, Email,
+                    Entreprise, Adresse, Effectif, Projet) sera utilisé.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {formFields.map((field, idx) => {
+                      const isCustom = !findPreset(field.hubspotName);
+                      const presetValue = isCustom ? CUSTOM_PRESET_VALUE : field.hubspotName;
+                      const supportsSearchingForOffice = !isCustom &&
+                        Boolean(findPreset(field.hubspotName)?.supportsSearchingForOffice);
+                      return (
+                        <div key={idx} className="border border-primary-200 bg-white p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs uppercase tracking-[0.15em] text-luxury-slate/70">
+                              Champ #{idx + 1}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button type="button" onClick={() => moveField(idx, -1)}
+                                disabled={idx === 0}
+                                className="px-2 py-1 text-xs border border-primary-200 disabled:opacity-30 hover:bg-luxury-cream">
+                                ↑
+                              </button>
+                              <button type="button" onClick={() => moveField(idx, 1)}
+                                disabled={idx === formFields.length - 1}
+                                className="px-2 py-1 text-xs border border-primary-200 disabled:opacity-30 hover:bg-luxury-cream">
+                                ↓
+                              </button>
+                              <button type="button" onClick={() => removeField(idx)}
+                                className="px-2 py-1 text-xs border border-red-200 text-red-600 hover:bg-red-50">
+                                Supprimer
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] uppercase tracking-[0.15em] text-luxury-slate/70 mb-1">
+                                Champ HubSpot
+                              </label>
+                              <select
+                                value={presetValue}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === CUSTOM_PRESET_VALUE) {
+                                    updateField(idx, { hubspotName: "", mapToSearchingForOffice: undefined });
+                                  } else {
+                                    const preset = findPreset(v);
+                                    if (preset) {
+                                      updateField(idx, makeFieldFromPreset(preset));
+                                    }
+                                  }
+                                }}
+                                className={`${inputClass} cursor-pointer`}
+                              >
+                                {HUBSPOT_FIELD_PRESETS.map((p) => (
+                                  <option key={p.hubspotName} value={p.hubspotName}>{p.label}</option>
+                                ))}
+                                <option value={CUSTOM_PRESET_VALUE}>Autre (personnalisé)</option>
+                              </select>
+                            </div>
+
+                            {isCustom && (
+                              <div>
+                                <label className="block text-[10px] uppercase tracking-[0.15em] text-luxury-slate/70 mb-1">
+                                  Nom interne HubSpot
+                                </label>
+                                <input type="text" value={field.hubspotName}
+                                  onChange={(e) => updateField(idx, { hubspotName: e.target.value })}
+                                  className={inputClass}
+                                  placeholder="ex. secteur_d_activite" />
+                              </div>
+                            )}
+
+                            <div className={isCustom ? "" : "sm:col-span-2"}>
+                              <label className="block text-[10px] uppercase tracking-[0.15em] text-luxury-slate/70 mb-1">
+                                Libellé / placeholder
+                              </label>
+                              <input type="text" value={field.label}
+                                onChange={(e) => updateField(idx, { label: e.target.value })}
+                                className={inputClass}
+                                placeholder="ex. Email professionnel" />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] uppercase tracking-[0.15em] text-luxury-slate/70 mb-1">
+                                Type
+                              </label>
+                              <select
+                                value={field.type}
+                                onChange={(e) => updateField(idx, { type: e.target.value as LpFormFieldType })}
+                                className={`${inputClass} cursor-pointer`}
+                              >
+                                <option value="text">Texte</option>
+                                <option value="email">Email</option>
+                                <option value="tel">Téléphone</option>
+                                <option value="date">Date</option>
+                                <option value="textarea">Zone de texte</option>
+                                <option value="select">Liste déroulante</option>
+                                <option value="checkbox">Case à cocher</option>
+                              </select>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              <label className="flex items-center gap-2 text-xs text-luxury-charcoal cursor-pointer">
+                                <input type="checkbox" checked={Boolean(field.required)}
+                                  onChange={(e) => updateField(idx, { required: e.target.checked })}
+                                  className="w-4 h-4 accent-luxury-gold" />
+                                Obligatoire
+                              </label>
+                              {field.type !== "textarea" && field.type !== "checkbox" && (
+                                <label className="flex items-center gap-2 text-xs text-luxury-charcoal cursor-pointer">
+                                  <input type="checkbox" checked={Boolean(field.halfWidth)}
+                                    onChange={(e) => updateField(idx, { halfWidth: e.target.checked })}
+                                    className="w-4 h-4 accent-luxury-gold" />
+                                  Demi-largeur
+                                </label>
+                              )}
+                            </div>
+                          </div>
+
+                          {field.type === "select" && (
+                            <div>
+                              <label className="block text-[10px] uppercase tracking-[0.15em] text-luxury-slate/70 mb-1">
+                                Options (une par ligne)
+                              </label>
+                              <textarea
+                                value={(field.options || []).join("\n")}
+                                onChange={(e) => updateField(idx, {
+                                  options: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+                                })}
+                                className={inputClass}
+                                rows={4}
+                                placeholder={"Option 1\nOption 2"}
+                              />
+                            </div>
+                          )}
+
+                          {supportsSearchingForOffice && field.type === "select" && (
+                            <label className="flex items-start gap-2 text-xs text-luxury-charcoal cursor-pointer">
+                              <input type="checkbox" checked={Boolean(field.mapToSearchingForOffice)}
+                                onChange={(e) => updateField(idx, { mapToSearchingForOffice: e.target.checked })}
+                                className="mt-0.5 w-4 h-4 accent-luxury-gold" />
+                              <span>
+                                Mapper vers <code className="text-[11px]">declare_etre_en_recherche</code>{" "}
+                                <span className="text-luxury-slate/60">(coché à <code>true</code> si la valeur commence par « Oui »)</span>
+                              </span>
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <button type="button" onClick={addField}
+                  className="mt-3 text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors">
+                  + Ajouter un champ
+                </button>
               </div>
             </div>
           </section>

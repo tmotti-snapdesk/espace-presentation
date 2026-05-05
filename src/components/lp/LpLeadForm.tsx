@@ -2,55 +2,46 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import type { LpFormField } from "@/types/lp";
+import { LEGACY_DEFAULT_FIELDS } from "@/lib/hubspotFieldCatalog";
 
 interface LpLeadFormProps {
   title?: string;
   label?: string;
   ctaText?: string;
   hubspotFormId?: string;
+  fields?: LpFormField[];
   lpSlug: string;
   lpTitle: string;
 }
 
-const HEADCOUNT_OPTIONS = [
-  "Entre 1 et 5",
-  "6 à 10",
-  "11 à 20",
-  "21 à 50",
-  "Plus de 50",
-];
+type FieldValue = string | boolean;
 
-const PROJECT_OPTIONS = [
-  "Oui, dans les 3 prochains mois",
-  "Oui, dans les 6 prochains mois",
-  "Peut-être d'ici 1 an",
-  "Pas pour l'instant",
-];
+function initialValueFor(field: LpFormField): FieldValue {
+  return field.type === "checkbox" ? false : "";
+}
 
 export default function LpLeadForm({
   title,
   label,
   ctaText = "Envoyer ma demande",
   hubspotFormId,
+  fields,
   lpSlug,
   lpTitle,
 }: LpLeadFormProps) {
-  const [form, setForm] = useState({
-    firstname: "",
-    lastname: "",
-    email: "",
-    company: "",
-    address: "",
-    headcount: "",
-    project: "",
-  });
+  const effectiveFields =
+    fields && fields.length > 0 ? fields : LEGACY_DEFAULT_FIELDS;
+
+  const [values, setValues] = useState<Record<string, FieldValue>>(() =>
+    Object.fromEntries(effectiveFields.map((f) => [f.hubspotName, initialValueFor(f)]))
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (key: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [key]: e.target.value }));
+  const update = (name: string, value: FieldValue) =>
+    setValues((v) => ({ ...v, [name]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,22 +49,33 @@ export default function LpLeadForm({
     setError(null);
 
     try {
-      // Map the "projet de bureau" select onto HubSpot's
-      // `declare_etre_en_recherche` boolean: only the two "Oui ..."
-      // options count as an active search.
-      const searchingForOffice = form.project.startsWith("Oui");
+      // Build the HubSpot fields payload from whatever the visitor filled in.
+      // Empty strings are dropped to match HubSpot's expectations; checkboxes
+      // are serialised as "true" / "false".
+      const fieldsPayload = effectiveFields
+        .map((f) => {
+          const raw = values[f.hubspotName];
+          if (f.type === "checkbox") {
+            return { name: f.hubspotName, value: raw ? "true" : "false" };
+          }
+          const str = typeof raw === "string" ? raw : "";
+          return { name: f.hubspotName, value: str };
+        })
+        .filter((entry) => entry.value !== "");
+
+      // Legacy boolean: any select flagged as `mapToSearchingForOffice` and
+      // whose value starts with "Oui" flips `declare_etre_en_recherche`.
+      const searchingForOffice = effectiveFields.some((f) => {
+        if (!f.mapToSearchingForOffice) return false;
+        const v = values[f.hubspotName];
+        return typeof v === "string" && v.startsWith("Oui");
+      });
 
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: form.email,
-          company: form.company,
-          firstname: form.firstname,
-          lastname: form.lastname,
-          address: form.address,
-          headcount: form.headcount,
-          project: form.project,
+          fields: fieldsPayload,
           searchingForOffice,
           espaceName: lpTitle,
           espaceSlug: lpSlug,
@@ -95,6 +97,93 @@ export default function LpLeadForm({
 
   const inputClass =
     "w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm bg-white";
+
+  // Group consecutive `halfWidth` fields into rows of 2; full-width fields
+  // (and checkboxes) sit on their own row.
+  const rows: LpFormField[][] = [];
+  for (const f of effectiveFields) {
+    const last = rows[rows.length - 1];
+    if (
+      f.halfWidth &&
+      f.type !== "textarea" &&
+      f.type !== "checkbox" &&
+      last &&
+      last.length === 1 &&
+      last[0].halfWidth &&
+      last[0].type !== "textarea" &&
+      last[0].type !== "checkbox"
+    ) {
+      last.push(f);
+    } else {
+      rows.push([f]);
+    }
+  }
+
+  const renderField = (f: LpFormField) => {
+    const value = values[f.hubspotName];
+    const placeholder = f.label;
+
+    if (f.type === "select") {
+      return (
+        <select
+          key={f.hubspotName}
+          required={f.required}
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => update(f.hubspotName, e.target.value)}
+          className={`${inputClass} cursor-pointer`}
+        >
+          <option value="">{placeholder}</option>
+          {(f.options || []).map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (f.type === "textarea") {
+      return (
+        <textarea
+          key={f.hubspotName}
+          required={f.required}
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => update(f.hubspotName, e.target.value)}
+          className={inputClass}
+          placeholder={placeholder}
+          rows={4}
+        />
+      );
+    }
+
+    if (f.type === "checkbox") {
+      return (
+        <label
+          key={f.hubspotName}
+          className="flex items-start gap-3 text-white/80 text-sm font-light cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            required={f.required}
+            checked={Boolean(value)}
+            onChange={(e) => update(f.hubspotName, e.target.checked)}
+            className="mt-1 w-4 h-4 accent-luxury-gold cursor-pointer"
+          />
+          <span>{f.label}</span>
+        </label>
+      );
+    }
+
+    return (
+      <input
+        key={f.hubspotName}
+        type={f.type}
+        required={f.required}
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => update(f.hubspotName, e.target.value)}
+        className={inputClass}
+        placeholder={placeholder}
+      />
+    );
+  };
 
   return (
     <section id="form" className="bg-luxury-charcoal section-padding">
@@ -138,79 +227,15 @@ export default function LpLeadForm({
             viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.6 }}
           >
-            {/* Row 1 : prénom / nom */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                required
-                value={form.firstname}
-                onChange={set("firstname")}
-                className={inputClass}
-                placeholder="Prénom *"
-              />
-              <input
-                type="text"
-                required
-                value={form.lastname}
-                onChange={set("lastname")}
-                className={inputClass}
-                placeholder="Nom *"
-              />
-            </div>
-
-            {/* Row 2 : email / entreprise */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="email"
-                required
-                value={form.email}
-                onChange={set("email")}
-                className={inputClass}
-                placeholder="Email professionnel *"
-              />
-              <input
-                type="text"
-                value={form.company}
-                onChange={set("company")}
-                className={inputClass}
-                placeholder="Entreprise"
-              />
-            </div>
-
-            {/* Row 3 : adresse / effectif */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                required
-                value={form.address}
-                onChange={set("address")}
-                className={inputClass}
-                placeholder="Adresse des bureaux *"
-              />
-              <select
-                value={form.headcount}
-                onChange={set("headcount")}
-                className={`${inputClass} cursor-pointer`}
-              >
-                <option value="">Effectif</option>
-                {HEADCOUNT_OPTIONS.map((o) => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Row 4 : projet bureau */}
-            <select
-              required
-              value={form.project}
-              onChange={set("project")}
-              className={`${inputClass} cursor-pointer`}
-            >
-              <option value="">Projet de nouveaux bureaux ? *</option>
-              {PROJECT_OPTIONS.map((o) => (
-                <option key={o} value={o}>{o}</option>
-              ))}
-            </select>
+            {rows.map((row, i) =>
+              row.length === 2 ? (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {row.map(renderField)}
+                </div>
+              ) : (
+                <div key={i}>{renderField(row[0])}</div>
+              )
+            )}
 
             {error && (
               <p className="text-red-400 text-sm text-center">{error}</p>

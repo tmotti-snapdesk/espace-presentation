@@ -287,34 +287,46 @@ export default function LpLeadForm({
           <motion.form
             onSubmit={handleSubmit}
             className="space-y-4"
-            initial={{ y: 20 }}
-            whileInView={{ y: 0 }}
+            initial="hidden"
+            whileInView="visible"
             viewport={{ once: true, amount: 0.1 }}
-            transition={{ duration: 0.6 }}
+            variants={{
+              hidden: {},
+              // Stagger each row reveal so the form feels lighter than a
+              // wall of fields appearing all at once.
+              visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+            }}
           >
-            {rows.map((row, i) =>
-              row.length === 2 ? (
-                <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {row.map(renderField)}
-                </div>
-              ) : (
-                <div key={i}>{renderField(row[0])}</div>
-              )
-            )}
+            {rows.map((row, i) => (
+              <motion.div
+                key={i}
+                variants={{
+                  hidden: { opacity: 0, y: 16 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+                }}
+                className={row.length === 2 ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}
+              >
+                {row.map(renderField)}
+              </motion.div>
+            ))}
 
             {error && (
               <p className="text-red-400 text-sm text-center">{error}</p>
             )}
 
-            <button
+            <motion.button
               type="submit"
               disabled={isSubmitting}
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+              }}
               className={`w-full px-8 py-5 bg-luxury-gold text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-luxury-champagne ${
                 isSubmitting ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
               {isSubmitting ? "Envoi en cours..." : ctaText}
-            </button>
+            </motion.button>
 
             <p className="text-center text-xs text-white/40 pt-2">
               Données traitées conformément à notre politique de confidentialité.

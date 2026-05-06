@@ -26,7 +26,7 @@ export interface LpFaqItem {
   answer: string;
 }
 
-export type LpFormFieldType = "text" | "email" | "tel" | "date" | "textarea" | "select" | "checkbox";
+export type LpFormFieldType = "text" | "email" | "tel" | "number" | "date" | "textarea" | "select" | "checkbox" | "multi-checkbox";
 
 export interface LpFormField {
   // HubSpot internal name (e.g. "email", "firstname", "phone").

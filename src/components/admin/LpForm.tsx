@@ -1138,10 +1138,12 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                                 <option value="text">Texte</option>
                                 <option value="email">Email</option>
                                 <option value="tel">Téléphone</option>
+                                <option value="number">Nombre</option>
                                 <option value="date">Date</option>
                                 <option value="textarea">Zone de texte</option>
                                 <option value="select">Liste déroulante</option>
                                 <option value="checkbox">Case à cocher</option>
+                                <option value="multi-checkbox">Cases à cocher multiples</option>
                               </select>
                             </div>
 

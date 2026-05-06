@@ -15,11 +15,17 @@ interface LpLeadFormProps {
   lpTitle: string;
 }
 
-type FieldValue = string | boolean;
+type FieldValue = string | boolean | string[];
 
 function initialValueFor(field: LpFormField): FieldValue {
-  return field.type === "checkbox" ? false : "";
+  if (field.type === "checkbox") return false;
+  if (field.type === "multi-checkbox") return [];
+  return "";
 }
+
+// Labels longer than this render above the input rather than as a
+// placeholder — keeps long HubSpot questions readable without overflowing.
+const INLINE_LABEL_MAX_LENGTH = 32;
 
 export default function LpLeadForm({
   title,
@@ -57,6 +63,11 @@ export default function LpLeadForm({
           const raw = values[f.hubspotName];
           if (f.type === "checkbox") {
             return { name: f.hubspotName, value: raw ? "true" : "false" };
+          }
+          if (f.type === "multi-checkbox") {
+            // HubSpot expects multi-valued enumerations as ";"-separated strings.
+            const arr = Array.isArray(raw) ? raw : [];
+            return { name: f.hubspotName, value: arr.join(";") };
           }
           const str = typeof raw === "string" ? raw : "";
           return { name: f.hubspotName, value: str };
@@ -99,19 +110,20 @@ export default function LpLeadForm({
     "w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm bg-white";
 
   // Group consecutive `halfWidth` fields into rows of 2; full-width fields
-  // (and checkboxes) sit on their own row.
+  // (textareas, checkboxes, multi-checkboxes) sit on their own row.
+  const isHalfEligible = (f: LpFormField) =>
+    f.halfWidth &&
+    f.type !== "textarea" &&
+    f.type !== "checkbox" &&
+    f.type !== "multi-checkbox";
   const rows: LpFormField[][] = [];
   for (const f of effectiveFields) {
     const last = rows[rows.length - 1];
     if (
-      f.halfWidth &&
-      f.type !== "textarea" &&
-      f.type !== "checkbox" &&
+      isHalfEligible(f) &&
       last &&
       last.length === 1 &&
-      last[0].halfWidth &&
-      last[0].type !== "textarea" &&
-      last[0].type !== "checkbox"
+      isHalfEligible(last[0])
     ) {
       last.push(f);
     } else {
@@ -121,18 +133,33 @@ export default function LpLeadForm({
 
   const renderField = (f: LpFormField) => {
     const value = values[f.hubspotName];
-    const placeholder = f.label;
+    // Long labels (typical of HubSpot questions) render above the input;
+    // short labels stay inline as placeholders to keep the legacy compact look.
+    const labelAbove = f.label.length > INLINE_LABEL_MAX_LENGTH;
+    const placeholder = labelAbove ? "" : f.label;
+    const requiredHint = f.required && labelAbove ? " *" : "";
+
+    const wrap = (control: React.ReactNode) =>
+      labelAbove ? (
+        <div key={f.hubspotName}>
+          <label className="block text-xs uppercase tracking-[0.15em] text-white/70 mb-2 font-light">
+            {f.label}{requiredHint}
+          </label>
+          {control}
+        </div>
+      ) : (
+        <div key={f.hubspotName}>{control}</div>
+      );
 
     if (f.type === "select") {
-      return (
+      return wrap(
         <select
-          key={f.hubspotName}
           required={f.required}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => update(f.hubspotName, e.target.value)}
           className={`${inputClass} cursor-pointer`}
         >
-          <option value="">{placeholder}</option>
+          <option value="">{labelAbove ? "Sélectionner…" : f.label}</option>
           {(f.options || []).map((o) => (
             <option key={o} value={o}>{o}</option>
           ))}
@@ -141,9 +168,8 @@ export default function LpLeadForm({
     }
 
     if (f.type === "textarea") {
-      return (
+      return wrap(
         <textarea
-          key={f.hubspotName}
           required={f.required}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => update(f.hubspotName, e.target.value)}
@@ -172,9 +198,48 @@ export default function LpLeadForm({
       );
     }
 
-    return (
+    if (f.type === "multi-checkbox") {
+      const selected = Array.isArray(value) ? value : [];
+      const toggle = (option: string) => {
+        const next = selected.includes(option)
+          ? selected.filter((v) => v !== option)
+          : [...selected, option];
+        update(f.hubspotName, next);
+      };
+      return (
+        <div key={f.hubspotName}>
+          <label className="block text-xs uppercase tracking-[0.15em] text-white/70 mb-3 font-light">
+            {f.label}{f.required ? " *" : ""}
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {(f.options || []).map((o) => {
+              const checked = selected.includes(o);
+              return (
+                <label
+                  key={o}
+                  className={`flex items-center gap-2 px-3 py-2 border text-sm cursor-pointer transition-colors ${
+                    checked
+                      ? "border-luxury-gold bg-luxury-gold/10 text-white"
+                      : "border-primary-200/30 text-white/70 hover:border-luxury-gold/50"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(o)}
+                    className="w-4 h-4 accent-luxury-gold cursor-pointer"
+                  />
+                  <span>{o}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    return wrap(
       <input
-        key={f.hubspotName}
         type={f.type}
         required={f.required}
         value={typeof value === "string" ? value : ""}

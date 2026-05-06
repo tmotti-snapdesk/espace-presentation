@@ -59,6 +59,7 @@ function mapFieldType(hubspotType: string): LpFormFieldType {
     case "email":             return "email";
     case "phone":
     case "phonenumber":       return "tel";
+    case "number":            return "number";
     case "date":
     case "datetime":          return "date";
     case "multi_line_text":
@@ -66,12 +67,33 @@ function mapFieldType(hubspotType: string): LpFormFieldType {
     case "dropdown":
     case "select":
     case "radio":             return "select";
+    case "checkbox":
+    case "multiple_checkboxes":
+    case "booleancheckbox_group":
+                              return "multi-checkbox";
     case "single_checkbox":
     case "booleancheckbox":   return "checkbox";
     case "single_line_text":
     case "text":
     default:                  return "text";
   }
+}
+
+// HubSpot form labels can ship inline HTML (e.g. <strong>...</strong>).
+// We strip tags and decode the few entities HubSpot routinely emits so
+// the label stays readable when rendered as plain text.
+function cleanLabel(raw: string): string {
+  if (!raw) return "";
+  return raw
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function convert(field: HubspotFieldV3 | HubspotFieldV2): LpFormField | null {
@@ -82,11 +104,11 @@ function convert(field: HubspotFieldV3 | HubspotFieldV2): LpFormField | null {
   const type = mapFieldType(field.fieldType);
   return {
     hubspotName: field.name,
-    label: field.placeholder || field.label || field.name,
+    label: cleanLabel(field.label || field.placeholder || field.name),
     type,
     required: Boolean(field.required),
     options: field.options && field.options.length > 0
-      ? field.options.map((o) => o.label)
+      ? field.options.map((o) => cleanLabel(o.label))
       : undefined,
     mapToSearchingForOffice: preset?.supportsSearchingForOffice ? true : undefined,
   };

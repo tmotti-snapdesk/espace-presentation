@@ -87,18 +87,24 @@ export default function LpLeadForm({
 
       // Legacy boolean: any select flagged as `mapToSearchingForOffice` and
       // whose value starts with "Oui" flips `declare_etre_en_recherche`.
-      const searchingForOffice = effectiveFields.some((f) => {
-        if (!f.mapToSearchingForOffice) return false;
-        const v = values[f.hubspotName];
-        return typeof v === "string" && v.startsWith("Oui");
-      });
+      // We omit the flag entirely when no such field is configured so the
+      // server doesn't try to push the property to HubSpot forms that
+      // don't have it (which would error out the whole submission).
+      const usesSearchingForOffice = effectiveFields.some((f) => f.mapToSearchingForOffice);
+      const searchingForOffice = usesSearchingForOffice
+        ? effectiveFields.some((f) => {
+            if (!f.mapToSearchingForOffice) return false;
+            const v = values[f.hubspotName];
+            return typeof v === "string" && v.startsWith("Oui");
+          })
+        : undefined;
 
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fields: fieldsPayload,
-          searchingForOffice,
+          ...(searchingForOffice !== undefined && { searchingForOffice }),
           espaceName: lpTitle,
           espaceSlug: lpSlug,
           hubspotFormId: hubspotFormId || undefined,
@@ -208,11 +214,14 @@ export default function LpLeadForm({
       })
       .filter((entry) => entry.value !== "");
 
-    const searchingForOffice = currentFields.some((f) => {
-      if (!f.mapToSearchingForOffice) return false;
-      const v = currentValues[f.hubspotName];
-      return typeof v === "string" && v.startsWith("Oui");
-    });
+    const usesSearchingForOffice = currentFields.some((f) => f.mapToSearchingForOffice);
+    const searchingForOffice = usesSearchingForOffice
+      ? currentFields.some((f) => {
+          if (!f.mapToSearchingForOffice) return false;
+          const v = currentValues[f.hubspotName];
+          return typeof v === "string" && v.startsWith("Oui");
+        })
+      : undefined;
 
     fetch("/api/leads/partial", {
       method: "POST",
@@ -221,7 +230,7 @@ export default function LpLeadForm({
       body: JSON.stringify({
         sessionId,
         fields: fieldsPayload,
-        searchingForOffice,
+        ...(searchingForOffice !== undefined && { searchingForOffice }),
         stage: maxRevealedChunk,
         espaceName: lpTitle,
         espaceSlug: lpSlug,

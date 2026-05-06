@@ -41,7 +41,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email requis" }, { status: 400 });
     }
 
-    const searchingForOffice = Boolean(body.searchingForOffice);
+    // Only honor the searching-for-office flag when the client explicitly
+    // sent it — if the LP's HubSpot form doesn't have a
+    // `declare_etre_en_recherche` property, forwarding it would 400 the
+    // entire submission and silently drop the lead.
+    const searchingForOffice =
+      typeof body.searchingForOffice === "boolean" ? body.searchingForOffice : undefined;
 
     // Build a flat object for the Blob backup so historical leads stay
     // browsable even when their field set varies between LPs.
@@ -50,7 +55,7 @@ export async function POST(request: NextRequest) {
     );
     const lead = {
       ...fieldsRecord,
-      searchingForOffice,
+      searchingForOffice: searchingForOffice ?? false,
       espaceName: body.espaceName || "",
       espaceSlug: body.espaceSlug || "",
       source: body.source || "",
@@ -76,7 +81,9 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             fields: [
               ...incomingFields,
-              { name: "declare_etre_en_recherche", value: searchingForOffice ? "true" : "false" },
+              ...(searchingForOffice !== undefined
+                ? [{ name: "declare_etre_en_recherche", value: searchingForOffice ? "true" : "false" }]
+                : []),
             ],
             context: {
               pageUri: lead.source,

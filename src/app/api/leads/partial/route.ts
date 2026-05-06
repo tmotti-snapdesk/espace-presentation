@@ -36,14 +36,18 @@ export async function POST(request: NextRequest) {
           .map((f: IncomingField) => ({ name: f.name, value: f.value }))
       : [];
 
-    const searchingForOffice = Boolean(body.searchingForOffice);
+    // Mirror /api/leads: only forward declare_etre_en_recherche when the
+    // client explicitly opts in, otherwise we'd error out HubSpot forms
+    // that don't expose that property.
+    const searchingForOffice =
+      typeof body.searchingForOffice === "boolean" ? body.searchingForOffice : undefined;
     const fieldsRecord: Record<string, string> = Object.fromEntries(
       incomingFields.map((f) => [f.name, f.value])
     );
     const partial = {
       sessionId,
       ...fieldsRecord,
-      searchingForOffice,
+      searchingForOffice: searchingForOffice ?? false,
       stage: typeof body.stage === "number" ? body.stage : 0,
       espaceName: body.espaceName || "",
       espaceSlug: body.espaceSlug || "",
@@ -79,7 +83,9 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               fields: [
                 ...incomingFields,
-                { name: "declare_etre_en_recherche", value: searchingForOffice ? "true" : "false" },
+                ...(searchingForOffice !== undefined
+                  ? [{ name: "declare_etre_en_recherche", value: searchingForOffice ? "true" : "false" }]
+                  : []),
               ],
               context: {
                 pageUri: partial.source,

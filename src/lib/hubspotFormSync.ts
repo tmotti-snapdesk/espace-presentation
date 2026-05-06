@@ -11,8 +11,8 @@ import { findPreset } from "@/lib/hubspotFieldCatalog";
 // forms still served via the public submissions endpoint typically only
 // surface their schema through v2.
 //
-// Requires a HubSpot private-app token in HUBSPOT_ACCESS_TOKEN with the
-// `forms` (read) scope. Returns null when the token is missing, both
+// Requires a HubSpot private-app token in HUBSPOT_PRIVATE_APP_TOKEN with
+// the `forms` (read) scope. Returns null when the token is missing, both
 // endpoints fail, or the response is empty — callers fall back to the
 // LP's manual config or the legacy 7-field form.
 
@@ -144,7 +144,7 @@ async function fetchV2(formId: string, token: string): Promise<LpFormField[] | n
 
 export const fetchHubspotFormFields = cache(
   async (formId: string): Promise<LpFormField[] | null> => {
-    const token = process.env.HUBSPOT_ACCESS_TOKEN || process.env.HUBSPOT_PRIVATE_APP_TOKEN;
+    const token = process.env.HUBSPOT_PRIVATE_APP_TOKEN;
     if (!token || !formId) return null;
     return (await fetchV3(formId, token)) ?? (await fetchV2(formId, token));
   }

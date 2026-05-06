@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { LpFormField } from "@/types/lp";
 import { LEGACY_DEFAULT_FIELDS } from "@/lib/hubspotFieldCatalog";
@@ -172,6 +172,65 @@ export default function LpLeadForm({
   }, [values, chunks]);
 
   const allChunksRevealed = maxRevealedChunk >= chunks.length - 1;
+
+  // Stable per-mount session id so successive partial saves overwrite the
+  // same Blob file rather than spawning one per chunk advance.
+  const [sessionId] = useState(() =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `s-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+
+  // Stash the latest values + fields in refs so the partial-save effect
+  // can read them without subscribing to every keystroke (otherwise it'd
+  // hammer the API instead of firing once per chunk advance).
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+  const fieldsRef = useRef(effectiveFields);
+  fieldsRef.current = effectiveFields;
+
+  useEffect(() => {
+    if (maxRevealedChunk === 0) return; // nothing meaningful captured yet
+    const currentValues = valuesRef.current;
+    const currentFields = fieldsRef.current;
+    const fieldsPayload = currentFields
+      .map((f) => {
+        const raw = currentValues[f.hubspotName];
+        if (f.type === "checkbox") {
+          return { name: f.hubspotName, value: raw ? "true" : "false" };
+        }
+        if (f.type === "multi-checkbox") {
+          const arr = Array.isArray(raw) ? raw : [];
+          return { name: f.hubspotName, value: arr.join(";") };
+        }
+        const str = typeof raw === "string" ? raw : "";
+        return { name: f.hubspotName, value: str };
+      })
+      .filter((entry) => entry.value !== "");
+
+    const searchingForOffice = currentFields.some((f) => {
+      if (!f.mapToSearchingForOffice) return false;
+      const v = currentValues[f.hubspotName];
+      return typeof v === "string" && v.startsWith("Oui");
+    });
+
+    fetch("/api/leads/partial", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true, // best-effort if the visitor is leaving the tab
+      body: JSON.stringify({
+        sessionId,
+        fields: fieldsPayload,
+        searchingForOffice,
+        stage: maxRevealedChunk,
+        espaceName: lpTitle,
+        espaceSlug: lpSlug,
+        hubspotFormId: hubspotFormId || undefined,
+        source: typeof window !== "undefined" ? window.location.href : "",
+        utm: typeof window !== "undefined" ? window.location.search : "",
+      }),
+    }).catch(() => {});
+  }, [maxRevealedChunk, sessionId, lpTitle, lpSlug, hubspotFormId]);
 
   const renderField = (f: LpFormField) => {
     const value = values[f.hubspotName];

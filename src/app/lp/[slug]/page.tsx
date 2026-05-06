@@ -81,6 +81,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
     <main>
       <LpHero
         videoUrl={lp.heroVideoUrl}
+        imageUrl={lp.heroImageUrl}
         title={lp.heroTitle}
         subtitle={lp.heroSubtitle}
         ctaText={lp.heroCtaText}

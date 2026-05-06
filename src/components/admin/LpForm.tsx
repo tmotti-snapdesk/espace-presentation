@@ -30,7 +30,8 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState<"hero" | "logo" | "mission-photo" | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<"hero" | "hero-image" | "logo" | "mission-photo" | null>(null);
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
   const [testimonialPhotoPickerIndex, setTestimonialPhotoPickerIndex] = useState<number | null>(null);
   const [urgencyIconPickerIndex, setUrgencyIconPickerIndex] = useState<number | null>(null);
@@ -47,6 +48,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
     heroSubtitle: initialData?.heroSubtitle || "",
     heroCtaText: initialData?.heroCtaText || "En savoir plus",
     heroVideoUrl: initialData?.heroVideoUrl || "",
+    heroImageUrl: initialData?.heroImageUrl || "",
   });
 
   // ── Notre métier ──
@@ -165,6 +167,22 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       setError(`Erreur lors de l'upload de la vidéo : ${msg}`);
     } finally {
       setUploadingVideo(false);
+    }
+  };
+
+  // ── Hero image upload (alternative to the video) ──
+  const handleHeroImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHeroImage(true);
+    try {
+      const blob = await upload(buildUploadPath("hero-image", file), file, { access: "public", handleUploadUrl: "/api/upload" });
+      setForm((f) => ({ ...f, heroImageUrl: blob.url }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'upload de l'image : ${msg}`);
+    } finally {
+      setUploadingHeroImage(false);
     }
   };
 
@@ -493,6 +511,33 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 </div>
                 {uploadingVideo && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
               </div>
+
+              <div>
+                <label className={labelClass}>
+                  Image de fond{" "}
+                  <span className="text-luxury-slate/60 normal-case tracking-normal">
+                    (alternative à la vidéo — si renseignée, le titre apparaît mot par mot)
+                  </span>
+                </label>
+                {form.heroImageUrl && (
+                  <div className="mb-3 flex items-center gap-3 p-3 bg-primary-50 border border-primary-100 text-xs text-luxury-slate">
+                    <span className="truncate flex-1">{form.heroImageUrl}</span>
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, heroImageUrl: "" }))}
+                      className="shrink-0 text-red-400 hover:text-red-600">Retirer</button>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <input type="file" accept="image/webp,image/jpeg,image/png,image/avif"
+                    onChange={handleHeroImageChange}
+                    className="flex-1 text-sm text-luxury-slate file:mr-4 file:py-2 file:px-4 file:border file:border-primary-200 file:text-xs file:uppercase file:tracking-wider file:bg-white file:text-luxury-charcoal hover:file:bg-primary-50 file:cursor-pointer cursor-pointer" />
+                  <button type="button" onClick={() => setPickerOpen("hero-image")}
+                    className="shrink-0 px-4 py-2 text-xs uppercase tracking-wider border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors">
+                    Bibliothèque
+                  </button>
+                </div>
+                {uploadingHeroImage && <p className="text-xs text-luxury-slate mt-2">Upload en cours...</p>}
+              </div>
+
               <div>
                 <label className={labelClass}>Titre principal</label>
                 <input type="text" value={form.heroTitle} onChange={set("heroTitle")}
@@ -1209,8 +1254,8 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-          <button type="submit" disabled={isSaving || uploadingVideo || uploadingLogo}
-            className={`luxury-btn w-full py-5 ${(isSaving || uploadingVideo || uploadingLogo) ? "opacity-50 cursor-not-allowed" : ""}`}>
+          <button type="submit" disabled={isSaving || uploadingVideo || uploadingLogo || uploadingHeroImage}
+            className={`luxury-btn w-full py-5 ${(isSaving || uploadingVideo || uploadingLogo || uploadingHeroImage) ? "opacity-50 cursor-not-allowed" : ""}`}>
             {isSaving ? "Sauvegarde..." : mode === "create" ? "Créer la landing page" : "Enregistrer les modifications"}
           </button>
         </form>
@@ -1223,6 +1268,8 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
         onSelect={(asset) => {
           if (pickerOpen === "hero") {
             setForm((f) => ({ ...f, heroVideoUrl: asset.url }));
+          } else if (pickerOpen === "hero-image") {
+            setForm((f) => ({ ...f, heroImageUrl: asset.url }));
           } else if (pickerOpen === "logo") {
             const alt = asset.pathname.split("/").pop()?.replace(/\.[^.]+$/, "") || "";
             setSocialProofLogos((prev) => [...prev, { url: asset.url, alt }]);

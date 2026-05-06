@@ -58,6 +58,9 @@ export interface LandingPageData {
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   heroVideoUrl: string;
+  // Optional WebP/JPEG/PNG background. When set, takes precedence over the
+  // video and unlocks a word-by-word reveal of the hero title.
+  heroImageUrl?: string;
   heroTitle: string;
   heroSubtitle: string;
   heroCtaText: string;      // text of the CTA button (anchors to #form)

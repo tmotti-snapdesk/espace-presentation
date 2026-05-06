@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       slug,
       internalTitle: body.internalTitle || slug,
       heroVideoUrl: body.heroVideoUrl || "",
+      heroImageUrl: body.heroImageUrl || undefined,
       heroTitle: body.heroTitle || "",
       heroSubtitle: body.heroSubtitle || "",
       heroCtaText: body.heroCtaText || "En savoir plus",

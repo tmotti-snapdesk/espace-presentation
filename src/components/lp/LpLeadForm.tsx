@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { LpFormField } from "@/types/lp";
 import { LEGACY_DEFAULT_FIELDS } from "@/lib/hubspotFieldCatalog";
@@ -26,6 +26,17 @@ function initialValueFor(field: LpFormField): FieldValue {
 // Labels longer than this render above the input rather than as a
 // placeholder — keeps long HubSpot questions readable without overflowing.
 const INLINE_LABEL_MAX_LENGTH = 32;
+
+// Number of consecutive rows revealed at once. Subsequent batches appear
+// only after all required fields in the previous batches have been filled,
+// so the visitor doesn't face a wall of inputs upfront.
+const ROWS_PER_CHUNK = 3;
+
+function isFieldFilled(field: LpFormField, value: FieldValue): boolean {
+  if (field.type === "checkbox") return value === true;
+  if (field.type === "multi-checkbox") return Array.isArray(value) && value.length > 0;
+  return typeof value === "string" && value.trim() !== "";
+}
 
 export default function LpLeadForm({
   title,
@@ -130,6 +141,37 @@ export default function LpLeadForm({
       rows.push([f]);
     }
   }
+
+  // Group rows into chunks revealed progressively. The visitor sees
+  // ROWS_PER_CHUNK rows at a time; the next chunk reveals automatically
+  // once every required field in the prior chunks is filled.
+  const chunks: LpFormField[][][] = [];
+  for (let i = 0; i < rows.length; i += ROWS_PER_CHUNK) {
+    chunks.push(rows.slice(i, i + ROWS_PER_CHUNK));
+  }
+
+  const [maxRevealedChunk, setMaxRevealedChunk] = useState(0);
+
+  useEffect(() => {
+    // Walk forward from the current frontier as long as the chunk we sit
+    // on has all its required fields satisfied, then surface the next.
+    // We never roll back: clearing a previously-filled field after the
+    // form has expanded would feel jarring.
+    setMaxRevealedChunk((prev) => {
+      let candidate = prev;
+      while (
+        candidate < chunks.length - 1 &&
+        chunks[candidate]
+          .flat()
+          .every((f) => !f.required || isFieldFilled(f, values[f.hubspotName]))
+      ) {
+        candidate++;
+      }
+      return candidate;
+    });
+  }, [values, chunks]);
+
+  const allChunksRevealed = maxRevealedChunk >= chunks.length - 1;
 
   const renderField = (f: LpFormField) => {
     const value = values[f.hubspotName];
@@ -284,54 +326,46 @@ export default function LpLeadForm({
             </p>
           </motion.div>
         ) : (
-          <motion.form
-            onSubmit={handleSubmit}
-            className="space-y-4"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            variants={{
-              hidden: {},
-              // Stagger each row reveal so the form feels lighter than a
-              // wall of fields appearing all at once.
-              visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
-            }}
-          >
-            {rows.map((row, i) => (
-              <motion.div
-                key={i}
-                variants={{
-                  hidden: { opacity: 0, y: 16 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
-                }}
-                className={row.length === 2 ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}
-              >
-                {row.map(renderField)}
-              </motion.div>
-            ))}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {chunks.map((chunkRows, chunkIdx) => {
+              if (chunkIdx > maxRevealedChunk) return null;
+              return chunkRows.map((row, rowIdx) => (
+                <motion.div
+                  key={`${chunkIdx}-${rowIdx}`}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.45, delay: rowIdx * 0.08, ease: "easeOut" }}
+                  className={row.length === 2 ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}
+                >
+                  {row.map(renderField)}
+                </motion.div>
+              ));
+            })}
 
             {error && (
               <p className="text-red-400 text-sm text-center">{error}</p>
             )}
 
-            <motion.button
-              type="submit"
-              disabled={isSubmitting}
-              variants={{
-                hidden: { opacity: 0, y: 16 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
-              }}
-              className={`w-full px-8 py-5 bg-luxury-gold text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-luxury-champagne ${
-                isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              {isSubmitting ? "Envoi en cours..." : ctaText}
-            </motion.button>
+            {allChunksRevealed && (
+              <motion.button
+                type="submit"
+                disabled={isSubmitting}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                className={`w-full px-8 py-5 bg-luxury-gold text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-luxury-champagne ${
+                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {isSubmitting ? "Envoi en cours..." : ctaText}
+              </motion.button>
+            )}
 
             <p className="text-center text-xs text-white/40 pt-2">
               Données traitées conformément à notre politique de confidentialité.
             </p>
-          </motion.form>
+          </form>
         )}
       </div>
     </section>

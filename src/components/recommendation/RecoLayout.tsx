@@ -76,13 +76,12 @@ export function BonusCard() {
 export function SuccessSection() {
   return (
     <section className={`flex-1 flex flex-col ${styles.screen}`}>
-      <div className="text-center py-10 flex-1 flex flex-col items-center justify-center">
+      <div className="text-center py-10 lg:py-16 flex-1 flex flex-col items-center justify-center max-w-[640px] mx-auto w-full">
         <div
-          className={`w-[76px] h-[76px] rounded-full bg-reco-accent-soft flex items-center justify-center mb-7 ${styles.successGlyph}`}
+          className={`w-[88px] h-[88px] lg:w-[112px] lg:h-[112px] rounded-full bg-reco-accent-soft flex items-center justify-center mb-8 ${styles.successGlyph}`}
         >
           <svg
-            width="34"
-            height="34"
+            className="w-[40px] h-[40px] lg:w-[52px] lg:h-[52px]"
             viewBox="0 0 24 24"
             fill="none"
             stroke="#E590A1"
@@ -94,16 +93,16 @@ export function SuccessSection() {
           </svg>
         </div>
         <h2
-          className={`${styles.fraunces} font-normal text-[26px] leading-[1.15] tracking-[-0.02em] mb-3`}
+          className={`${styles.fraunces} font-normal text-[30px] lg:text-[44px] leading-[1.15] tracking-[-0.02em] mb-4`}
         >
           Merci{" "}
           <em className={`${styles.fraunces} italic text-reco-accent`}>infiniment</em>.
         </h2>
-        <p className="text-reco-ink-soft max-w-[38ch] mx-auto mb-3">
+        <p className="text-reco-ink-soft text-[17px] lg:text-[19px] max-w-[46ch] mx-auto mb-3 leading-[1.55]">
           On revient vers vous très vite, et on prendra contact avec votre proche avec
           délicatesse.
         </p>
-        <p className="text-reco-ink-soft max-w-[38ch] mx-auto mb-3 text-[14px]">
+        <p className="text-reco-ink-soft max-w-[46ch] mx-auto mb-3 text-[15px] lg:text-[16px] leading-[1.55]">
           Dès qu&apos;on a confirmé que la recherche est sérieuse, on vous verse{" "}
           <strong className="text-reco-ink">150 €</strong>. Et si signature,{" "}
           <strong className="text-reco-ink">jusqu&apos;à 5 000 €</strong>.

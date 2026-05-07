@@ -72,7 +72,7 @@ export default function MerciPage() {
 
   return (
     <main className={`min-h-dvh bg-reco-bg text-reco-ink font-geist ${styles.app}`}>
-      <div className="max-w-[560px] mx-auto px-[22px] pt-6 pb-12 min-h-dvh flex flex-col">
+      <div className="max-w-[1180px] mx-auto px-6 sm:px-8 lg:px-12 pt-6 pb-12 min-h-dvh flex flex-col">
         <RecoHeader label={meta.label} />
 
         {meta.step > 0 && screen !== "success" && (
@@ -99,7 +99,7 @@ export default function MerciPage() {
 
 function ProgressBar({ step }: { step: number }) {
   return (
-    <div className="flex gap-1.5 mb-9">
+    <div className="flex gap-1.5 mb-9 max-w-[720px] mx-auto w-full">
       <div
         className={`flex-1 h-[3px] bg-reco-line rounded-[2px] ${styles.progressSeg} ${
           step === 1 ? styles.progressSegActive : ""
@@ -117,17 +117,17 @@ function ProgressBar({ step }: { step: number }) {
 function HomeScreen({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
   return (
     <section className={`flex-1 flex flex-col ${styles.screen}`}>
-      <div className={styles.stagger}>
-        <p className="text-[12px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
+      <div className={`${styles.stagger} max-w-[720px] mx-auto w-full`}>
+        <p className="text-[12px] lg:text-[13px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
           Un grand merci
         </p>
         <h1
-          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-4 text-[clamp(32px,7.5vw,42px)]`}
+          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-5 text-[clamp(36px,5.5vw,64px)]`}
         >
           2 petites <em className={`${styles.fraunces} italic text-reco-accent`}>demandes</em>,
           1 minute&nbsp;chrono.
         </h1>
-        <p className="text-reco-ink-soft text-[17px] leading-[1.55] mb-8 max-w-[42ch]">
+        <p className="text-reco-ink-soft text-[17px] lg:text-[19px] leading-[1.55] mb-8 max-w-[52ch]">
           D&apos;abord un avis Google, puis une recommandation. Si vous nous présentez
           quelqu&apos;un qui cherche vraiment&nbsp;:{" "}
           <span className={styles.accentStrong}>150&nbsp;€ pour vous tout de suite</span>, et{" "}
@@ -137,14 +137,14 @@ function HomeScreen({ onStart, onSkip }: { onStart: () => void; onSkip: () => vo
         <button
           type="button"
           onClick={onStart}
-          className={`bg-reco-ink text-reco-bg border-0 rounded-full px-7 py-4 text-[15px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full tracking-[0.01em] ${styles.btnPrimary}`}
+          className={`bg-reco-ink text-reco-bg border-0 rounded-full px-7 py-4 text-[15px] lg:text-[16px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto sm:min-w-[260px] tracking-[0.01em] ${styles.btnPrimary}`}
         >
           C&apos;est parti →
         </button>
         <button
           type="button"
           onClick={onSkip}
-          className="bg-transparent border-0 text-reco-ink-faint font-inherit text-[13px] cursor-pointer p-3 underline underline-offset-[3px] mt-2 self-center hover:text-reco-ink-soft"
+          className="bg-transparent border-0 text-reco-ink-faint font-inherit text-[13px] cursor-pointer p-3 underline underline-offset-[3px] mt-2 block sm:inline-block hover:text-reco-ink-soft"
         >
           Sauter l&apos;avis et passer direct à la reco
         </button>
@@ -167,8 +167,8 @@ function ReviewScreen({
   );
   return (
     <section className={`flex-1 flex flex-col ${styles.screen}`}>
-      <div className={styles.stagger}>
-        <p className="text-[12px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
+      <div className={`${styles.stagger} max-w-[720px] mx-auto w-full`}>
+        <p className="text-[12px] lg:text-[13px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
           Étape 1 sur 2 · Avis Google
         </p>
         <div className={`inline-flex gap-1 mb-5 ${styles.starsDeco}`} aria-hidden>
@@ -179,21 +179,21 @@ function ReviewScreen({
           <Star />
         </div>
         <h1
-          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-4 text-[clamp(32px,7.5vw,42px)]`}
+          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-5 text-[clamp(36px,5.5vw,64px)]`}
         >
           Quelques mots <em className={`${styles.fraunces} italic text-reco-accent`}>sincères</em>,
           ça change tout.
         </h1>
-        <p className="text-reco-ink-soft text-[17px] leading-[1.55] mb-8 max-w-[42ch]">
+        <p className="text-reco-ink-soft text-[17px] lg:text-[19px] leading-[1.55] mb-8 max-w-[52ch]">
           Bons ou constructifs, vos retours sont précieux. On ouvre Google Maps dans un nouvel
           onglet — vous laissez votre avis, puis revenez ici pour l&apos;étape&nbsp;2.
         </p>
 
-        <div className="flex flex-col gap-2.5 mt-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5 mt-3">
           <button
             type="button"
             onClick={onOpenGoogle}
-            className={`bg-reco-accent text-white border-0 rounded-full px-7 py-4 text-[15px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full tracking-[0.01em] ${styles.btnGoogle}`}
+            className={`bg-reco-accent text-white border-0 rounded-full px-7 py-4 text-[15px] lg:text-[16px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto sm:min-w-[280px] tracking-[0.01em] ${styles.btnGoogle}`}
           >
             Laisser mon avis sur Google
             <svg
@@ -211,7 +211,7 @@ function ReviewScreen({
           <button
             type="button"
             onClick={onSkip}
-            className="bg-transparent border-0 text-reco-ink-faint font-inherit text-[13px] cursor-pointer p-3 underline underline-offset-[3px] mt-2 self-center hover:text-reco-ink-soft"
+            className="bg-transparent border-0 text-reco-ink-faint font-inherit text-[13px] cursor-pointer p-3 underline underline-offset-[3px] hover:text-reco-ink-soft"
           >
             Pas envie d&apos;avis Google ? Passer à la reco
           </button>
@@ -230,19 +230,19 @@ function WaitingScreen({
 }) {
   return (
     <section className={`flex-1 flex flex-col ${styles.screen}`}>
-      <div className={styles.stagger}>
-        <p className="text-[12px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
+      <div className={`${styles.stagger} max-w-[720px] mx-auto w-full`}>
+        <p className="text-[12px] lg:text-[13px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
           Étape 1 sur 2 · En cours
         </p>
         <h1
-          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-4 text-[clamp(32px,7.5vw,42px)]`}
+          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-5 text-[clamp(36px,5.5vw,64px)]`}
         >
           On vous attend{" "}
           <em className={`${styles.fraunces} italic text-reco-accent`}>tranquillement</em>.
         </h1>
 
         <div
-          className={`bg-reco-elev border border-reco-line rounded-[22px] px-6 py-7 mt-2 ${styles.waitingCard}`}
+          className={`bg-reco-elev border border-reco-line rounded-[22px] px-6 py-7 lg:px-9 lg:py-9 mt-2 ${styles.waitingCard}`}
         >
           <div className="relative">
             <div
@@ -262,26 +262,26 @@ function WaitingScreen({
                 <polyline points="9 12 11 14 15 10" />
               </svg>
             </div>
-            <div className={`${styles.fraunces} text-[20px] mb-2`}>
+            <div className={`${styles.fraunces} text-[20px] lg:text-[24px] mb-2`}>
               Google est ouvert dans un autre onglet
             </div>
-            <div className="text-reco-ink-soft text-[15px] mb-[22px]">
+            <div className="text-reco-ink-soft text-[15px] lg:text-[17px] mb-[22px]">
               Une fois votre avis publié, revenez ici. On enchaîne automatiquement sur
               l&apos;étape&nbsp;2.
             </div>
 
-            <div className="flex flex-col gap-2.5 mt-3">
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-3">
               <button
                 type="button"
                 onClick={onContinue}
-                className={`bg-reco-ink text-reco-bg border-0 rounded-full px-7 py-4 text-[15px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full tracking-[0.01em] ${styles.btnPrimary}`}
+                className={`bg-reco-ink text-reco-bg border-0 rounded-full px-7 py-4 text-[15px] lg:text-[16px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto sm:flex-1 tracking-[0.01em] ${styles.btnPrimary}`}
               >
                 C&apos;est fait, on passe à la suite →
               </button>
               <button
                 type="button"
                 onClick={onReopen}
-                className={`bg-reco-elev text-reco-ink border border-reco-line rounded-full px-[18px] py-2.5 text-[13px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full ${styles.btnSecondary}`}
+                className={`bg-reco-elev text-reco-ink border border-reco-line rounded-full px-[18px] py-2.5 text-[13px] font-medium cursor-pointer transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto ${styles.btnSecondary}`}
               >
                 Rouvrir Google
               </button>
@@ -302,29 +302,33 @@ function ReferScreen({
 }) {
   return (
     <section className={`flex-1 flex flex-col ${styles.screen}`}>
-      <div className={styles.stagger}>
-        <p className="text-[12px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
-          Étape 2 sur 2 · Recommandation
-        </p>
-        <h1
-          className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-4 text-[clamp(32px,7.5vw,42px)]`}
-        >
-          Une <em className={`${styles.fraunces} italic text-reco-accent`}>introduction</em> en
-          cadeau&nbsp;?
-        </h1>
-        <p className="text-reco-ink-soft text-[17px] leading-[1.55] mb-7 max-w-[42ch]">
-          Quelqu&apos;un dans votre réseau pourrait avoir besoin d&apos;un espace de travail
-          flex. Présentez-le-nous, on prend contact en douceur en glissant votre nom.
-        </p>
+      <div className="grid lg:grid-cols-[1fr_minmax(0,520px)] lg:gap-16 xl:gap-24">
+        <div className={styles.stagger}>
+          <p className="text-[12px] lg:text-[13px] tracking-[0.12em] uppercase text-reco-accent font-semibold mb-3.5">
+            Étape 2 sur 2 · Recommandation
+          </p>
+          <h1
+            className={`${styles.fraunces} font-normal leading-[1.05] tracking-[-0.025em] mb-5 text-[clamp(36px,5.5vw,64px)]`}
+          >
+            Une <em className={`${styles.fraunces} italic text-reco-accent`}>introduction</em> en
+            cadeau&nbsp;?
+          </h1>
+          <p className="text-reco-ink-soft text-[17px] lg:text-[19px] leading-[1.55] mb-7 max-w-[44ch]">
+            Quelqu&apos;un dans votre réseau pourrait avoir besoin d&apos;un espace de travail
+            flex. Présentez-le-nous, on prend contact en douceur en glissant votre nom.
+          </p>
 
-        <BonusCard />
+          <BonusCard />
+        </div>
+
+        <div className="lg:pt-1">
+          <RecommendationForm
+            source="snapdesk-merci-page"
+            googleReviewOpened={googleOpened}
+            onSuccess={onSuccess}
+          />
+        </div>
       </div>
-
-      <RecommendationForm
-        source="snapdesk-merci-page"
-        googleReviewOpened={googleOpened}
-        onSuccess={onSuccess}
-      />
     </section>
   );
 }

@@ -12,9 +12,10 @@ export function RecoHeader({ label }: { label: string }) {
         {!imgFailed ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src="/Logo.png"
+            src="/images/Logo Snapdesk Blanc.png"
             alt="Snapdesk"
             className="h-7 w-auto block"
+            style={{ filter: "invert(1)" }}
             onError={() => setImgFailed(true)}
           />
         ) : (

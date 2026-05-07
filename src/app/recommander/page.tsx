@@ -66,7 +66,8 @@ function HowItWorks() {
   const steps = [
     <>Vous nous présentez votre proche ci-dessous.</>,
     <>
-      On le contacte. Si la recherche est réelle&nbsp;:{" "}
+      On le contacte. Si la recherche est réelle
+      <sup className="text-reco-accent font-semibold ml-0.5">*</sup>&nbsp;:{" "}
       <strong className="text-reco-ink font-medium">150&nbsp;€ pour vous</strong>.
     </>,
     <>
@@ -76,17 +77,32 @@ function HowItWorks() {
   ];
 
   return (
-    <div className="flex flex-col gap-3 mb-8 px-5 py-[18px] bg-reco-elev border border-reco-line rounded-[22px]">
-      {steps.map((text, i) => (
-        <div key={i} className="flex gap-3.5 items-start">
-          <div
-            className={`shrink-0 w-[26px] h-[26px] rounded-full bg-reco-accent-soft text-reco-accent-deep flex items-center justify-center font-medium text-[14px] ${styles.fraunces}`}
-          >
-            {i + 1}
+    <div className="mb-8">
+      <div className="flex flex-col gap-3 px-5 py-[18px] bg-reco-elev border border-reco-line rounded-[22px]">
+        {steps.map((text, i) => (
+          <div key={i} className="flex gap-3.5 items-start">
+            <div
+              className={`shrink-0 w-[26px] h-[26px] rounded-full bg-reco-accent-soft text-reco-accent-deep flex items-center justify-center font-medium text-[14px] ${styles.fraunces}`}
+            >
+              {i + 1}
+            </div>
+            <div className="text-[14px] text-reco-ink-soft leading-[1.45] pt-0.5">{text}</div>
           </div>
-          <div className="text-[14px] text-reco-ink-soft leading-[1.45] pt-0.5">{text}</div>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div className="mt-3 px-1 text-[12px] text-reco-ink-faint leading-[1.5]">
+        <p className="mb-1">
+          <span className="text-reco-accent font-semibold">*</span> Recherche
+          considérée comme réelle si&nbsp;:
+        </p>
+        <ul className="list-disc pl-5 space-y-0.5">
+          <li>prise de contact sans brokerage&nbsp;;</li>
+          <li>
+            recherche d&apos;un espace de bureau de plus de 5 postes à Paris
+            intramuros.
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }

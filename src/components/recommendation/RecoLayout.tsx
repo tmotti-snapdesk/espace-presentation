@@ -14,7 +14,7 @@ export function RecoHeader({ label }: { label: string }) {
           <img
             src="/images/Logo Snapdesk Blanc.png"
             alt="Snapdesk"
-            className="h-7 w-auto block"
+            className="h-10 lg:h-12 w-auto block"
             style={{ filter: "invert(1)" }}
             onError={() => setImgFailed(true)}
           />

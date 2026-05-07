@@ -223,7 +223,7 @@ export default function RecommendationForm({
             </Field>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Email" optional="(ou tél.)">
+              <Field label="Email">
                 <input
                   type="email"
                   placeholder="email@exemple.com"

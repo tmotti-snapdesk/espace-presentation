@@ -122,6 +122,11 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [formCtaText, setFormCtaText] = useState(initialData?.formCtaText || "Envoyer ma demande");
   const [formHubspotFormId, setFormHubspotFormId] = useState(initialData?.formHubspotFormId || "");
   const [formFields, setFormFields] = useState<LpFormField[]>(initialData?.formFields || []);
+  // Legacy LPs predate this toggle and saved no value — treat them as
+  // progressive to preserve the established behaviour.
+  const [formProgressive, setFormProgressive] = useState<boolean>(
+    initialData?.formProgressive !== false
+  );
 
   const updateField = (index: number, patch: Partial<LpFormField>) => {
     setFormFields((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
@@ -392,6 +397,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       formCtaText: formCtaText || undefined,
       formHubspotFormId: formHubspotFormId || undefined,
       formFields: formFields.length > 0 ? formFields : undefined,
+      formProgressive,
     };
 
     try {
@@ -1059,6 +1065,37 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 <label className={labelClass}>Texte du bouton de soumission</label>
                 <input type="text" value={formCtaText} onChange={(e) => setFormCtaText(e.target.value)}
                   className={inputClass} placeholder="Envoyer ma demande" />
+              </div>
+              <div>
+                <label className={labelClass}>Mode d&apos;affichage des champs</label>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-2 text-sm text-luxury-charcoal cursor-pointer">
+                    <input
+                      type="radio"
+                      name="formProgressive"
+                      checked={formProgressive}
+                      onChange={() => setFormProgressive(true)}
+                      className="mt-1 w-4 h-4 accent-luxury-gold"
+                    />
+                    <span>
+                      <strong>Progressif</strong>{" "}
+                      <span className="text-luxury-slate/60">— les champs apparaissent par groupes de 3 au fur et à mesure que le visiteur remplit le formulaire.</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-sm text-luxury-charcoal cursor-pointer">
+                    <input
+                      type="radio"
+                      name="formProgressive"
+                      checked={!formProgressive}
+                      onChange={() => setFormProgressive(false)}
+                      className="mt-1 w-4 h-4 accent-luxury-gold"
+                    />
+                    <span>
+                      <strong>Classique</strong>{" "}
+                      <span className="text-luxury-slate/60">— tous les champs sont visibles d&apos;emblée. À privilégier pour les formulaires courts ou ceux dont les champs ne se prêtent pas à un dévoilement progressif.</span>
+                    </span>
+                  </label>
+                </div>
               </div>
               <div>
                 <label className={labelClass}>

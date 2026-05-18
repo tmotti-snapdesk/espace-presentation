@@ -13,6 +13,9 @@ interface LpLeadFormProps {
   fields?: LpFormField[];
   lpSlug: string;
   lpTitle: string;
+  // When false, render every field at once instead of revealing them
+  // three rows at a time. Defaults to true.
+  progressive?: boolean;
 }
 
 type FieldValue = string | boolean | string[];
@@ -46,6 +49,7 @@ export default function LpLeadForm({
   fields,
   lpSlug,
   lpTitle,
+  progressive = true,
 }: LpLeadFormProps) {
   const effectiveFields =
     fields && fields.length > 0 ? fields : LEGACY_DEFAULT_FIELDS;
@@ -151,14 +155,22 @@ export default function LpLeadForm({
   // Group rows into chunks revealed progressively. The visitor sees
   // ROWS_PER_CHUNK rows at a time; the next chunk reveals automatically
   // once every required field in the prior chunks is filled.
+  // When `progressive` is false, every row sits in a single chunk so the
+  // whole form is visible upfront — some forms (e.g. very short ones, or
+  // those with a single textarea) don't benefit from the staggered reveal.
   const chunks: LpFormField[][][] = [];
-  for (let i = 0; i < rows.length; i += ROWS_PER_CHUNK) {
-    chunks.push(rows.slice(i, i + ROWS_PER_CHUNK));
+  if (progressive) {
+    for (let i = 0; i < rows.length; i += ROWS_PER_CHUNK) {
+      chunks.push(rows.slice(i, i + ROWS_PER_CHUNK));
+    }
+  } else {
+    chunks.push(rows);
   }
 
   const [maxRevealedChunk, setMaxRevealedChunk] = useState(0);
 
   useEffect(() => {
+    if (!progressive) return;
     // Walk forward from the current frontier as long as the chunk we sit
     // on has all its required fields satisfied, then surface the next.
     // We never roll back: clearing a previously-filled field after the
@@ -175,7 +187,7 @@ export default function LpLeadForm({
       }
       return candidate;
     });
-  }, [values, chunks]);
+  }, [values, chunks, progressive]);
 
   const allChunksRevealed = maxRevealedChunk >= chunks.length - 1;
 

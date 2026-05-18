@@ -95,6 +95,7 @@ export async function PUT(
       formCtaText: body.formCtaText,
       formHubspotFormId: body.formHubspotFormId,
       formFields: body.formFields,
+      formProgressive: body.formProgressive,
       createdAt: body.createdAt || new Date().toISOString(),
     };
 

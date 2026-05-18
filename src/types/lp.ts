@@ -117,4 +117,8 @@ export interface LandingPageData {
   // When set and non-empty, replaces the legacy 7-field form with a fully
   // configurable list of fields (preserves back-compat for older LPs).
   formFields?: LpFormField[];
+  // When false, the form renders every field at once instead of the
+  // default 3-fields-at-a-time progressive reveal. `undefined` is treated
+  // as `true` so existing LPs keep the progressive behaviour.
+  formProgressive?: boolean;
 }

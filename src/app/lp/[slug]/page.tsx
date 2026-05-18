@@ -1,7 +1,7 @@
-import { cache } from "react";
+import { cache, type ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { list } from "@vercel/blob";
-import { LandingPageData } from "@/types/lp";
+import { LandingPageData, resolveSectionOrder } from "@/types/lp";
 import LpHero from "@/components/lp/LpHero";
 import LpMission from "@/components/lp/LpMission";
 import LpProcess from "@/components/lp/LpProcess";
@@ -77,6 +77,102 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
   );
   const testimonialVisible = testimonialItems.length > 0;
 
+  // Render the reorderable blocks in the admin-defined order. The Hero is
+  // always first (it's the page header) and the floating sticky CTA always
+  // last; everything between is configurable so we can A/B test layouts
+  // (e.g. form right after the hero).
+  const order = resolveSectionOrder(lp.sectionOrder);
+  const blocks: ReactNode[] = [];
+  let formRendered = false;
+  for (const key of order) {
+    switch (key) {
+      case "mission":
+        blocks.push(
+          <LpMission
+            key="mission"
+            label={lp.missionLabel}
+            title={lp.missionTitle}
+            subtitle={lp.missionSubtitle}
+            cards={lp.missionCards}
+            photos={lp.missionPhotos}
+          />
+        );
+        // Anchor CTA points to #form — only useful while the form is still
+        // ahead in the page.
+        if (missionVisible && !formRendered) {
+          blocks.push(<LpAnchorCta key="mission-cta" text={ctaText} />);
+        }
+        break;
+      case "process":
+        blocks.push(
+          <LpProcess
+            key="process"
+            label={lp.processLabel}
+            title={lp.processTitle}
+            subtitle={lp.processSubtitle}
+            steps={lp.processSteps}
+          />
+        );
+        break;
+      case "testimonial":
+        blocks.push(<LpTestimonial key="testimonial" items={testimonialItems} />);
+        if (testimonialVisible && !formRendered) {
+          blocks.push(<LpAnchorCta key="testimonial-cta" text={ctaText} />);
+        }
+        break;
+      case "socialProof":
+        blocks.push(
+          <LpSocialProof
+            key="socialProof"
+            title={lp.socialProofTitle}
+            logos={lp.socialProofLogos}
+            showGoogleRating={lp.socialProofShowGoogleRating}
+          />
+        );
+        break;
+      case "urgency":
+        blocks.push(
+          <LpUrgency
+            key="urgency"
+            label={lp.urgencyLabel}
+            title={lp.urgencyTitle}
+            subtitle={lp.urgencySubtitle}
+            steps={lp.urgencySteps}
+            deadline={lp.urgencyDeadline}
+            expiredText={lp.urgencyExpiredText}
+          />
+        );
+        break;
+      case "form":
+        blocks.push(
+          <LpLeadForm
+            key="form"
+            title={lp.formTitle}
+            label={lp.formLabel}
+            ctaText={lp.formCtaText}
+            hubspotFormId={lp.formHubspotFormId}
+            fields={formFields}
+            lpSlug={lp.slug}
+            lpTitle={lp.heroTitle || lp.internalTitle}
+            progressive={lp.formProgressive === true}
+          />
+        );
+        formRendered = true;
+        break;
+      case "faq":
+        blocks.push(
+          <LpFaq
+            key="faq"
+            label={lp.faqLabel}
+            title={lp.faqTitle}
+            subtitle={lp.faqSubtitle}
+            items={lp.faqItems}
+          />
+        );
+        break;
+    }
+  }
+
   return (
     <main>
       <LpHero
@@ -87,57 +183,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         ctaText={lp.heroCtaText}
       />
 
-      <LpMission
-        label={lp.missionLabel}
-        title={lp.missionTitle}
-        subtitle={lp.missionSubtitle}
-        cards={lp.missionCards}
-        photos={lp.missionPhotos}
-      />
-      {missionVisible && <LpAnchorCta text={ctaText} />}
-
-      <LpProcess
-        label={lp.processLabel}
-        title={lp.processTitle}
-        subtitle={lp.processSubtitle}
-        steps={lp.processSteps}
-      />
-
-      <LpTestimonial items={testimonialItems} />
-      {testimonialVisible && <LpAnchorCta text={ctaText} />}
-
-      <LpSocialProof
-        title={lp.socialProofTitle}
-        logos={lp.socialProofLogos}
-        showGoogleRating={lp.socialProofShowGoogleRating}
-      />
-
-      <LpUrgency
-        label={lp.urgencyLabel}
-        title={lp.urgencyTitle}
-        subtitle={lp.urgencySubtitle}
-        steps={lp.urgencySteps}
-        deadline={lp.urgencyDeadline}
-        expiredText={lp.urgencyExpiredText}
-      />
-
-      <LpLeadForm
-        title={lp.formTitle}
-        label={lp.formLabel}
-        ctaText={lp.formCtaText}
-        hubspotFormId={lp.formHubspotFormId}
-        fields={formFields}
-        lpSlug={lp.slug}
-        lpTitle={lp.heroTitle || lp.internalTitle}
-        progressive={lp.formProgressive === true}
-      />
-
-      <LpFaq
-        label={lp.faqLabel}
-        title={lp.faqTitle}
-        subtitle={lp.faqSubtitle}
-        items={lp.faqItems}
-      />
+      {blocks}
 
       <LpStickyCta text={ctaText} />
     </main>

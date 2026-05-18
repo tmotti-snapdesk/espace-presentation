@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       formHubspotFormId: body.formHubspotFormId,
       formFields: body.formFields,
       formProgressive: body.formProgressive,
+      sectionOrder: body.sectionOrder,
       createdAt: new Date().toISOString(),
     };
 

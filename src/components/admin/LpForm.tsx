@@ -2,7 +2,19 @@
 
 import { useState } from "react";
 import { upload } from "@vercel/blob/client";
-import { LandingPageData, LpMissionCard, LpLogo, LpProcessStep, LpFaqItem, LpTestimonialItem, LpFormField, LpFormFieldType } from "@/types/lp";
+import {
+  LandingPageData,
+  LpMissionCard,
+  LpLogo,
+  LpProcessStep,
+  LpFaqItem,
+  LpTestimonialItem,
+  LpFormField,
+  LpFormFieldType,
+  LpSectionKey,
+  LP_SECTION_LABELS,
+  resolveSectionOrder,
+} from "@/types/lp";
 import {
   HUBSPOT_FIELD_PRESETS,
   CUSTOM_PRESET_VALUE,
@@ -128,6 +140,21 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [formProgressive, setFormProgressive] = useState<boolean>(
     initialData?.formProgressive === true
   );
+
+  // ── Disposition de la page (ordre des blocs entre le Hero et le sticky CTA) ──
+  const [sectionOrder, setSectionOrder] = useState<LpSectionKey[]>(() =>
+    resolveSectionOrder(initialData?.sectionOrder)
+  );
+  const moveSection = (index: number, delta: number) => {
+    setSectionOrder((prev) => {
+      const next = [...prev];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const resetSectionOrder = () => setSectionOrder(resolveSectionOrder(undefined));
 
   const updateField = (index: number, patch: Partial<LpFormField>) => {
     setFormFields((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
@@ -399,6 +426,7 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
       formHubspotFormId: formHubspotFormId || undefined,
       formFields: formFields.length > 0 ? formFields : undefined,
       formProgressive,
+      sectionOrder,
     };
 
     try {
@@ -493,6 +521,43 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* ── Disposition de la page ── */}
+          <section>
+            <SectionTitle>Disposition de la page</SectionTitle>
+            <p className="text-xs text-luxury-slate/70 leading-relaxed mb-4">
+              Réorganise l&apos;ordre des blocs pour tester quelle disposition convertit le mieux
+              (par exemple, placer le formulaire juste après le Hero). Le Hero reste toujours
+              en premier ; les blocs vides ne s&apos;affichent pas de toute façon.
+            </p>
+            <div className="space-y-2">
+              {sectionOrder.map((key, idx) => (
+                <div key={key}
+                  className="flex items-center justify-between gap-3 border border-primary-200 bg-white px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-luxury-slate/60 w-6 tabular-nums">{idx + 1}.</span>
+                    <span className="text-sm text-luxury-charcoal">{LP_SECTION_LABELS[key]}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => moveSection(idx, -1)}
+                      disabled={idx === 0}
+                      className="px-2 py-1 text-xs border border-primary-200 disabled:opacity-30 hover:bg-luxury-cream">
+                      ↑
+                    </button>
+                    <button type="button" onClick={() => moveSection(idx, 1)}
+                      disabled={idx === sectionOrder.length - 1}
+                      className="px-2 py-1 text-xs border border-primary-200 disabled:opacity-30 hover:bg-luxury-cream">
+                      ↓
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={resetSectionOrder}
+              className="mt-3 text-xs text-luxury-slate/70 hover:text-luxury-charcoal transition-colors underline underline-offset-2">
+              Rétablir l&apos;ordre par défaut
+            </button>
           </section>
 
           {/* ── Hero ── */}

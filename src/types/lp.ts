@@ -121,4 +121,53 @@ export interface LandingPageData {
   // visitor fills them in. Defaults to false (classic display, every
   // field visible upfront) — progressive must be opted in per LP.
   formProgressive?: boolean;
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  // Order in which the reorderable blocks are rendered between the Hero and
+  // the floating sticky CTA. When unset, `DEFAULT_LP_SECTION_ORDER` is used.
+  // Unknown keys are ignored; known keys missing from the array are appended
+  // in their default position so newly-introduced sections still appear on
+  // older LPs.
+  sectionOrder?: LpSectionKey[];
+}
+
+// Keys of the blocks the admin can reorder. Hero is always first, the
+// floating sticky CTA is always last — neither is part of the order.
+export type LpSectionKey =
+  | "mission"
+  | "process"
+  | "testimonial"
+  | "socialProof"
+  | "urgency"
+  | "form"
+  | "faq";
+
+export const DEFAULT_LP_SECTION_ORDER: LpSectionKey[] = [
+  "mission",
+  "process",
+  "testimonial",
+  "socialProof",
+  "urgency",
+  "form",
+  "faq",
+];
+
+export const LP_SECTION_LABELS: Record<LpSectionKey, string> = {
+  mission: "Notre métier",
+  process: "Comment ça marche",
+  testimonial: "Témoignages clients",
+  socialProof: "Social proof",
+  urgency: "Urgence + compte à rebours",
+  form: "Formulaire",
+  faq: "FAQ",
+};
+
+// Returns the effective order: `sectionOrder` when set, with any default
+// keys missing from it appended in their default position so a newly
+// added block doesn't vanish for LPs saved before it existed.
+export function resolveSectionOrder(saved?: LpSectionKey[]): LpSectionKey[] {
+  if (!saved || saved.length === 0) return DEFAULT_LP_SECTION_ORDER;
+  const known = saved.filter((k) => DEFAULT_LP_SECTION_ORDER.includes(k));
+  const missing = DEFAULT_LP_SECTION_ORDER.filter((k) => !known.includes(k));
+  return [...known, ...missing];
 }

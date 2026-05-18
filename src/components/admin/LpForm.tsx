@@ -122,10 +122,11 @@ export default function LpForm({ mode, initialData }: LpFormProps) {
   const [formCtaText, setFormCtaText] = useState(initialData?.formCtaText || "Envoyer ma demande");
   const [formHubspotFormId, setFormHubspotFormId] = useState(initialData?.formHubspotFormId || "");
   const [formFields, setFormFields] = useState<LpFormField[]>(initialData?.formFields || []);
-  // Legacy LPs predate this toggle and saved no value — treat them as
-  // progressive to preserve the established behaviour.
+  // Classic display is the default; progressive must be opted in
+  // explicitly. Legacy LPs saved before this toggle existed have an
+  // undefined value and therefore also default to classic.
   const [formProgressive, setFormProgressive] = useState<boolean>(
-    initialData?.formProgressive !== false
+    initialData?.formProgressive === true
   );
 
   const updateField = (index: number, patch: Partial<LpFormField>) => {

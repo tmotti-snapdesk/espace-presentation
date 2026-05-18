@@ -129,7 +129,7 @@ export default async function LpPage({ params }: { params: { slug: string } }) {
         fields={formFields}
         lpSlug={lp.slug}
         lpTitle={lp.heroTitle || lp.internalTitle}
-        progressive={lp.formProgressive !== false}
+        progressive={lp.formProgressive === true}
       />
 
       <LpFaq

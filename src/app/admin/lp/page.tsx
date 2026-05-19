@@ -54,6 +54,9 @@ export default function LpDashboard() {
             <Link href="/admin" className="text-white/60 text-sm hover:text-white transition-colors">
               ← Espaces
             </Link>
+            <Link href="/admin/leads" className="text-white/60 text-sm hover:text-white transition-colors">
+              Leads
+            </Link>
             <Link href="/admin/lp/nouveau" className="luxury-btn text-sm">
               + Nouvelle LP
             </Link>

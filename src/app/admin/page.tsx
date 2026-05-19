@@ -117,6 +117,9 @@ export default function AdminDashboard() {
             <Link href="/admin/lp" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
               Landing Pages
             </Link>
+            <Link href="/admin/leads" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
+              Leads
+            </Link>
             <Link href="/admin/nouveau" className="luxury-btn text-sm">
               + Créer un espace
             </Link>

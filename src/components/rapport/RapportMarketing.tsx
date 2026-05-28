@@ -62,7 +62,7 @@ export default function RapportMarketing({
   );
 
   return (
-    <section className="section-padding bg-luxury-cream">
+    <section id="marketing" className="section-padding bg-luxury-cream scroll-mt-8">
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="mb-14"

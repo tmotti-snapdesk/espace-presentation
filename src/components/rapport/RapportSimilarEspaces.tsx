@@ -13,7 +13,7 @@ export default function RapportSimilarEspaces({
   if (similarEspaces.length === 0) return null;
 
   return (
-    <section className="section-padding bg-luxury-cream">
+    <section id="similaires" className="section-padding bg-luxury-cream scroll-mt-8">
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="mb-14"

@@ -10,7 +10,7 @@ export default function RapportProspection({ prospectionActions }: RapportProspe
   if (prospectionActions.length === 0) return null;
 
   return (
-    <section className="section-padding bg-white">
+    <section id="prospection" className="section-padding bg-white scroll-mt-8">
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="mb-14"

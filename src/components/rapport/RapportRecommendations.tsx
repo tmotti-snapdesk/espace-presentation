@@ -12,7 +12,7 @@ export default function RapportRecommendations({
   if (recommendations.length === 0) return null;
 
   return (
-    <section className="section-padding bg-luxury-charcoal text-white">
+    <section id="preconisations" className="section-padding bg-luxury-charcoal text-white scroll-mt-8">
       <div className="max-w-5xl mx-auto">
         <motion.div
           className="mb-14"

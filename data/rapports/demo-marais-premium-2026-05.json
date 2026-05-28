@@ -1,0 +1,119 @@
+{
+  "espaceSlug": "demo-marais-premium",
+  "espaceName": "Le Marais Premium",
+  "espaceAddress": "42 rue de Rivoli, 75004 Paris",
+  "marketingStartDate": "2026-02-15",
+  "month": "2026-05",
+  "ownerName": "M. Lefèvre",
+  "intro": "Le mois de mai marque une accélération nette de la commercialisation du Marais Premium. La nouvelle stratégie de diffusion porte ses fruits : davantage de formulaires entrants qualifiés, un pipeline qui se densifie et deux opportunités sérieuses désormais en phase de négociation.",
+  "monthlyBudget": "1 850 €",
+  "totalBudget": "5 240 €",
+  "matchingFormsCount": 17,
+  "preselectionCount": 9,
+  "brokersListingActive": true,
+  "brokersListingCount": 450,
+  "distribution": {
+    "bureauxLocaux": true,
+    "ubiq": true,
+    "spliit": true,
+    "flashoffice": false,
+    "placeImmobilier": true
+  },
+  "otherMarketingActions": [
+    "Refonte intégrale des visuels professionnels par notre photographe partenaire",
+    "Mise en avant Top Annonce sur Bureaux Locaux pendant 3 semaines",
+    "Publication d'une série de 3 posts LinkedIn 'Inside Le Marais' (12 400 impressions cumulées)",
+    "Campagne emailing dédiée vers 480 contacts qualifiés (studios créatifs & agences)"
+  ],
+  "prospectionActions": [
+    "Relance individuelle des 28 prospects qualifiés du trimestre",
+    "Prise de contact avec 12 brokers spécialistes du 3e et 4e arrondissement",
+    "Qualification de 18 nouveaux leads entrants reçus en mai",
+    "Organisation d'un petit-déjeuner décideurs RH sur place (10 invités)",
+    "Suivi rapproché des 6 propositions commerciales émises en avril"
+  ],
+  "visites": [
+    {
+      "id": "vis-1",
+      "date": "2026-05-06",
+      "prospect": "Atelier Norée",
+      "activity": "Studio d'architecture",
+      "workstations": "12",
+      "feedback": "Très enthousiastes sur la luminosité et le quartier. La fondatrice apprécie particulièrement le balcon filant. Souhaitent valider le budget avec leur associé avant fin mai.",
+      "outcome": "Proposition envoyée le 12/05, relance prévue le 03/06"
+    },
+    {
+      "id": "vis-2",
+      "date": "2026-05-09",
+      "prospect": "Helios Tech",
+      "activity": "Éditeur SaaS — 22 collaborateurs",
+      "workstations": "20",
+      "feedback": "Hésitent entre Le Marais et un espace dans le 9e. Le quartier et la modernité de l'aménagement les séduisent, mais le prix par poste est légèrement au-dessus de leur cible initiale.",
+      "outcome": "Proposition envoyée avec un geste commercial, négociation en cours"
+    },
+    {
+      "id": "vis-3",
+      "date": "2026-05-14",
+      "prospect": "Maison Vega",
+      "activity": "Agence de communication",
+      "workstations": "8",
+      "feedback": "Coup de cœur unanime sur le balcon filant. Cherchent une disponibilité pour septembre — souhaitent revenir avec leurs associés pour confirmation.",
+      "outcome": "Seconde visite planifiée le 11/06"
+    },
+    {
+      "id": "vis-4",
+      "date": "2026-05-21",
+      "prospect": "Nova Studio",
+      "activity": "Production audiovisuelle",
+      "workstations": "10",
+      "feedback": "Très intéressés. L'équipement de la salle de réunion principale leur convient parfaitement pour leurs présentations clients. En attente de la décision du board.",
+      "outcome": "Décision du board attendue le 07/06"
+    },
+    {
+      "id": "vis-5",
+      "date": "2026-05-27",
+      "prospect": "Patera Design",
+      "activity": "Agence design produit",
+      "workstations": "6",
+      "feedback": "Signature actée à l'issue de la visite. Démarrage prévu pour juillet 2026 sur un engagement 24 mois.",
+      "outcome": "Bail signé — démarrage 01/07/2026"
+    }
+  ],
+  "recommendations": [
+    "Maintenir l'effort de diffusion sur Spliit et Ubiq : ces deux portails génèrent les profils les plus alignés avec votre cible.\nAugmenter le budget de mise en avant Top Annonce de 20% pour le mois de juin.",
+    "Produire une vidéo immersive courte (45s) pour différencier l'annonce sur les réseaux sociaux et les portails. Notre équipe peut s'en charger dans le cadre du budget marketing.",
+    "Ouvrir le créneau d'une journée portes ouvertes mi-juin pour capitaliser sur l'intérêt actuel et concrétiser les 4 prospects encore en réflexion.",
+    "Envisager un léger ajustement du prix par poste pour les contrats de 24 mois et plus, afin de sécuriser plus rapidement les profils stables (type Helios Tech)."
+  ],
+  "similarEspaces": [
+    {
+      "id": "sim-1",
+      "name": "Le Sentier — Atelier",
+      "url": "https://example.com/sentier-atelier",
+      "price": "16 800 € HT/mois",
+      "workstations": "40",
+      "description": "Plateau industriel rénové dans le 2e, ambiance brutaliste contemporaine. Disponible immédiatement.",
+      "image": ""
+    },
+    {
+      "id": "sim-2",
+      "name": "Bastille Maison",
+      "url": "https://example.com/bastille-maison",
+      "price": "19 200 € HT/mois",
+      "workstations": "50",
+      "description": "Hôtel particulier sur 3 niveaux dans le 11e, terrasse de 80m². Disponibilité septembre.",
+      "image": ""
+    },
+    {
+      "id": "sim-3",
+      "name": "Saint-Honoré Suite",
+      "url": "https://example.com/saint-honore",
+      "price": "21 500 € HT/mois",
+      "workstations": "45",
+      "description": "Étage haussmannien premium dans le 1er, prestations très haut de gamme. Engagement minimum 24 mois.",
+      "image": ""
+    }
+  ],
+  "createdAt": "2026-05-28T09:00:00.000Z",
+  "updatedAt": "2026-05-28T09:00:00.000Z"
+}

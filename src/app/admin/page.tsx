@@ -173,6 +173,12 @@ export default function AdminDashboard() {
                   >
                     Modifier
                   </Link>
+                  <Link
+                    href={`/admin/${espace.slug}/rapports`}
+                    className="px-4 py-2 text-sm border border-luxury-gold/40 text-luxury-charcoal bg-luxury-champagne/30 hover:bg-luxury-champagne/60 transition-colors rounded"
+                  >
+                    Rapports
+                  </Link>
                   <button
                     onClick={() => handleDuplicate(espace.slug)}
                     disabled={duplicating === espace.slug}

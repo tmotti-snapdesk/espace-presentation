@@ -32,6 +32,14 @@
     "Organisation d'un petit-déjeuner décideurs RH sur place (10 invités)",
     "Suivi rapproché des 6 propositions commerciales émises en avril"
   ],
+  "upcomingActions": [
+    "Seconde visite avec Maison Vega le 11/06",
+    "Réception de la décision board Nova Studio le 07/06",
+    "Lancement d'une campagne LinkedIn sponsorisée (budget 600 €)",
+    "Production d'une vidéo immersive de 45 secondes",
+    "Journée portes ouvertes prévue mi-juin"
+  ],
+  "presentationUrl": "/espaces/demo-marais-premium",
   "visites": [
     {
       "id": "vis-1",

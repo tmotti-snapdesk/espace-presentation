@@ -10,6 +10,7 @@ interface RapportHeroProps {
   month: string;
   marketingStartDate: string;
   ownerName: string;
+  presentationUrl: string;
 }
 
 export default function RapportHero({
@@ -18,9 +19,14 @@ export default function RapportHero({
   month,
   marketingStartDate,
   ownerName,
+  presentationUrl,
 }: RapportHeroProps) {
   const monthLabel = formatMonthLabel(month);
   const startLabel = formatLongDate(marketingStartDate);
+
+  const handlePrint = () => {
+    if (typeof window !== "undefined") window.print();
+  };
 
   return (
     <section className="relative w-full overflow-hidden bg-luxury-charcoal text-white">
@@ -37,7 +43,7 @@ export default function RapportHero({
 
       <div className="relative z-10 px-6 md:px-12 lg:px-24 pt-12 pb-20">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between gap-6 mb-16">
             <Image
               src="/images/Logo Snapdesk Blanc.png"
               alt="Snapdesk"
@@ -46,11 +52,35 @@ export default function RapportHero({
               className="h-8 md:h-10 w-auto"
               priority
             />
-            <p className="luxury-label text-luxury-champagne text-right">
-              Rapport de commercialisation
-              <br />
-              <span className="capitalize">{monthLabel}</span>
-            </p>
+            <div className="flex flex-col items-end gap-4">
+              <p className="luxury-label text-luxury-champagne text-right">
+                Rapport de commercialisation
+                <br />
+                <span className="capitalize">{monthLabel}</span>
+              </p>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="no-print inline-flex items-center gap-2 px-4 py-2 border border-white/30 text-white/90 text-xs uppercase tracking-[0.15em] font-medium hover:bg-white/10 transition-colors rounded"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 6 2 18 2 18 9" />
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                  <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                Télécharger en PDF
+              </button>
+            </div>
           </div>
 
           <motion.div
@@ -66,6 +96,33 @@ export default function RapportHero({
                 {espaceAddress}
               </p>
             )}
+
+            {presentationUrl && (
+              <a
+                href={presentationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-6 py-3 mb-10 bg-luxury-champagne text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium rounded hover:bg-white transition-colors group"
+              >
+                Voir la présentation commerciale
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-transform group-hover:translate-x-1"
+                  aria-hidden="true"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </a>
+            )}
+
             <div className="flex flex-wrap items-end gap-x-16 gap-y-6 pt-10 border-t border-white/10">
               {startLabel && (
                 <div>

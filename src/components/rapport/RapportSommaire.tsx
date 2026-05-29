@@ -15,7 +15,7 @@ export default function RapportSommaire({ items }: RapportSommaireProps) {
   if (items.length === 0) return null;
 
   return (
-    <section className="bg-luxury-cream border-b border-primary-100">
+    <section className="no-print bg-luxury-cream border-b border-primary-100">
       <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-24 py-8 md:py-10">
         <motion.div
           initial={{ opacity: 0, y: 10 }}

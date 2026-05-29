@@ -75,6 +75,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       prospectionActions: Array.isArray(body.prospectionActions)
         ? body.prospectionActions.filter(Boolean)
         : [],
+      upcomingActions: Array.isArray(body.upcomingActions)
+        ? body.upcomingActions.filter(Boolean)
+        : [],
+      presentationUrl: body.presentationUrl ?? existing?.presentationUrl ?? "",
       visites: Array.isArray(body.visites) ? body.visites : [],
       recommendations: Array.isArray(body.recommendations)
         ? body.recommendations.filter(Boolean)

@@ -32,6 +32,10 @@ function normalizeRapport(body: Record<string, unknown>, slug: string, month: st
     prospectionActions: Array.isArray(body.prospectionActions)
       ? (body.prospectionActions as string[]).filter(Boolean)
       : [],
+    upcomingActions: Array.isArray(body.upcomingActions)
+      ? (body.upcomingActions as string[]).filter(Boolean)
+      : [],
+    presentationUrl: (body.presentationUrl as string) || "",
     visites: Array.isArray(body.visites) ? (body.visites as RapportData["visites"]) : [],
     recommendations: Array.isArray(body.recommendations)
       ? (body.recommendations as string[]).filter(Boolean)

@@ -21,7 +21,7 @@ export default function RapportProspection({ prospectionActions }: RapportProspe
         >
           <p className="luxury-label mb-4">Commerciale</p>
           <h2 className="luxury-subheading text-luxury-charcoal mb-4">
-            Prospection menée ce mois-ci
+            Actions menées ce mois-ci
           </h2>
           <div className="luxury-divider" />
         </motion.div>

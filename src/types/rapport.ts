@@ -45,10 +45,13 @@ export interface RapportData {
   otherMarketingActions: string[];
 
   prospectionActions: string[];
+  upcomingActions: string[];
 
   visites: RapportVisite[];
   recommendations: string[];
   similarEspaces: SimilarEspace[];
+
+  presentationUrl: string;
 
   createdAt: string;
   updatedAt: string;
@@ -71,10 +74,13 @@ export interface RapportFormData {
   otherMarketingActions: string;
 
   prospectionActions: string;
+  upcomingActions: string;
 
   visites: RapportVisite[];
   recommendations: string;
   similarEspaces: SimilarEspace[];
+
+  presentationUrl: string;
 }
 
 export const DISTRIBUTION_LABELS: Record<keyof RapportDistribution, string> = {

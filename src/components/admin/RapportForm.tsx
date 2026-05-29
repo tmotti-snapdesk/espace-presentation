@@ -84,12 +84,14 @@ export default function RapportForm({
         distribution: { ...emptyDistribution(), ...initialData.distribution },
         otherMarketingActions: joinLines(initialData.otherMarketingActions),
         prospectionActions: joinLines(initialData.prospectionActions),
+        upcomingActions: joinLines(initialData.upcomingActions || []),
         visites: initialData.visites.length > 0 ? initialData.visites : [emptyVisite()],
         recommendations: joinLines(initialData.recommendations),
         similarEspaces:
           initialData.similarEspaces.length > 0
             ? initialData.similarEspaces
             : [emptySimilar()],
+        presentationUrl: initialData.presentationUrl || "",
       };
     }
     return {
@@ -107,9 +109,11 @@ export default function RapportForm({
       distribution: emptyDistribution(),
       otherMarketingActions: "",
       prospectionActions: "",
+      upcomingActions: "",
       visites: [emptyVisite()],
       recommendations: "",
       similarEspaces: [emptySimilar()],
+      presentationUrl: "",
     };
   });
 
@@ -182,9 +186,11 @@ export default function RapportForm({
         distribution: form.distribution,
         otherMarketingActions: splitLines(form.otherMarketingActions),
         prospectionActions: splitLines(form.prospectionActions),
+        upcomingActions: splitLines(form.upcomingActions),
         visites: form.visites.filter((v) => v.prospect.trim() || v.feedback.trim()),
         recommendations: splitLines(form.recommendations),
         similarEspaces: form.similarEspaces.filter((s) => s.name.trim()),
+        presentationUrl: form.presentationUrl.trim(),
       };
 
       const endpoint =
@@ -291,6 +297,19 @@ export default function RapportForm({
               className={inputCls}
               placeholder="ex: M. Lefèvre"
             />
+          </Field>
+          <Field label="Lien vers la présentation commerciale" full>
+            <input
+              type="url"
+              value={form.presentationUrl}
+              onChange={(e) => updateField("presentationUrl", e.target.value)}
+              className={inputCls}
+              placeholder="https://..."
+            />
+            <p className="text-xs text-luxury-slate mt-2">
+              Un bouton « Voir la présentation commerciale » apparaîtra dans le hero
+              du rapport si l&apos;URL est renseignée.
+            </p>
           </Field>
           <Field label="Synthèse / introduction" full>
             <textarea
@@ -419,14 +438,27 @@ export default function RapportForm({
 
         <div className="mb-12" />
 
-        <SectionTitle>Section commerciale — prospection</SectionTitle>
-        <Field label="Actions de prospection (une par ligne)" full>
+        <SectionTitle>Actions menées</SectionTitle>
+        <Field label="Actions menées ce mois-ci (une par ligne)" full>
           <textarea
             value={form.prospectionActions}
             onChange={(e) => updateField("prospectionActions", e.target.value)}
             rows={5}
             className={inputCls + " resize-vertical"}
             placeholder={"ex:\nRelance des 28 prospects qualifiés du trimestre\nPrise de contact avec 12 brokers spécialistes du 4e arrondissement\nQualification de 18 nouveaux leads entrants"}
+          />
+        </Field>
+
+        <div className="mb-12" />
+
+        <SectionTitle>Actions à venir</SectionTitle>
+        <Field label="Actions prévues le mois prochain (une par ligne)" full>
+          <textarea
+            value={form.upcomingActions}
+            onChange={(e) => updateField("upcomingActions", e.target.value)}
+            rows={5}
+            className={inputCls + " resize-vertical"}
+            placeholder={"ex:\nOrganiser un petit-déjeuner décideurs RH\nLancer une campagne LinkedIn sponsorisée\nRelancer les 4 propositions toujours en réflexion"}
           />
         </Field>
 

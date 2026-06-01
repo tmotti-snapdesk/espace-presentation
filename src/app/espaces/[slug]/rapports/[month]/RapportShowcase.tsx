@@ -43,7 +43,7 @@ export default function RapportShowcase({ rapport }: RapportShowcaseProps) {
       <RapportIntro intro={rapport.intro} />
       <RapportMarketing
         monthlyBudget={rapport.monthlyBudget}
-        totalBudget={rapport.totalBudget}
+        targetedEmailingCount={rapport.targetedEmailingCount}
         matchingFormsCount={rapport.matchingFormsCount}
         preselectionCount={rapport.preselectionCount}
         brokersListingActive={rapport.brokersListingActive}
@@ -53,7 +53,10 @@ export default function RapportShowcase({ rapport }: RapportShowcaseProps) {
       />
       <RapportProspection prospectionActions={rapport.prospectionActions} />
       <RapportUpcoming upcomingActions={upcomingActions} />
-      <RapportVisites visites={rapport.visites} />
+      <RapportVisites
+        visites={rapport.visites}
+        anonymizeProspects={rapport.anonymizeVisitProspects}
+      />
       <RapportRecommendations recommendations={rapport.recommendations} />
       <RapportSimilarEspaces similarEspaces={rapport.similarEspaces} />
       <RapportFooter espaceName={rapport.espaceName} />

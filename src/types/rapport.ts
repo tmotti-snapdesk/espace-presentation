@@ -36,7 +36,7 @@ export interface RapportData {
   intro: string;
 
   monthlyBudget: string;
-  totalBudget: string;
+  targetedEmailingCount: number;
   matchingFormsCount: number;
   preselectionCount: number;
   brokersListingActive: boolean;
@@ -47,6 +47,7 @@ export interface RapportData {
   prospectionActions: string[];
   upcomingActions: string[];
 
+  anonymizeVisitProspects: boolean;
   visites: RapportVisite[];
   recommendations: string[];
   similarEspaces: SimilarEspace[];
@@ -65,7 +66,7 @@ export interface RapportFormData {
   intro: string;
 
   monthlyBudget: string;
-  totalBudget: string;
+  targetedEmailingCount: string;
   matchingFormsCount: string;
   preselectionCount: string;
   brokersListingActive: boolean;
@@ -76,6 +77,7 @@ export interface RapportFormData {
   prospectionActions: string;
   upcomingActions: string;
 
+  anonymizeVisitProspects: boolean;
   visites: RapportVisite[];
   recommendations: string;
   similarEspaces: SimilarEspace[];

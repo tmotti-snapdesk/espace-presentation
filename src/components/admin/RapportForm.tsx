@@ -76,7 +76,7 @@ export default function RapportForm({
         marketingStartDate: initialData.marketingStartDate,
         intro: initialData.intro,
         monthlyBudget: initialData.monthlyBudget,
-        totalBudget: initialData.totalBudget,
+        targetedEmailingCount: String(initialData.targetedEmailingCount ?? ""),
         matchingFormsCount: String(initialData.matchingFormsCount),
         preselectionCount: String(initialData.preselectionCount),
         brokersListingActive: initialData.brokersListingActive,
@@ -85,6 +85,7 @@ export default function RapportForm({
         otherMarketingActions: joinLines(initialData.otherMarketingActions),
         prospectionActions: joinLines(initialData.prospectionActions),
         upcomingActions: joinLines(initialData.upcomingActions || []),
+        anonymizeVisitProspects: initialData.anonymizeVisitProspects ?? false,
         visites: initialData.visites.length > 0 ? initialData.visites : [emptyVisite()],
         recommendations: joinLines(initialData.recommendations),
         similarEspaces:
@@ -101,7 +102,7 @@ export default function RapportForm({
       marketingStartDate: "",
       intro: "",
       monthlyBudget: "",
-      totalBudget: "",
+      targetedEmailingCount: "",
       matchingFormsCount: "",
       preselectionCount: "",
       brokersListingActive: true,
@@ -110,6 +111,7 @@ export default function RapportForm({
       otherMarketingActions: "",
       prospectionActions: "",
       upcomingActions: "",
+      anonymizeVisitProspects: false,
       visites: [emptyVisite()],
       recommendations: "",
       similarEspaces: [emptySimilar()],
@@ -178,7 +180,7 @@ export default function RapportForm({
         ownerName: form.ownerName,
         intro: form.intro,
         monthlyBudget: form.monthlyBudget,
-        totalBudget: form.totalBudget,
+        targetedEmailingCount: form.targetedEmailingCount,
         matchingFormsCount: form.matchingFormsCount,
         preselectionCount: form.preselectionCount,
         brokersListingActive: form.brokersListingActive,
@@ -187,6 +189,7 @@ export default function RapportForm({
         otherMarketingActions: splitLines(form.otherMarketingActions),
         prospectionActions: splitLines(form.prospectionActions),
         upcomingActions: splitLines(form.upcomingActions),
+        anonymizeVisitProspects: form.anonymizeVisitProspects,
         visites: form.visites.filter((v) => v.prospect.trim() || v.feedback.trim()),
         recommendations: splitLines(form.recommendations),
         similarEspaces: form.similarEspaces.filter((s) => s.name.trim()),
@@ -333,13 +336,14 @@ export default function RapportForm({
               placeholder="ex: 1 250 €"
             />
           </Field>
-          <Field label="Budget marketing cumulé depuis le début">
+          <Field label="Contacts ayant reçu un emailing ciblé">
             <input
-              type="text"
-              value={form.totalBudget}
-              onChange={(e) => updateField("totalBudget", e.target.value)}
+              type="number"
+              min={0}
+              value={form.targetedEmailingCount}
+              onChange={(e) => updateField("targetedEmailingCount", e.target.value)}
               className={inputCls}
-              placeholder="ex: 4 800 €"
+              placeholder="0"
             />
           </Field>
           <Field label="Formulaires reçus avec cahier des charges correspondant">
@@ -352,7 +356,7 @@ export default function RapportForm({
               placeholder="0"
             />
           </Field>
-          <Field label="Entreprises ayant reçu l'espace en pré-sélection">
+          <Field label="Prospects ayant reçu la présentation commerciale">
             <input
               type="number"
               min={0}
@@ -475,6 +479,25 @@ export default function RapportForm({
           >
             + Ajouter une visite
           </button>
+        </div>
+        <div className="mb-6 p-5 border border-primary-200 rounded-lg bg-white">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.anonymizeVisitProspects}
+              onChange={(e) => updateField("anonymizeVisitProspects", e.target.checked)}
+              className="w-5 h-5 accent-luxury-gold mt-0.5"
+            />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-luxury-charcoal">
+                Anonymiser le nom des prospects sur les visites
+              </span>
+              <p className="text-xs text-luxury-slate mt-1">
+                Les noms seront masqués dans le rapport (« Prospect 1 », « Prospect 2 »…).
+                Vous pouvez tout de même les saisir ci-dessous pour votre suivi interne.
+              </p>
+            </div>
+          </label>
         </div>
         <div className="space-y-4 mb-12">
           {form.visites.map((v) => (

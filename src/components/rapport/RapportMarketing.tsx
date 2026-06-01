@@ -5,7 +5,7 @@ import { RapportDistribution, DISTRIBUTION_LABELS } from "@/types/rapport";
 
 interface RapportMarketingProps {
   monthlyBudget: string;
-  totalBudget: string;
+  targetedEmailingCount: number;
   matchingFormsCount: number;
   preselectionCount: number;
   brokersListingActive: boolean;
@@ -49,7 +49,7 @@ function KpiCard({
 
 export default function RapportMarketing({
   monthlyBudget,
-  totalBudget,
+  targetedEmailingCount,
   matchingFormsCount,
   preselectionCount,
   brokersListingActive,
@@ -80,13 +80,16 @@ export default function RapportMarketing({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
           <KpiCard label="Budget marketing du mois" value={monthlyBudget || "—"} highlight />
-          <KpiCard label="Budget marketing cumulé" value={totalBudget || "—"} highlight />
+          <KpiCard
+            label="Contacts ayant reçu un emailing ciblé"
+            value={targetedEmailingCount}
+          />
           <KpiCard
             label="Formulaires reçus avec cahier des charges correspondant"
             value={matchingFormsCount}
           />
           <KpiCard
-            label="Entreprises ayant reçu l'espace en pré-sélection"
+            label="Prospects ayant reçu la présentation commerciale"
             value={preselectionCount}
           />
         </div>

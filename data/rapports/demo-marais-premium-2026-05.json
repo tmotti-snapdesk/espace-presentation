@@ -7,7 +7,7 @@
   "ownerName": "M. Lefèvre",
   "intro": "Le mois de mai marque une accélération nette de la commercialisation du Marais Premium. La nouvelle stratégie de diffusion porte ses fruits : davantage de formulaires entrants qualifiés, un pipeline qui se densifie et deux opportunités sérieuses désormais en phase de négociation.",
   "monthlyBudget": "1 850 €",
-  "totalBudget": "5 240 €",
+  "targetedEmailingCount": 480,
   "matchingFormsCount": 17,
   "preselectionCount": 9,
   "brokersListingActive": true,
@@ -40,6 +40,7 @@
     "Journée portes ouvertes prévue mi-juin"
   ],
   "presentationUrl": "/espaces/demo-marais-premium",
+  "anonymizeVisitProspects": false,
   "visites": [
     {
       "id": "vis-1",

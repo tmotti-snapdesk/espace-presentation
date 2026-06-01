@@ -5,9 +5,13 @@ import { RapportVisite, formatLongDate } from "@/types/rapport";
 
 interface RapportVisitesProps {
   visites: RapportVisite[];
+  anonymizeProspects?: boolean;
 }
 
-export default function RapportVisites({ visites }: RapportVisitesProps) {
+export default function RapportVisites({
+  visites,
+  anonymizeProspects = false,
+}: RapportVisitesProps) {
   if (visites.length === 0) return null;
 
   return (
@@ -61,7 +65,7 @@ export default function RapportVisites({ visites }: RapportVisitesProps) {
                 <div className="p-6 md:p-8">
                   <div className="mb-4">
                     <h3 className="font-serif text-2xl text-luxury-charcoal">
-                      {v.prospect}
+                      {anonymizeProspects ? `Prospect ${i + 1}` : v.prospect}
                     </h3>
                     {v.activity && (
                       <p className="text-sm text-luxury-slate mt-1">{v.activity}</p>

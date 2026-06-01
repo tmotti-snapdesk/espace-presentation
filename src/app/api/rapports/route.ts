@@ -20,7 +20,7 @@ function normalizeRapport(body: Record<string, unknown>, slug: string, month: st
     ownerName: (body.ownerName as string) || "",
     intro: (body.intro as string) || "",
     monthlyBudget: (body.monthlyBudget as string) || "",
-    totalBudget: (body.totalBudget as string) || "",
+    targetedEmailingCount: parseInt(String(kpisBody.targetedEmailingCount ?? "0")) || 0,
     matchingFormsCount: parseInt(String(kpisBody.matchingFormsCount ?? "0")) || 0,
     preselectionCount: parseInt(String(kpisBody.preselectionCount ?? "0")) || 0,
     brokersListingActive: Boolean(body.brokersListingActive),
@@ -36,6 +36,7 @@ function normalizeRapport(body: Record<string, unknown>, slug: string, month: st
       ? (body.upcomingActions as string[]).filter(Boolean)
       : [],
     presentationUrl: (body.presentationUrl as string) || "",
+    anonymizeVisitProspects: Boolean(body.anonymizeVisitProspects),
     visites: Array.isArray(body.visites) ? (body.visites as RapportData["visites"]) : [],
     recommendations: Array.isArray(body.recommendations)
       ? (body.recommendations as string[]).filter(Boolean)

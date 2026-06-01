@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       ownerName: body.ownerName ?? existing?.ownerName ?? "",
       intro: body.intro ?? existing?.intro ?? "",
       monthlyBudget: body.monthlyBudget ?? existing?.monthlyBudget ?? "",
-      totalBudget: body.totalBudget ?? existing?.totalBudget ?? "",
+      targetedEmailingCount: parseInt(String(body.targetedEmailingCount ?? "0")) || 0,
       matchingFormsCount: parseInt(String(body.matchingFormsCount ?? "0")) || 0,
       preselectionCount: parseInt(String(body.preselectionCount ?? "0")) || 0,
       brokersListingActive: Boolean(body.brokersListingActive),
@@ -79,6 +79,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
         ? body.upcomingActions.filter(Boolean)
         : [],
       presentationUrl: body.presentationUrl ?? existing?.presentationUrl ?? "",
+      anonymizeVisitProspects: Boolean(body.anonymizeVisitProspects),
       visites: Array.isArray(body.visites) ? body.visites : [],
       recommendations: Array.isArray(body.recommendations)
         ? body.recommendations.filter(Boolean)

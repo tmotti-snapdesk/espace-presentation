@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { list, put, del } from "@vercel/blob";
-import { getRapportByKey, rapportBlobPath } from "@/lib/rapports";
+import { getRapportByKey, normalizeRapportData, rapportBlobPath } from "@/lib/rapports";
 import { RapportData, emptyDistribution } from "@/types/rapport";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ async function loadFromBlob(espaceSlug: string, month: string): Promise<RapportD
     if (!jsonBlob) return null;
     const res = await fetch(jsonBlob.url, { cache: "no-store" });
     if (!res.ok) return null;
-    return (await res.json()) as RapportData;
+    return normalizeRapportData(await res.json());
   } catch {
     return null;
   }

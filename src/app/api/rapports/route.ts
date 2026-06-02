@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { list, put } from "@vercel/blob";
-import { getAllRapports, rapportBlobPath } from "@/lib/rapports";
+import { getAllRapports, normalizeRapportData, rapportBlobPath } from "@/lib/rapports";
 import { RapportData, emptyDistribution } from "@/types/rapport";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       for (const blob of jsonBlobs) {
         const res = await fetch(blob.url, { cache: "no-store" });
         if (res.ok) {
-          const data = (await res.json()) as RapportData;
+          const data = normalizeRapportData(await res.json());
           const key = `${data.espaceSlug}-${data.month}`;
           rapports.push(data);
           seenKeys.add(key);

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { list } from "@vercel/blob";
-import { getRapportByKey, rapportBlobPath } from "@/lib/rapports";
+import { getRapportByKey, normalizeRapportData, rapportBlobPath } from "@/lib/rapports";
 import { RapportData, formatMonthLabel } from "@/types/rapport";
 import RapportShowcase from "./RapportShowcase";
 
@@ -14,7 +14,7 @@ async function resolveRapport(espaceSlug: string, month: string): Promise<Rappor
     const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
     if (jsonBlob) {
       const res = await fetch(jsonBlob.url, { cache: "no-store" });
-      if (res.ok) return (await res.json()) as RapportData;
+      if (res.ok) return normalizeRapportData(await res.json());
     }
   } catch {
     // Blob not configured

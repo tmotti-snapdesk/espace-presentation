@@ -97,25 +97,6 @@ export const DISTRIBUTION_LABELS: Record<keyof RapportDistribution, string> = {
   placeImmobilier: "La Place de l'Immobilier",
 };
 
-export interface RapportSectionDef {
-  id: string;
-  label: string;
-}
-
-/**
- * Sections de contenu pouvant être masquées depuis l'admin.
- * Les `id` correspondent aux ancres du sommaire (sauf "intro", qui n'y figure pas).
- */
-export const RAPPORT_SECTIONS: RapportSectionDef[] = [
-  { id: "intro", label: "Synthèse / introduction" },
-  { id: "marketing", label: "Marketing" },
-  { id: "prospection", label: "Actions menées" },
-  { id: "actions-a-venir", label: "Actions à venir" },
-  { id: "visites", label: "Comptes rendus de visite" },
-  { id: "preconisations", label: "Nos préconisations" },
-  { id: "similaires", label: "Espaces similaires" },
-];
-
 export function emptyDistribution(): RapportDistribution {
   return {
     bureauxLocaux: false,

@@ -12,6 +12,9 @@ interface RapportMarketingProps {
   brokersListingCount: number;
   distribution: RapportDistribution;
   otherMarketingActions: string[];
+  showKpis?: boolean;
+  showDistribution?: boolean;
+  showOther?: boolean;
 }
 
 function KpiCard({
@@ -56,6 +59,9 @@ export default function RapportMarketing({
   brokersListingCount,
   distribution,
   otherMarketingActions,
+  showKpis = true,
+  showDistribution = true,
+  showOther = true,
 }: RapportMarketingProps) {
   const distributionEntries = (
     Object.entries(DISTRIBUTION_LABELS) as [keyof RapportDistribution, string][]
@@ -78,21 +84,23 @@ export default function RapportMarketing({
           <div className="luxury-divider" />
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          <KpiCard label="Budget marketing du mois" value={monthlyBudget || "—"} highlight />
-          <KpiCard
-            label="Contacts ayant reçu un emailing ciblé"
-            value={targetedEmailingCount}
-          />
-          <KpiCard
-            label="Formulaires reçus avec cahier des charges correspondant"
-            value={matchingFormsCount}
-          />
-          <KpiCard
-            label="Prospects ayant reçu la présentation commerciale"
-            value={preselectionCount}
-          />
-        </div>
+        {showKpis && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <KpiCard label="Budget marketing du mois" value={monthlyBudget || "—"} highlight />
+            <KpiCard
+              label="Contacts ayant reçu un emailing ciblé"
+              value={targetedEmailingCount}
+            />
+            <KpiCard
+              label="Formulaires reçus avec cahier des charges correspondant"
+              value={matchingFormsCount}
+            />
+            <KpiCard
+              label="Prospects ayant reçu la présentation commerciale"
+              value={preselectionCount}
+            />
+          </div>
+        )}
 
         {brokersListingActive && (
           <motion.div
@@ -131,6 +139,7 @@ export default function RapportMarketing({
           </motion.div>
         )}
 
+        {showDistribution && (
         <motion.div
           className="mb-12"
           initial={{ opacity: 0, y: 20 }}
@@ -174,8 +183,9 @@ export default function RapportMarketing({
             })}
           </div>
         </motion.div>
+        )}
 
-        {otherMarketingActions.length > 0 && (
+        {showOther && otherMarketingActions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

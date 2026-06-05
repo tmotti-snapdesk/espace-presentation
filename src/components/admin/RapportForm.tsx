@@ -9,7 +9,6 @@ import {
   SimilarEspace,
   RapportDistribution,
   DISTRIBUTION_LABELS,
-  RAPPORT_SECTIONS,
   formatMonthLabel,
   splitLines,
   joinLines,
@@ -141,6 +140,8 @@ export default function RapportForm({
         : [...prev.hiddenSections, id],
     }));
   };
+
+  const isHidden = (id: string) => form.hiddenSections.includes(id);
 
   const updateVisite = (id: string, patch: Partial<RapportVisite>) => {
     setForm((prev) => ({
@@ -327,7 +328,12 @@ export default function RapportForm({
               du rapport si l&apos;URL est renseignée.
             </p>
           </Field>
-          <Field label="Synthèse / introduction" full>
+          <Field
+            label="Synthèse / introduction"
+            full
+            hidden={isHidden("intro")}
+            onToggle={() => toggleSection("intro")}
+          >
             <textarea
               value={form.intro}
               onChange={(e) => updateField("intro", e.target.value)}
@@ -338,47 +344,17 @@ export default function RapportForm({
           </Field>
         </div>
 
-        <SectionTitle>Visibilité des sections</SectionTitle>
-        <div className="mb-12">
-          <p className="text-sm text-luxury-slate mb-4">
-            Cochez une section pour la masquer dans le rapport publié. Les sections
-            sans contenu restent automatiquement masquées.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {RAPPORT_SECTIONS.map(({ id, label }) => {
-              const isHidden = form.hiddenSections.includes(id);
-              return (
-                <label
-                  key={id}
-                  className={`flex items-center justify-between gap-3 cursor-pointer p-3 border rounded-lg transition-colors ${
-                    isHidden
-                      ? "border-red-200 bg-red-50"
-                      : "border-primary-200 bg-white hover:border-primary-300"
-                  }`}
-                >
-                  <span className="text-sm text-luxury-charcoal">{label}</span>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={`text-xs uppercase tracking-wider ${
-                        isHidden ? "text-red-500" : "text-luxury-slate"
-                      }`}
-                    >
-                      {isHidden ? "Masquée" : "Affichée"}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={isHidden}
-                      onChange={() => toggleSection(id)}
-                      className="w-4 h-4 accent-red-500"
-                    />
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
-        <SectionTitle>Section marketing</SectionTitle>
+        <SectionTitle
+          hidden={isHidden("marketing")}
+          onToggle={() => toggleSection("marketing")}
+        >
+          Section marketing
+        </SectionTitle>
+        <BlockHeader
+          label="Indicateurs clés"
+          hidden={isHidden("marketing.kpis")}
+          onToggle={() => toggleSection("marketing.kpis")}
+        />
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Field label="Budget marketing du mois">
             <input
@@ -456,9 +432,11 @@ export default function RapportForm({
         </div>
 
         <div className="mb-8">
-          <p className="text-sm font-medium text-luxury-charcoal mb-3">
-            Diffusion de l&apos;annonce
-          </p>
+          <BlockHeader
+            label="Diffusion de l'annonce"
+            hidden={isHidden("marketing.distribution")}
+            onToggle={() => toggleSection("marketing.distribution")}
+          />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {(Object.entries(DISTRIBUTION_LABELS) as [keyof RapportDistribution, string][]).map(
               ([key, label]) => (
@@ -483,7 +461,12 @@ export default function RapportForm({
           </div>
         </div>
 
-        <Field label="Autres actions marketing (une par ligne)" full>
+        <Field
+          label="Autres actions marketing (une par ligne)"
+          full
+          hidden={isHidden("marketing.other")}
+          onToggle={() => toggleSection("marketing.other")}
+        >
           <textarea
             value={form.otherMarketingActions}
             onChange={(e) => updateField("otherMarketingActions", e.target.value)}
@@ -495,7 +478,12 @@ export default function RapportForm({
 
         <div className="mb-12" />
 
-        <SectionTitle>Actions menées</SectionTitle>
+        <SectionTitle
+          hidden={isHidden("prospection")}
+          onToggle={() => toggleSection("prospection")}
+        >
+          Actions menées
+        </SectionTitle>
         <Field label="Actions menées ce mois-ci (une par ligne)" full>
           <textarea
             value={form.prospectionActions}
@@ -508,7 +496,12 @@ export default function RapportForm({
 
         <div className="mb-12" />
 
-        <SectionTitle>Actions à venir</SectionTitle>
+        <SectionTitle
+          hidden={isHidden("actions-a-venir")}
+          onToggle={() => toggleSection("actions-a-venir")}
+        >
+          Actions à venir
+        </SectionTitle>
         <Field label="Actions prévues le mois prochain (une par ligne)" full>
           <textarea
             value={form.upcomingActions}
@@ -525,13 +518,19 @@ export default function RapportForm({
           <h2 className="font-serif text-2xl text-luxury-charcoal">
             Comptes rendus de visite
           </h2>
-          <button
-            type="button"
-            onClick={() => updateField("visites", [...form.visites, emptyVisite()])}
-            className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
-          >
-            + Ajouter une visite
-          </button>
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={() => updateField("visites", [...form.visites, emptyVisite()])}
+              className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
+            >
+              + Ajouter une visite
+            </button>
+            <VisibilitySwitch
+              hidden={isHidden("visites")}
+              onToggle={() => toggleSection("visites")}
+            />
+          </div>
         </div>
         <div className="mb-6 p-5 border border-primary-200 rounded-lg bg-white">
           <label className="flex items-start gap-3 cursor-pointer">
@@ -625,7 +624,12 @@ export default function RapportForm({
           ))}
         </div>
 
-        <SectionTitle>Nos préconisations</SectionTitle>
+        <SectionTitle
+          hidden={isHidden("preconisations")}
+          onToggle={() => toggleSection("preconisations")}
+        >
+          Nos préconisations
+        </SectionTitle>
         <Field label="Préconisations (une par ligne)" full>
           <textarea
             value={form.recommendations}
@@ -642,15 +646,21 @@ export default function RapportForm({
           <h2 className="font-serif text-2xl text-luxury-charcoal">
             Espaces similaires sur le marché
           </h2>
-          <button
-            type="button"
-            onClick={() =>
-              updateField("similarEspaces", [...form.similarEspaces, emptySimilar()])
-            }
-            className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
-          >
-            + Ajouter un espace
-          </button>
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={() =>
+                updateField("similarEspaces", [...form.similarEspaces, emptySimilar()])
+              }
+              className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
+            >
+              + Ajouter un espace
+            </button>
+            <VisibilitySwitch
+              hidden={isHidden("similaires")}
+              onToggle={() => toggleSection("similaires")}
+            />
+          </div>
         </div>
         <div className="space-y-4 mb-12">
           {form.similarEspaces.map((s) => (
@@ -753,11 +763,78 @@ const inputCls =
 const inputClsSmall =
   "w-full px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold transition-colors";
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+/**
+ * Petit interrupteur affiché/masqué. Allumé (or) = bloc affiché dans le rapport,
+ * éteint (gris) = bloc masqué.
+ */
+function VisibilitySwitch({
+  hidden,
+  onToggle,
+}: {
+  hidden: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
-      {children}
-    </h2>
+    <span className="flex items-center gap-2 shrink-0">
+      <span
+        className={`text-[11px] uppercase tracking-wider ${
+          hidden ? "text-luxury-slate/60" : "text-luxury-gold"
+        }`}
+      >
+        {hidden ? "Masqué" : "Affiché"}
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={!hidden}
+        onClick={onToggle}
+        title={hidden ? "Masqué — cliquer pour afficher" : "Affiché — cliquer pour masquer"}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          hidden ? "bg-primary-200" : "bg-luxury-gold"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            hidden ? "translate-x-1" : "translate-x-6"
+          }`}
+        />
+      </button>
+    </span>
+  );
+}
+
+function SectionTitle({
+  children,
+  hidden,
+  onToggle,
+}: {
+  children: React.ReactNode;
+  hidden?: boolean;
+  onToggle?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 mb-6 pb-3 border-b border-primary-200">
+      <h2 className="font-serif text-2xl text-luxury-charcoal">{children}</h2>
+      {onToggle && <VisibilitySwitch hidden={!!hidden} onToggle={onToggle} />}
+    </div>
+  );
+}
+
+/** En-tête d'un sous-bloc (à l'intérieur d'une section) avec interrupteur de visibilité. */
+function BlockHeader({
+  label,
+  hidden,
+  onToggle,
+}: {
+  label: string;
+  hidden: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 mb-3">
+      <p className="text-sm font-medium text-luxury-charcoal">{label}</p>
+      <VisibilitySwitch hidden={hidden} onToggle={onToggle} />
+    </div>
   );
 }
 
@@ -767,12 +844,16 @@ function Field({
   full,
   small,
   colSpan,
+  hidden,
+  onToggle,
 }: {
   label: string;
   children: React.ReactNode;
   full?: boolean;
   small?: boolean;
   colSpan?: number;
+  hidden?: boolean;
+  onToggle?: () => void;
 }) {
   const className = [
     full ? "md:col-span-2" : "",
@@ -782,13 +863,16 @@ function Field({
     .join(" ");
   return (
     <div className={className}>
-      <label
-        className={`block ${
-          small ? "text-xs uppercase tracking-wider text-luxury-slate" : "text-sm font-medium text-luxury-charcoal"
-        } mb-2`}
-      >
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <label
+          className={`block ${
+            small ? "text-xs uppercase tracking-wider text-luxury-slate" : "text-sm font-medium text-luxury-charcoal"
+          }`}
+        >
+          {label}
+        </label>
+        {onToggle && <VisibilitySwitch hidden={!!hidden} onToggle={onToggle} />}
+      </div>
       {children}
     </div>
   );

@@ -54,6 +54,9 @@ export default function RapportShowcase({ rapport }: RapportShowcaseProps) {
           brokersListingCount={rapport.brokersListingCount}
           distribution={rapport.distribution}
           otherMarketingActions={rapport.otherMarketingActions}
+          showKpis={isVisible("marketing.kpis")}
+          showDistribution={isVisible("marketing.distribution")}
+          showOther={isVisible("marketing.other")}
         />
       )}
       {isVisible("prospection") && (

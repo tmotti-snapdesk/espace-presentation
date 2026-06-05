@@ -85,6 +85,9 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
         ? body.recommendations.filter(Boolean)
         : [],
       similarEspaces: Array.isArray(body.similarEspaces) ? body.similarEspaces : [],
+      hiddenSections: Array.isArray(body.hiddenSections)
+        ? body.hiddenSections.filter((s: unknown): s is string => typeof s === "string")
+        : [],
       createdAt: existing?.createdAt || now,
       updatedAt: now,
     };

@@ -9,6 +9,7 @@ import {
   SimilarEspace,
   RapportDistribution,
   DISTRIBUTION_LABELS,
+  RAPPORT_SECTIONS,
   formatMonthLabel,
   splitLines,
   joinLines,
@@ -93,6 +94,7 @@ export default function RapportForm({
             ? initialData.similarEspaces
             : [emptySimilar()],
         presentationUrl: initialData.presentationUrl || "",
+        hiddenSections: initialData.hiddenSections || [],
       };
     }
     return {
@@ -116,6 +118,7 @@ export default function RapportForm({
       recommendations: "",
       similarEspaces: [emptySimilar()],
       presentationUrl: "",
+      hiddenSections: [],
     };
   });
 
@@ -127,6 +130,15 @@ export default function RapportForm({
     setForm((prev) => ({
       ...prev,
       distribution: { ...prev.distribution, [key]: !prev.distribution[key] },
+    }));
+  };
+
+  const toggleSection = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      hiddenSections: prev.hiddenSections.includes(id)
+        ? prev.hiddenSections.filter((s) => s !== id)
+        : [...prev.hiddenSections, id],
     }));
   };
 
@@ -194,6 +206,7 @@ export default function RapportForm({
         recommendations: splitLines(form.recommendations),
         similarEspaces: form.similarEspaces.filter((s) => s.name.trim()),
         presentationUrl: form.presentationUrl.trim(),
+        hiddenSections: form.hiddenSections,
       };
 
       const endpoint =
@@ -323,6 +336,46 @@ export default function RapportForm({
               placeholder="Quelques lignes pour introduire le rapport."
             />
           </Field>
+        </div>
+
+        <SectionTitle>Visibilité des sections</SectionTitle>
+        <div className="mb-12">
+          <p className="text-sm text-luxury-slate mb-4">
+            Cochez une section pour la masquer dans le rapport publié. Les sections
+            sans contenu restent automatiquement masquées.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {RAPPORT_SECTIONS.map(({ id, label }) => {
+              const isHidden = form.hiddenSections.includes(id);
+              return (
+                <label
+                  key={id}
+                  className={`flex items-center justify-between gap-3 cursor-pointer p-3 border rounded-lg transition-colors ${
+                    isHidden
+                      ? "border-red-200 bg-red-50"
+                      : "border-primary-200 bg-white hover:border-primary-300"
+                  }`}
+                >
+                  <span className="text-sm text-luxury-charcoal">{label}</span>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`text-xs uppercase tracking-wider ${
+                        isHidden ? "text-red-500" : "text-luxury-slate"
+                      }`}
+                    >
+                      {isHidden ? "Masquée" : "Affichée"}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={isHidden}
+                      onChange={() => toggleSection(id)}
+                      className="w-4 h-4 accent-red-500"
+                    />
+                  </span>
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         <SectionTitle>Section marketing</SectionTitle>

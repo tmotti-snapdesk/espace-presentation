@@ -18,6 +18,9 @@ interface RapportShowcaseProps {
 
 export default function RapportShowcase({ rapport }: RapportShowcaseProps) {
   const upcomingActions = rapport.upcomingActions || [];
+  const hidden = new Set(rapport.hiddenSections || []);
+  const isVisible = (id: string) => !hidden.has(id);
+
   const sommaire = [
     { id: "marketing", label: "Marketing", show: true },
     { id: "prospection", label: "Actions menées", show: rapport.prospectionActions.length > 0 },
@@ -26,7 +29,7 @@ export default function RapportShowcase({ rapport }: RapportShowcaseProps) {
     { id: "preconisations", label: "Nos préconisations", show: rapport.recommendations.length > 0 },
     { id: "similaires", label: "Espaces similaires", show: rapport.similarEspaces.length > 0 },
   ]
-    .filter((s) => s.show)
+    .filter((s) => s.show && isVisible(s.id))
     .map(({ id, label }) => ({ id, label }));
 
   return (
@@ -40,25 +43,37 @@ export default function RapportShowcase({ rapport }: RapportShowcaseProps) {
         presentationUrl={rapport.presentationUrl || ""}
       />
       <RapportSommaire items={sommaire} />
-      <RapportIntro intro={rapport.intro} />
-      <RapportMarketing
-        monthlyBudget={rapport.monthlyBudget}
-        targetedEmailingCount={rapport.targetedEmailingCount}
-        matchingFormsCount={rapport.matchingFormsCount}
-        preselectionCount={rapport.preselectionCount}
-        brokersListingActive={rapport.brokersListingActive}
-        brokersListingCount={rapport.brokersListingCount}
-        distribution={rapport.distribution}
-        otherMarketingActions={rapport.otherMarketingActions}
-      />
-      <RapportProspection prospectionActions={rapport.prospectionActions} />
-      <RapportUpcoming upcomingActions={upcomingActions} />
-      <RapportVisites
-        visites={rapport.visites}
-        anonymizeProspects={rapport.anonymizeVisitProspects}
-      />
-      <RapportRecommendations recommendations={rapport.recommendations} />
-      <RapportSimilarEspaces similarEspaces={rapport.similarEspaces} />
+      {isVisible("intro") && <RapportIntro intro={rapport.intro} />}
+      {isVisible("marketing") && (
+        <RapportMarketing
+          monthlyBudget={rapport.monthlyBudget}
+          targetedEmailingCount={rapport.targetedEmailingCount}
+          matchingFormsCount={rapport.matchingFormsCount}
+          preselectionCount={rapport.preselectionCount}
+          brokersListingActive={rapport.brokersListingActive}
+          brokersListingCount={rapport.brokersListingCount}
+          distribution={rapport.distribution}
+          otherMarketingActions={rapport.otherMarketingActions}
+        />
+      )}
+      {isVisible("prospection") && (
+        <RapportProspection prospectionActions={rapport.prospectionActions} />
+      )}
+      {isVisible("actions-a-venir") && (
+        <RapportUpcoming upcomingActions={upcomingActions} />
+      )}
+      {isVisible("visites") && (
+        <RapportVisites
+          visites={rapport.visites}
+          anonymizeProspects={rapport.anonymizeVisitProspects}
+        />
+      )}
+      {isVisible("preconisations") && (
+        <RapportRecommendations recommendations={rapport.recommendations} />
+      )}
+      {isVisible("similaires") && (
+        <RapportSimilarEspaces similarEspaces={rapport.similarEspaces} />
+      )}
       <RapportFooter espaceName={rapport.espaceName} />
     </main>
   );

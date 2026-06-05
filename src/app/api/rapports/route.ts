@@ -44,6 +44,9 @@ function normalizeRapport(body: Record<string, unknown>, slug: string, month: st
     similarEspaces: Array.isArray(body.similarEspaces)
       ? (body.similarEspaces as RapportData["similarEspaces"])
       : [],
+    hiddenSections: Array.isArray(body.hiddenSections)
+      ? (body.hiddenSections as string[]).filter((s): s is string => typeof s === "string")
+      : [],
     createdAt: (body.createdAt as string) || now,
     updatedAt: now,
   };

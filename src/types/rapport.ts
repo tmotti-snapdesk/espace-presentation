@@ -6,6 +6,11 @@ export interface RapportVisite {
   workstations: string;
   feedback: string;
   outcome: string;
+  // Visites remontées automatiquement depuis le Google Sheet des BizDev et
+  // reformulées par Gemini restent "pending" tant qu'un admin ne les a pas
+  // validées : elles ne doivent jamais s'afficher sur le rapport public.
+  status?: "pending" | "published";
+  rawNotes?: string;
 }
 
 export interface SimilarEspace {
@@ -26,14 +31,8 @@ export interface RapportDistribution {
   placeImmobilier: boolean;
 }
 
-export interface RapportData {
-  espaceSlug: string;
-  espaceName: string;
-  espaceAddress: string;
-  marketingStartDate: string;
+export interface RapportMonthData {
   month: string;
-  ownerName: string;
-  intro: string;
 
   monthlyBudget: string;
   targetedEmailingCount: number;
@@ -47,8 +46,18 @@ export interface RapportData {
   prospectionActions: string[];
   upcomingActions: string[];
 
-  anonymizeVisitProspects: boolean;
   visites: RapportVisite[];
+}
+
+export interface RapportData {
+  espaceSlug: string;
+  espaceName: string;
+  espaceAddress: string;
+  marketingStartDate: string;
+  ownerName: string;
+  intro: string;
+
+  anonymizeVisitProspects: boolean;
   recommendations: string[];
   similarEspaces: SimilarEspace[];
 
@@ -58,14 +67,12 @@ export interface RapportData {
 
   createdAt: string;
   updatedAt: string;
+
+  months: RapportMonthData[];
 }
 
-export interface RapportFormData {
+export interface RapportMonthFormData {
   month: string;
-  ownerName: string;
-  espaceAddress: string;
-  marketingStartDate: string;
-  intro: string;
 
   monthlyBudget: string;
   targetedEmailingCount: string;
@@ -79,14 +86,24 @@ export interface RapportFormData {
   prospectionActions: string;
   upcomingActions: string;
 
-  anonymizeVisitProspects: boolean;
   visites: RapportVisite[];
+}
+
+export interface RapportFormData {
+  ownerName: string;
+  espaceAddress: string;
+  marketingStartDate: string;
+  intro: string;
+
+  anonymizeVisitProspects: boolean;
   recommendations: string;
   similarEspaces: SimilarEspace[];
 
   presentationUrl: string;
 
   hiddenSections: string[];
+
+  months: RapportMonthFormData[];
 }
 
 export const DISTRIBUTION_LABELS: Record<keyof RapportDistribution, string> = {
@@ -105,6 +122,34 @@ export function emptyDistribution(): RapportDistribution {
     flashoffice: false,
     placeImmobilier: false,
   };
+}
+
+export function emptyRapportMonth(month: string): RapportMonthData {
+  return {
+    month,
+    monthlyBudget: "",
+    targetedEmailingCount: 0,
+    matchingFormsCount: 0,
+    preselectionCount: 0,
+    brokersListingActive: true,
+    brokersListingCount: 450,
+    distribution: emptyDistribution(),
+    otherMarketingActions: [],
+    prospectionActions: [],
+    upcomingActions: [],
+    visites: [],
+  };
+}
+
+export function findRapportMonth(
+  rapport: Pick<RapportData, "months">,
+  month: string
+): RapportMonthData | null {
+  return rapport.months.find((m) => m.month === month) || null;
+}
+
+export function sortMonthsDesc(months: RapportMonthData[]): RapportMonthData[] {
+  return [...months].sort((a, b) => b.month.localeCompare(a.month));
 }
 
 export function formatMonthLabel(month: string): string {

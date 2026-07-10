@@ -6,6 +6,7 @@ import { EspaceData } from "@/types/espace";
 
 export default function AdminDashboard() {
   const [espaces, setEspaces] = useState<EspaceData[]>([]);
+  const [pendingVisitesCount, setPendingVisitesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
@@ -63,6 +64,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchEspaces();
+    fetch("/api/visites?status=pending")
+      .then((res) => (res.ok ? res.json() : { visites: [] }))
+      .then((data) => setPendingVisitesCount(data.visites?.length || 0))
+      .catch(() => {});
   }, []);
 
   const handleDuplicate = async (slug: string) => {
@@ -119,6 +124,17 @@ export default function AdminDashboard() {
             </Link>
             <Link href="/admin/leads" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
               Leads
+            </Link>
+            <Link
+              href="/admin/visites"
+              className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white relative"
+            >
+              Visites à valider
+              {pendingVisitesCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[11px] rounded-full bg-luxury-gold text-luxury-charcoal font-medium">
+                  {pendingVisitesCount}
+                </span>
+              )}
             </Link>
             <Link href="/admin/nouveau" className="luxury-btn text-sm">
               + Créer un espace

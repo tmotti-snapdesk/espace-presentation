@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { EspaceData } from "@/types/espace";
 import RapportForm from "@/components/admin/RapportForm";
 
@@ -10,6 +11,7 @@ export default function NewRapportPage({
 }: {
   params: { slug: string };
 }) {
+  const router = useRouter();
   const [espace, setEspace] = useState<EspaceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,9 +19,19 @@ export default function NewRapportPage({
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/espaces/${params.slug}`);
-        if (!res.ok) throw new Error("Espace non trouvé");
-        const data = await res.json();
+        const [espaceRes, rapportRes] = await Promise.all([
+          fetch(`/api/espaces/${params.slug}`),
+          fetch(`/api/rapports?espaceSlug=${params.slug}`),
+        ]);
+        if (!espaceRes.ok) throw new Error("Espace non trouvé");
+        const data = await espaceRes.json();
+        const rapportsData = await rapportRes.json();
+        const existing = rapportsData.rapports?.[0];
+        if (existing) {
+          // Un seul rapport par espace : redirige vers l'éditeur existant.
+          router.replace(`/admin/${params.slug}/rapports/${existing.months[0]?.month || ""}`);
+          return;
+        }
         setEspace(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur de chargement");
@@ -28,7 +40,7 @@ export default function NewRapportPage({
       }
     }
     load();
-  }, [params.slug]);
+  }, [params.slug, router]);
 
   if (loading) {
     return (

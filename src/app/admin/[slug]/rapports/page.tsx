@@ -11,22 +11,23 @@ export default function EspaceRapportsPage({
   params: { slug: string };
 }) {
   const [espace, setEspace] = useState<EspaceData | null>(null);
-  const [rapports, setRapports] = useState<RapportData[]>([]);
+  const [rapport, setRapport] = useState<RapportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deletingMonth, setDeletingMonth] = useState<string | null>(null);
+  const [deletingRapport, setDeletingRapport] = useState(false);
 
   const load = async () => {
     try {
-      const [espaceRes, rapportsRes] = await Promise.all([
+      const [espaceRes, rapportRes] = await Promise.all([
         fetch(`/api/espaces/${params.slug}`),
         fetch(`/api/rapports?espaceSlug=${params.slug}`),
       ]);
       if (!espaceRes.ok) throw new Error("Espace non trouvé");
       const espaceData = await espaceRes.json();
-      const rapportsData = await rapportsRes.json();
+      const rapportsData = await rapportRes.json();
       setEspace(espaceData);
-      setRapports(rapportsData.rapports || []);
+      setRapport(rapportsData.rapports?.[0] || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de chargement");
     } finally {
@@ -38,18 +39,31 @@ export default function EspaceRapportsPage({
     load();
   }, [params.slug]);
 
-  const handleDelete = async (month: string) => {
-    if (!confirm(`Supprimer le rapport ${formatMonthLabel(month)} ?`)) return;
-    setDeleting(month);
+  const handleDeleteMonth = async (month: string) => {
+    if (!confirm(`Supprimer l'onglet ${formatMonthLabel(month)} ?`)) return;
+    setDeletingMonth(month);
     try {
-      const res = await fetch(`/api/rapports/${params.slug}/${month}`, {
+      const res = await fetch(`/api/rapports/${params.slug}?month=${month}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        setRapports((prev) => prev.filter((r) => r.month !== month));
+        setRapport((prev) =>
+          prev ? { ...prev, months: prev.months.filter((m) => m.month !== month) } : prev
+        );
       }
     } finally {
-      setDeleting(null);
+      setDeletingMonth(null);
+    }
+  };
+
+  const handleDeleteRapport = async () => {
+    if (!confirm("Supprimer entièrement le rapport de cet espace ?")) return;
+    setDeletingRapport(true);
+    try {
+      const res = await fetch(`/api/rapports/${params.slug}`, { method: "DELETE" });
+      if (res.ok) setRapport(null);
+    } finally {
+      setDeletingRapport(false);
     }
   };
 
@@ -85,7 +99,7 @@ export default function EspaceRapportsPage({
             <p className="luxury-label text-luxury-gold mb-1">
               {espace.name}
             </p>
-            <h1 className="font-serif text-2xl">Rapports de commercialisation</h1>
+            <h1 className="font-serif text-2xl">Rapport de commercialisation</h1>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -94,18 +108,20 @@ export default function EspaceRapportsPage({
             >
               &larr; Dashboard
             </Link>
-            <Link
-              href={`/admin/${params.slug}/rapports/nouveau`}
-              className="luxury-btn text-sm"
-            >
-              + Nouveau rapport
-            </Link>
+            {rapport && (
+              <Link
+                href={`/admin/${params.slug}/rapports/${rapport.months[0]?.month || ""}`}
+                className="luxury-btn text-sm"
+              >
+                Modifier le rapport
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto py-12 px-6 md:px-12">
-        {rapports.length === 0 ? (
+        {!rapport ? (
           <div className="text-center py-20">
             <p className="text-luxury-slate text-lg mb-6">
               Aucun rapport n&apos;a encore été généré pour cet espace.
@@ -114,58 +130,77 @@ export default function EspaceRapportsPage({
               href={`/admin/${params.slug}/rapports/nouveau`}
               className="luxury-btn"
             >
-              Créer le premier rapport
+              Créer le rapport
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {rapports.map((r) => (
-              <div
-                key={`${r.espaceSlug}-${r.month}`}
-                className="bg-white border border-primary-100 rounded-lg p-6 flex items-center justify-between gap-6 transition-shadow hover:shadow-md"
+          <>
+            <div className="bg-white border border-primary-100 rounded-lg p-6 mb-8">
+              <h2 className="font-serif text-xl text-luxury-charcoal mb-1">
+                {rapport.ownerName || "Destinataire non renseigné"}
+              </h2>
+              <p className="text-sm text-luxury-slate">{rapport.espaceAddress}</p>
+              <p className="text-xs text-luxury-slate/60 mt-2">
+                Dernière mise à jour :{" "}
+                {new Date(rapport.updatedAt).toLocaleDateString("fr-FR")}
+              </p>
+              <button
+                onClick={handleDeleteRapport}
+                disabled={deletingRapport}
+                className="mt-4 text-xs text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
               >
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-serif text-xl text-luxury-charcoal mb-1 capitalize">
-                    {formatMonthLabel(r.month)}
-                  </h2>
-                  <p className="text-sm text-luxury-slate">
-                    {r.visites.length} visite{r.visites.length > 1 ? "s" : ""}{" "}
-                    &middot; {r.matchingFormsCount} formulaire
-                    {r.matchingFormsCount > 1 ? "s" : ""} matché
-                    {r.matchingFormsCount > 1 ? "s" : ""} &middot; budget mois{" "}
-                    {r.monthlyBudget || "—"}
-                  </p>
-                  <p className="text-xs text-luxury-slate/60 mt-1">
-                    Dernière mise à jour :{" "}
-                    {new Date(r.updatedAt).toLocaleDateString("fr-FR")}
-                  </p>
+                {deletingRapport ? "Suppression..." : "Supprimer entièrement le rapport"}
+              </button>
+            </div>
+
+            <h3 className="text-sm uppercase tracking-wider text-luxury-slate mb-4">
+              Onglets mensuels
+            </h3>
+            <div className="grid gap-4">
+              {rapport.months.map((m) => (
+                <div
+                  key={m.month}
+                  className="bg-white border border-primary-100 rounded-lg p-6 flex items-center justify-between gap-6 transition-shadow hover:shadow-md"
+                >
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-serif text-xl text-luxury-charcoal mb-1 capitalize">
+                      {formatMonthLabel(m.month)}
+                    </h2>
+                    <p className="text-sm text-luxury-slate">
+                      {m.visites.length} visite{m.visites.length > 1 ? "s" : ""}{" "}
+                      &middot; {m.matchingFormsCount} formulaire
+                      {m.matchingFormsCount > 1 ? "s" : ""} matché
+                      {m.matchingFormsCount > 1 ? "s" : ""} &middot; budget mois{" "}
+                      {m.monthlyBudget || "—"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <a
+                      href={`/espaces/${rapport.espaceSlug}/rapports/${m.month}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
+                    >
+                      Voir
+                    </a>
+                    <Link
+                      href={`/admin/${rapport.espaceSlug}/rapports/${m.month}`}
+                      className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
+                    >
+                      Modifier
+                    </Link>
+                    <button
+                      onClick={() => handleDeleteMonth(m.month)}
+                      disabled={deletingMonth === m.month}
+                      className="px-4 py-2 text-sm border border-red-200 text-red-500 hover:bg-red-50 transition-colors rounded disabled:opacity-50"
+                    >
+                      {deletingMonth === m.month ? "..." : "Supprimer"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <a
-                    href={`/espaces/${r.espaceSlug}/rapports/${r.month}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
-                  >
-                    Voir
-                  </a>
-                  <Link
-                    href={`/admin/${r.espaceSlug}/rapports/${r.month}`}
-                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
-                  >
-                    Modifier
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(r.month)}
-                    disabled={deleting === r.month}
-                    className="px-4 py-2 text-sm border border-red-200 text-red-500 hover:bg-red-50 transition-colors rounded disabled:opacity-50"
-                  >
-                    {deleting === r.month ? "..." : "Supprimer"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </main>

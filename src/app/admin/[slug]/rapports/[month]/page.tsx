@@ -21,7 +21,7 @@ export default function EditRapportPage({
       try {
         const [espaceRes, rapportRes] = await Promise.all([
           fetch(`/api/espaces/${params.slug}`),
-          fetch(`/api/rapports/${params.slug}/${params.month}`),
+          fetch(`/api/rapports/${params.slug}`),
         ]);
         if (!espaceRes.ok) throw new Error("Espace non trouvé");
         if (!rapportRes.ok) throw new Error("Rapport non trouvé");
@@ -71,6 +71,7 @@ export default function EditRapportPage({
       espaceName={espace.name}
       espaceAddress={fullAddress}
       initialData={rapport}
+      initialActiveMonth={params.month}
     />
   );
 }

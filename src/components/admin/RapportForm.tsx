@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   RapportData,
   RapportFormData,
+  RapportMonthFormData,
   RapportVisite,
   SimilarEspace,
   RapportDistribution,
@@ -21,6 +22,7 @@ interface RapportFormProps {
   espaceName: string;
   espaceAddress: string;
   initialData?: RapportData;
+  initialActiveMonth?: string;
 }
 
 function uid(prefix: string) {
@@ -56,12 +58,54 @@ function defaultMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function nextMonthAfter(month: string): string {
+  if (!/^\d{4}-\d{2}$/.test(month)) return defaultMonth();
+  const [year, m] = month.split("-").map(Number);
+  const date = new Date(year, m, 1); // JS months are 0-based, so passing `m` (1-12) lands on the next month
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function emptyMonthForm(month: string): RapportMonthFormData {
+  return {
+    month,
+    monthlyBudget: "",
+    targetedEmailingCount: "",
+    matchingFormsCount: "",
+    preselectionCount: "",
+    brokersListingActive: true,
+    brokersListingCount: "450",
+    distribution: emptyDistribution(),
+    otherMarketingActions: "",
+    prospectionActions: "",
+    upcomingActions: "",
+    visites: [emptyVisite()],
+  };
+}
+
+function monthToForm(m: RapportData["months"][number]): RapportMonthFormData {
+  return {
+    month: m.month,
+    monthlyBudget: m.monthlyBudget,
+    targetedEmailingCount: String(m.targetedEmailingCount ?? ""),
+    matchingFormsCount: String(m.matchingFormsCount ?? ""),
+    preselectionCount: String(m.preselectionCount ?? ""),
+    brokersListingActive: m.brokersListingActive,
+    brokersListingCount: String(m.brokersListingCount || 450),
+    distribution: { ...emptyDistribution(), ...m.distribution },
+    otherMarketingActions: joinLines(m.otherMarketingActions),
+    prospectionActions: joinLines(m.prospectionActions),
+    upcomingActions: joinLines(m.upcomingActions || []),
+    visites: m.visites.length > 0 ? m.visites : [emptyVisite()],
+  };
+}
+
 export default function RapportForm({
   mode,
   espaceSlug,
   espaceName,
   espaceAddress,
   initialData,
+  initialActiveMonth,
 }: RapportFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,23 +114,11 @@ export default function RapportForm({
   const [form, setForm] = useState<RapportFormData>(() => {
     if (initialData) {
       return {
-        month: initialData.month,
         ownerName: initialData.ownerName,
         espaceAddress: initialData.espaceAddress || espaceAddress,
         marketingStartDate: initialData.marketingStartDate,
         intro: initialData.intro,
-        monthlyBudget: initialData.monthlyBudget,
-        targetedEmailingCount: String(initialData.targetedEmailingCount ?? ""),
-        matchingFormsCount: String(initialData.matchingFormsCount),
-        preselectionCount: String(initialData.preselectionCount),
-        brokersListingActive: initialData.brokersListingActive,
-        brokersListingCount: String(initialData.brokersListingCount || 450),
-        distribution: { ...emptyDistribution(), ...initialData.distribution },
-        otherMarketingActions: joinLines(initialData.otherMarketingActions),
-        prospectionActions: joinLines(initialData.prospectionActions),
-        upcomingActions: joinLines(initialData.upcomingActions || []),
         anonymizeVisitProspects: initialData.anonymizeVisitProspects ?? false,
-        visites: initialData.visites.length > 0 ? initialData.visites : [emptyVisite()],
         recommendations: joinLines(initialData.recommendations),
         similarEspaces:
           initialData.similarEspaces.length > 0
@@ -94,41 +126,58 @@ export default function RapportForm({
             : [emptySimilar()],
         presentationUrl: initialData.presentationUrl || "",
         hiddenSections: initialData.hiddenSections || [],
+        months:
+          initialData.months.length > 0
+            ? initialData.months.map(monthToForm)
+            : [emptyMonthForm(defaultMonth())],
       };
     }
     return {
-      month: defaultMonth(),
       ownerName: "",
       espaceAddress,
       marketingStartDate: "",
       intro: "",
-      monthlyBudget: "",
-      targetedEmailingCount: "",
-      matchingFormsCount: "",
-      preselectionCount: "",
-      brokersListingActive: true,
-      brokersListingCount: "450",
-      distribution: emptyDistribution(),
-      otherMarketingActions: "",
-      prospectionActions: "",
-      upcomingActions: "",
       anonymizeVisitProspects: false,
-      visites: [emptyVisite()],
       recommendations: "",
       similarEspaces: [emptySimilar()],
       presentationUrl: "",
       hiddenSections: [],
+      months: [emptyMonthForm(defaultMonth())],
     };
   });
+
+  const [activeMonthIndex, setActiveMonthIndex] = useState(() => {
+    if (initialActiveMonth) {
+      const idx = form.months.findIndex((m) => m.month === initialActiveMonth);
+      if (idx >= 0) return idx;
+    }
+    return 0;
+  });
+
+  const activeMonth = form.months[activeMonthIndex];
 
   const updateField = <K extends keyof RapportFormData>(key: K, value: RapportFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateMonth = <K extends keyof RapportMonthFormData>(
+    key: K,
+    value: RapportMonthFormData[K]
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      months: prev.months.map((m, i) => (i === activeMonthIndex ? { ...m, [key]: value } : m)),
+    }));
+  };
+
   const toggleDistribution = (key: keyof RapportDistribution) => {
     setForm((prev) => ({
       ...prev,
-      distribution: { ...prev.distribution, [key]: !prev.distribution[key] },
+      months: prev.months.map((m, i) =>
+        i === activeMonthIndex
+          ? { ...m, distribution: { ...m.distribution, [key]: !m.distribution[key] } }
+          : m
+      ),
     }));
   };
 
@@ -143,17 +192,37 @@ export default function RapportForm({
 
   const isHidden = (id: string) => form.hiddenSections.includes(id);
 
+  const addMonth = () => {
+    const latest = form.months.reduce((max, m) => (m.month > max ? m.month : max), form.months[0]?.month || defaultMonth());
+    const newMonth = emptyMonthForm(nextMonthAfter(latest));
+    setForm((prev) => ({ ...prev, months: [...prev.months, newMonth] }));
+    setActiveMonthIndex(form.months.length);
+  };
+
+  const removeMonth = (index: number) => {
+    if (form.months.length <= 1) return;
+    if (!confirm(`Supprimer l'onglet ${formatMonthLabel(form.months[index].month)} ?`)) return;
+    setForm((prev) => ({ ...prev, months: prev.months.filter((_, i) => i !== index) }));
+    setActiveMonthIndex((prev) => (prev >= index ? Math.max(0, prev - 1) : prev));
+  };
+
   const updateVisite = (id: string, patch: Partial<RapportVisite>) => {
     setForm((prev) => ({
       ...prev,
-      visites: prev.visites.map((v) => (v.id === id ? { ...v, ...patch } : v)),
+      months: prev.months.map((m, i) =>
+        i === activeMonthIndex
+          ? { ...m, visites: m.visites.map((v) => (v.id === id ? { ...v, ...patch } : v)) }
+          : m
+      ),
     }));
   };
 
   const removeVisite = (id: string) => {
     setForm((prev) => ({
       ...prev,
-      visites: prev.visites.filter((v) => v.id !== id),
+      months: prev.months.map((m, i) =>
+        i === activeMonthIndex ? { ...m, visites: m.visites.filter((v) => v.id !== id) } : m
+      ),
     }));
   };
 
@@ -180,51 +249,65 @@ export default function RapportForm({
     setGeneratedUrl(null);
 
     try {
-      if (!/^\d{4}-\d{2}$/.test(form.month)) {
-        throw new Error("Le mois doit être au format YYYY-MM");
+      for (const m of form.months) {
+        if (!/^\d{4}-\d{2}$/.test(m.month)) {
+          throw new Error(`Le mois "${m.month}" doit être au format YYYY-MM`);
+        }
+      }
+      const monthValues = form.months.map((m) => m.month);
+      if (new Set(monthValues).size !== monthValues.length) {
+        throw new Error("Chaque mois ne peut apparaître qu'une seule fois dans le rapport.");
       }
 
-      const payload = {
+      const generalPayload = {
         espaceSlug,
         espaceName,
         espaceAddress: form.espaceAddress,
         marketingStartDate: form.marketingStartDate,
-        month: form.month,
         ownerName: form.ownerName,
         intro: form.intro,
-        monthlyBudget: form.monthlyBudget,
-        targetedEmailingCount: form.targetedEmailingCount,
-        matchingFormsCount: form.matchingFormsCount,
-        preselectionCount: form.preselectionCount,
-        brokersListingActive: form.brokersListingActive,
-        brokersListingCount: form.brokersListingCount,
-        distribution: form.distribution,
-        otherMarketingActions: splitLines(form.otherMarketingActions),
-        prospectionActions: splitLines(form.prospectionActions),
-        upcomingActions: splitLines(form.upcomingActions),
         anonymizeVisitProspects: form.anonymizeVisitProspects,
-        visites: form.visites.filter((v) => v.prospect.trim() || v.feedback.trim()),
         recommendations: splitLines(form.recommendations),
         similarEspaces: form.similarEspaces.filter((s) => s.name.trim()),
         presentationUrl: form.presentationUrl.trim(),
         hiddenSections: form.hiddenSections,
       };
 
-      const endpoint =
-        mode === "edit"
-          ? `/api/rapports/${espaceSlug}/${form.month}`
-          : `/api/rapports`;
+      const monthsPayload = form.months.map((m) => ({
+        month: m.month,
+        monthlyBudget: m.monthlyBudget,
+        targetedEmailingCount: m.targetedEmailingCount,
+        matchingFormsCount: m.matchingFormsCount,
+        preselectionCount: m.preselectionCount,
+        brokersListingActive: m.brokersListingActive,
+        brokersListingCount: m.brokersListingCount,
+        distribution: m.distribution,
+        otherMarketingActions: splitLines(m.otherMarketingActions),
+        prospectionActions: splitLines(m.prospectionActions),
+        upcomingActions: splitLines(m.upcomingActions),
+        visites: m.visites.filter((v) => v.prospect.trim() || v.feedback.trim()),
+      }));
+
+      const endpoint = mode === "edit" ? `/api/rapports/${espaceSlug}` : `/api/rapports`;
       const method = mode === "edit" ? "PUT" : "POST";
+      const body =
+        mode === "edit"
+          ? { ...generalPayload, months: monthsPayload }
+          : { ...generalPayload, ...monthsPayload[0] };
 
       const res = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Une erreur est survenue");
-      setGeneratedUrl(data.url);
+      setGeneratedUrl(
+        mode === "edit"
+          ? `/espaces/${espaceSlug}/rapports/${activeMonth.month}`
+          : data.url
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -232,10 +315,7 @@ export default function RapportForm({
     }
   };
 
-  const title =
-    mode === "edit"
-      ? `Modifier le rapport ${formatMonthLabel(form.month)}`
-      : `Nouveau rapport — ${espaceName}`;
+  const title = mode === "edit" ? `Rapport — ${espaceName}` : `Nouveau rapport — ${espaceName}`;
 
   return (
     <main className="min-h-screen bg-luxury-cream">
@@ -277,18 +357,8 @@ export default function RapportForm({
           </div>
         )}
 
-        <SectionTitle>Header</SectionTitle>
+        <SectionTitle>Informations générales</SectionTitle>
         <div className="grid md:grid-cols-2 gap-6 mb-12">
-          <Field label="Mois du rapport *">
-            <input
-              type="month"
-              required
-              value={form.month}
-              onChange={(e) => updateField("month", e.target.value)}
-              disabled={mode === "edit"}
-              className={inputCls + " disabled:bg-primary-50 disabled:text-luxury-slate"}
-            />
-          </Field>
           <Field label="Commercialisé depuis">
             <input
               type="date"
@@ -344,6 +414,57 @@ export default function RapportForm({
           </Field>
         </div>
 
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-primary-200">
+          <h2 className="font-serif text-2xl text-luxury-charcoal">Suivi mensuel</h2>
+          <button
+            type="button"
+            onClick={addMonth}
+            className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
+          >
+            + Ajouter un mois
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mb-8">
+          {form.months.map((m, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActiveMonthIndex(i)}
+              className={`px-4 py-2 text-sm rounded-full border transition-colors capitalize ${
+                i === activeMonthIndex
+                  ? "bg-luxury-charcoal text-white border-luxury-charcoal"
+                  : "bg-white text-luxury-charcoal border-primary-200 hover:border-primary-300"
+              }`}
+            >
+              {formatMonthLabel(m.month) || "Nouveau mois"}
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-8 grid md:grid-cols-2 gap-6">
+          <Field label="Mois de cet onglet *">
+            <input
+              type="month"
+              required
+              value={activeMonth.month}
+              onChange={(e) => updateMonth("month", e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+          {form.months.length > 1 && (
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => removeMonth(activeMonthIndex)}
+                className="text-xs text-red-400 hover:text-red-600 transition-colors"
+              >
+                Supprimer cet onglet
+              </button>
+            </div>
+          )}
+        </div>
+
         <SectionTitle
           hidden={isHidden("marketing")}
           onToggle={() => toggleSection("marketing")}
@@ -359,8 +480,8 @@ export default function RapportForm({
           <Field label="Budget marketing du mois">
             <input
               type="text"
-              value={form.monthlyBudget}
-              onChange={(e) => updateField("monthlyBudget", e.target.value)}
+              value={activeMonth.monthlyBudget}
+              onChange={(e) => updateMonth("monthlyBudget", e.target.value)}
               className={inputCls}
               placeholder="ex: 1 250 €"
             />
@@ -369,8 +490,8 @@ export default function RapportForm({
             <input
               type="number"
               min={0}
-              value={form.targetedEmailingCount}
-              onChange={(e) => updateField("targetedEmailingCount", e.target.value)}
+              value={activeMonth.targetedEmailingCount}
+              onChange={(e) => updateMonth("targetedEmailingCount", e.target.value)}
               className={inputCls}
               placeholder="0"
             />
@@ -379,8 +500,8 @@ export default function RapportForm({
             <input
               type="number"
               min={0}
-              value={form.matchingFormsCount}
-              onChange={(e) => updateField("matchingFormsCount", e.target.value)}
+              value={activeMonth.matchingFormsCount}
+              onChange={(e) => updateMonth("matchingFormsCount", e.target.value)}
               className={inputCls}
               placeholder="0"
             />
@@ -389,8 +510,8 @@ export default function RapportForm({
             <input
               type="number"
               min={0}
-              value={form.preselectionCount}
-              onChange={(e) => updateField("preselectionCount", e.target.value)}
+              value={activeMonth.preselectionCount}
+              onChange={(e) => updateMonth("preselectionCount", e.target.value)}
               className={inputCls}
               placeholder="0"
             />
@@ -401,8 +522,8 @@ export default function RapportForm({
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={form.brokersListingActive}
-              onChange={(e) => updateField("brokersListingActive", e.target.checked)}
+              checked={activeMonth.brokersListingActive}
+              onChange={(e) => updateMonth("brokersListingActive", e.target.checked)}
               className="w-5 h-5 accent-luxury-gold mt-0.5"
             />
             <div className="flex-1">
@@ -413,7 +534,7 @@ export default function RapportForm({
                 Affichera : « Votre espace a été envoyé tous les lundis à notre listing
                 de X brokers immobiliers ».
               </p>
-              {form.brokersListingActive && (
+              {activeMonth.brokersListingActive && (
                 <div className="mt-3 flex items-center gap-3">
                   <label className="text-xs text-luxury-slate uppercase tracking-wider">
                     Nombre de brokers
@@ -421,8 +542,8 @@ export default function RapportForm({
                   <input
                     type="number"
                     min={0}
-                    value={form.brokersListingCount}
-                    onChange={(e) => updateField("brokersListingCount", e.target.value)}
+                    value={activeMonth.brokersListingCount}
+                    onChange={(e) => updateMonth("brokersListingCount", e.target.value)}
                     className="w-28 px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold"
                   />
                 </div>
@@ -443,14 +564,14 @@ export default function RapportForm({
                 <label
                   key={key}
                   className={`flex items-center gap-3 cursor-pointer p-3 border rounded-lg transition-colors ${
-                    form.distribution[key]
+                    activeMonth.distribution[key]
                       ? "border-luxury-gold bg-luxury-champagne/30"
                       : "border-primary-200 bg-white hover:border-primary-300"
                   }`}
                 >
                   <input
                     type="checkbox"
-                    checked={form.distribution[key]}
+                    checked={activeMonth.distribution[key]}
                     onChange={() => toggleDistribution(key)}
                     className="w-4 h-4 accent-luxury-gold"
                   />
@@ -468,8 +589,8 @@ export default function RapportForm({
           onToggle={() => toggleSection("marketing.other")}
         >
           <textarea
-            value={form.otherMarketingActions}
-            onChange={(e) => updateField("otherMarketingActions", e.target.value)}
+            value={activeMonth.otherMarketingActions}
+            onChange={(e) => updateMonth("otherMarketingActions", e.target.value)}
             rows={4}
             className={inputCls + " resize-vertical"}
             placeholder={"ex:\nRefonte des visuels professionnels\nMise en avant Top Annonce sur Bureaux Locaux\nPost LinkedIn parrainé"}
@@ -486,8 +607,8 @@ export default function RapportForm({
         </SectionTitle>
         <Field label="Actions menées ce mois-ci (une par ligne)" full>
           <textarea
-            value={form.prospectionActions}
-            onChange={(e) => updateField("prospectionActions", e.target.value)}
+            value={activeMonth.prospectionActions}
+            onChange={(e) => updateMonth("prospectionActions", e.target.value)}
             rows={5}
             className={inputCls + " resize-vertical"}
             placeholder={"ex:\nRelance des 28 prospects qualifiés du trimestre\nPrise de contact avec 12 brokers spécialistes du 4e arrondissement\nQualification de 18 nouveaux leads entrants"}
@@ -504,8 +625,8 @@ export default function RapportForm({
         </SectionTitle>
         <Field label="Actions prévues le mois prochain (une par ligne)" full>
           <textarea
-            value={form.upcomingActions}
-            onChange={(e) => updateField("upcomingActions", e.target.value)}
+            value={activeMonth.upcomingActions}
+            onChange={(e) => updateMonth("upcomingActions", e.target.value)}
             rows={5}
             className={inputCls + " resize-vertical"}
             placeholder={"ex:\nOrganiser un petit-déjeuner décideurs RH\nLancer une campagne LinkedIn sponsorisée\nRelancer les 4 propositions toujours en réflexion"}
@@ -521,7 +642,7 @@ export default function RapportForm({
           <div className="flex items-center gap-5">
             <button
               type="button"
-              onClick={() => updateField("visites", [...form.visites, emptyVisite()])}
+              onClick={() => updateMonth("visites", [...activeMonth.visites, emptyVisite()])}
               className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
             >
               + Ajouter une visite
@@ -552,8 +673,13 @@ export default function RapportForm({
           </label>
         </div>
         <div className="space-y-4 mb-12">
-          {form.visites.map((v) => (
+          {activeMonth.visites.map((v) => (
             <div key={v.id} className="p-5 border border-primary-200 rounded-lg bg-white">
+              {v.status === "pending" && (
+                <p className="mb-3 inline-block text-[11px] uppercase tracking-wider text-luxury-gold bg-luxury-champagne/40 px-2 py-1 rounded">
+                  Proposition Gemini — à valider dans « Visites à valider »
+                </p>
+              )}
               <div className="grid md:grid-cols-3 gap-4 mb-4">
                 <Field small label="Date">
                   <input
@@ -609,7 +735,7 @@ export default function RapportForm({
                   placeholder="Retours et objections du prospect."
                 />
               </Field>
-              {form.visites.length > 1 && (
+              {activeMonth.visites.length > 1 && (
                 <div className="mt-3 text-right">
                   <button
                     type="button"

@@ -109,12 +109,22 @@ export default function EspaceRapportsPage({
               &larr; Dashboard
             </Link>
             {rapport && (
-              <Link
-                href={`/admin/${params.slug}/rapports/${rapport.months[0]?.month || ""}`}
-                className="luxury-btn text-sm"
-              >
-                Modifier le rapport
-              </Link>
+              <>
+                <a
+                  href={`/espaces/${params.slug}/rapports`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white"
+                >
+                  Voir le rapport
+                </a>
+                <Link
+                  href={`/admin/${params.slug}/rapports/${rapport.months[0]?.month || ""}`}
+                  className="luxury-btn text-sm"
+                >
+                  Modifier le rapport
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -143,6 +153,17 @@ export default function EspaceRapportsPage({
               <p className="text-xs text-luxury-slate/60 mt-2">
                 Dernière mise à jour :{" "}
                 {new Date(rapport.updatedAt).toLocaleDateString("fr-FR")}
+              </p>
+              <p className="text-xs text-luxury-slate mt-3">
+                Lien unique à partager :{" "}
+                <a
+                  href={`/espaces/${params.slug}/rapports`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-luxury-gold hover:text-luxury-charcoal transition-colors underline"
+                >
+                  /espaces/{params.slug}/rapports
+                </a>
               </p>
               <button
                 onClick={handleDeleteRapport}

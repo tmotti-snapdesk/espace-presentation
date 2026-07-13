@@ -26,7 +26,7 @@ export default function RapportVisites({
         >
           <p className="luxury-label mb-4">Sur le terrain</p>
           <h2 className="luxury-subheading text-luxury-charcoal mb-4">
-            Comptes rendus de visite
+            Visites du mois
           </h2>
           <div className="luxury-divider" />
         </motion.div>

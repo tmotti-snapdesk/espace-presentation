@@ -36,14 +36,28 @@ function emptyRapport(espaceSlug: string): RapportData {
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const pending = await getPendingVisite(params.id);
-    if (!pending) {
+    const existing = await getPendingVisite(params.id);
+    if (!existing) {
       return NextResponse.json({ error: "Visite non trouvée" }, { status: 404 });
     }
+
+    // Le corps de la requête (envoyé par l'écran de validation) prime sur ce
+    // qui est stocké : ça évite de dépendre d'une relecture juste après une
+    // sauvegarde, qui peut retomber sur une version encore en cache côté Blob.
+    const body = await request.json().catch(() => ({}));
+    const pending = {
+      ...existing,
+      espaceSlug: body.espaceSlug !== undefined ? body.espaceSlug : existing.espaceSlug,
+      month: body.month !== undefined ? body.month : existing.month,
+      prospect: body.prospect !== undefined ? body.prospect : existing.prospect,
+      feedback: body.feedback !== undefined ? body.feedback : existing.feedback,
+      outcome: body.outcome !== undefined ? body.outcome : existing.outcome,
+    };
+
     if (!pending.espaceSlug) {
       return NextResponse.json(
         { error: "Choisissez l'espace concerné avant de publier" },

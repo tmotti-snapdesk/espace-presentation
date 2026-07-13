@@ -79,8 +79,17 @@ export default function VisitesAValiderPage() {
     }
     setBusyId(visite.id);
     try {
-      await saveEdits(visite);
-      const res = await fetch(`/api/visites/${visite.id}/publish`, { method: "POST" });
+      const res = await fetch(`/api/visites/${visite.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          espaceSlug: visite.espaceSlug,
+          month: visite.month,
+          prospect: visite.prospect,
+          feedback: visite.feedback,
+          outcome: visite.outcome,
+        }),
+      });
       if (res.ok) {
         setVisites((prev) => prev.filter((v) => v.id !== visite.id));
       } else {

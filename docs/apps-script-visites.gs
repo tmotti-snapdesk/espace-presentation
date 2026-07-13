@@ -57,6 +57,13 @@ function onEditInstallable(e) {
       muteHttpExceptions: true,
     });
 
+    // Toujours journaliser la réponse (succès ou échec) pour pouvoir
+    // diagnostiquer depuis Exécutions > Journal d'exécution, même quand
+    // aucune erreur n'est levée (ex: 401/400/500 renvoyé par le serveur).
+    Logger.log(
+      "Réponse webhook (" + response.getResponseCode() + "): " + response.getContentText()
+    );
+
     // Colonne optionnelle "Statut envoi" (à ajouter si vous voulez un retour
     // visuel dans le Sheet ; le script fonctionne aussi sans elle).
     const statusCol = headers.indexOf("Statut envoi") + 1;

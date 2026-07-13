@@ -32,12 +32,12 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
   const isVisible = (id: string) => !hidden.has(id);
 
   const sommaire = [
+    { id: "preconisations", label: "Nos préconisations", show: rapport.recommendations.length > 0 },
+    { id: "similaires", label: "Espaces similaires", show: rapport.similarEspaces.length > 0 },
     { id: "marketing", label: "Marketing", show: true },
     { id: "prospection", label: "Actions menées", show: (month?.prospectionActions.length || 0) > 0 },
     { id: "actions-a-venir", label: "Actions à venir", show: upcomingActions.length > 0 },
     { id: "visites", label: "Comptes rendus de visite", show: visites.length > 0 },
-    { id: "preconisations", label: "Nos préconisations", show: rapport.recommendations.length > 0 },
-    { id: "similaires", label: "Espaces similaires", show: rapport.similarEspaces.length > 0 },
   ]
     .filter((s) => s.show && isVisible(s.id))
     .map(({ id, label }) => ({ id, label }));
@@ -60,6 +60,18 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
         ownerName={rapport.ownerName}
         presentationUrl={rapport.presentationUrl || ""}
       />
+      <RapportSommaire items={sommaire} />
+
+      {/* Bloc global : commun à tout le rapport, indépendant du mois sélectionné */}
+      {isVisible("intro") && <RapportIntro intro={rapport.intro} />}
+      {isVisible("preconisations") && (
+        <RapportRecommendations recommendations={rapport.recommendations} />
+      )}
+      {isVisible("similaires") && (
+        <RapportSimilarEspaces similarEspaces={rapport.similarEspaces} />
+      )}
+
+      {/* Bloc mensuel : onglets puis détail du mois sélectionné */}
       {months.length > 1 && (
         <div className="no-print bg-white border-b border-primary-100">
           <div className="max-w-6xl mx-auto px-6 md:px-12 py-4 flex flex-wrap gap-2">
@@ -80,8 +92,6 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
           </div>
         </div>
       )}
-      <RapportSommaire items={sommaire} />
-      {isVisible("intro") && <RapportIntro intro={rapport.intro} />}
       {isVisible("marketing") && (
         <RapportMarketing
           monthlyBudget={month.monthlyBudget}
@@ -108,12 +118,6 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
           visites={visites}
           anonymizeProspects={rapport.anonymizeVisitProspects}
         />
-      )}
-      {isVisible("preconisations") && (
-        <RapportRecommendations recommendations={rapport.recommendations} />
-      )}
-      {isVisible("similaires") && (
-        <RapportSimilarEspaces similarEspaces={rapport.similarEspaces} />
       )}
       <RapportFooter espaceName={rapport.espaceName} />
     </main>

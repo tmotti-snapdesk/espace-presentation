@@ -187,11 +187,13 @@ function getLocalRapport(espaceSlug: string): RapportData | null {
 
   const merged = mergeLegacyRapports(legacyItems);
 
+  // Les anciens fichiers ne sont volontairement jamais supprimés : ils
+  // deviennent simplement inutilisés (le fichier fusionné est trouvé en
+  // premier lors des prochaines lectures). Ça garde la migration
+  // trivialement réversible — un rollback du code retombe sur les anciens
+  // fichiers intacts.
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(newPath, JSON.stringify(merged, null, 2));
-  for (const f of legacyFiles) {
-    fs.unlinkSync(path.join(DATA_DIR, f));
-  }
 
   return merged;
 }
@@ -238,15 +240,17 @@ async function getBlobRapport(espaceSlug: string): Promise<RapportData | null> {
 
     const merged = mergeLegacyRapports(legacyItems);
 
+    // Les anciens blobs ne sont volontairement jamais supprimés : ils
+    // deviennent simplement inutilisés (le blob fusionné est trouvé en
+    // premier lors des prochaines lectures). Ça garde la migration
+    // trivialement réversible — un rollback du déploiement retombe sur les
+    // anciens blobs intacts.
     await put(rapportBlobPath(espaceSlug), JSON.stringify(merged, null, 2), {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
     });
-    for (const blob of legacyBlobs) {
-      await del(blob.url);
-    }
 
     return merged;
   } catch {

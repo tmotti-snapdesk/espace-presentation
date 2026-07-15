@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LandingPageData } from "@/types/lp";
+import AdminNav from "@/components/admin/AdminNav";
 
 export default function LpDashboard() {
   const [lps, setLps] = useState<LandingPageData[]>([]);
@@ -44,25 +45,14 @@ export default function LpDashboard() {
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="luxury-label text-luxury-gold mb-1">Snapdesk</p>
-            <h1 className="font-serif text-2xl">Landing Pages</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-white/60 text-sm hover:text-white transition-colors">
-              ← Espaces
-            </Link>
-            <Link href="/admin/leads" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
-              Leads
-            </Link>
-            <Link href="/admin/lp/nouveau" className="luxury-btn text-sm">
-              + Nouvelle LP
-            </Link>
-          </div>
-        </div>
-      </div>
+      <AdminNav
+        title="Landing Pages"
+        actions={
+          <Link href="/admin/lp/nouveau" className="luxury-btn text-sm">
+            + Nouvelle LP
+          </Link>
+        }
+      />
 
       <div className="max-w-5xl mx-auto py-12 px-6 md:px-12">
         {loading ? (

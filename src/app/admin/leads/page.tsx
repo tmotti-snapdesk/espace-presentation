@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { EspaceData } from "@/types/espace";
 import type { LandingPageData } from "@/types/lp";
+import AdminNav from "@/components/admin/AdminNav";
 
 interface Lead {
   // dynamic HubSpot fields (email, firstname, …) at the root
@@ -236,29 +237,19 @@ export default function LeadsDashboard() {
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="luxury-label text-luxury-gold mb-1">Snapdesk</p>
-            <h1 className="font-serif text-2xl">Leads</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-white/60 text-sm hover:text-white transition-colors">
-              Espaces
-            </Link>
-            <Link href="/admin/lp" className="text-white/60 text-sm hover:text-white transition-colors">
-              Landing Pages
-            </Link>
-            <button
-              onClick={exportCsv}
-              disabled={filtered.length === 0}
-              className="luxury-btn text-sm disabled:opacity-50"
-            >
-              Exporter CSV
-            </button>
-          </div>
-        </div>
-      </div>
+      <AdminNav
+        title="Leads"
+        maxWidth="max-w-6xl"
+        actions={
+          <button
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="luxury-btn text-sm disabled:opacity-50"
+          >
+            Exporter CSV
+          </button>
+        }
+      />
 
       <div className="max-w-6xl mx-auto py-10 px-6 md:px-12">
         {loading ? (

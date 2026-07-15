@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { EspaceData } from "@/types/espace";
 import { PendingVisite } from "@/types/visitePending";
 import { formatMonthLabel } from "@/types/rapport";
+import AdminNav from "@/components/admin/AdminNav";
 
 export default function VisitesAValiderPage() {
   const [visites, setVisites] = useState<PendingVisite[]>([]);
@@ -118,17 +118,7 @@ export default function VisitesAValiderPage() {
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="luxury-label text-luxury-gold mb-1">Snapdesk</p>
-            <h1 className="font-serif text-2xl">Visites à valider</h1>
-          </div>
-          <Link href="/admin" className="text-sm text-white/60 hover:text-white transition-colors">
-            &larr; Dashboard
-          </Link>
-        </div>
-      </div>
+      <AdminNav title="Visites à valider" />
 
       <div className="max-w-5xl mx-auto py-12 px-6 md:px-12">
         {loading ? (

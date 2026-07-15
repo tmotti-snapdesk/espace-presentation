@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { EspaceData } from "@/types/espace";
+import AdminNav from "@/components/admin/AdminNav";
 
 export default function AdminDashboard() {
   const [espaces, setEspaces] = useState<EspaceData[]>([]);
-  const [pendingVisitesCount, setPendingVisitesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
@@ -64,10 +64,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchEspaces();
-    fetch("/api/visites?status=pending")
-      .then((res) => (res.ok ? res.json() : { visites: [] }))
-      .then((data) => setPendingVisitesCount(data.visites?.length || 0))
-      .catch(() => {});
   }, []);
 
   const handleDuplicate = async (slug: string) => {
@@ -101,14 +97,10 @@ export default function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      {/* Header */}
-      <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="luxury-label text-luxury-gold mb-1">Snapdesk</p>
-            <h1 className="font-serif text-2xl">Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-3">
+      <AdminNav
+        title="Dashboard"
+        actions={
+          <>
             <button
               type="button"
               onClick={() => {
@@ -119,29 +111,12 @@ export default function AdminDashboard() {
             >
               Échanger URLs
             </button>
-            <Link href="/admin/lp" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
-              Landing Pages
-            </Link>
-            <Link href="/admin/leads" className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white">
-              Leads
-            </Link>
-            <Link
-              href="/admin/visites"
-              className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white relative"
-            >
-              Visites à valider
-              {pendingVisitesCount > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[11px] rounded-full bg-luxury-gold text-luxury-charcoal font-medium">
-                  {pendingVisitesCount}
-                </span>
-              )}
-            </Link>
             <Link href="/admin/nouveau" className="luxury-btn text-sm">
               + Créer un espace
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="max-w-5xl mx-auto py-12 px-6 md:px-12">
         {loading ? (

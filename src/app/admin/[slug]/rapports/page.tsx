@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { EspaceData } from "@/types/espace";
 import { RapportData, formatMonthLabel } from "@/types/rapport";
+import AdminNav from "@/components/admin/AdminNav";
 
 export default function EspaceRapportsPage({
   params,
@@ -93,42 +94,30 @@ export default function EspaceRapportsPage({
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="luxury-label text-luxury-gold mb-1">
-              {espace.name}
-            </p>
-            <h1 className="font-serif text-2xl">Rapport de commercialisation</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin"
-              className="text-sm text-white/60 hover:text-white transition-colors"
-            >
-              &larr; Dashboard
-            </Link>
-            {rapport && (
-              <>
-                <a
-                  href={`/espaces/${params.slug}/rapports`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white"
-                >
-                  Voir le rapport
-                </a>
-                <Link
-                  href={`/admin/${params.slug}/rapports/${rapport.months[0]?.month || ""}`}
-                  className="luxury-btn text-sm"
-                >
-                  Modifier le rapport
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <AdminNav
+        title="Rapport de commercialisation"
+        eyebrow={espace.name}
+        actions={
+          rapport && (
+            <>
+              <a
+                href={`/espaces/${params.slug}/rapports`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white"
+              >
+                Voir le rapport
+              </a>
+              <Link
+                href={`/admin/${params.slug}/rapports/${rapport.months[0]?.month || ""}`}
+                className="luxury-btn text-sm"
+              >
+                Modifier le rapport
+              </Link>
+            </>
+          )
+        }
+      />
 
       <div className="max-w-5xl mx-auto py-12 px-6 md:px-12">
         {!rapport ? (

@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       leadGenMode: body.leadGenMode || "unlock",
       leadGenDismissible: body.leadGenDismissible || false,
       presentationLink: body.presentationLink || "",
+      brokerDirectoryVisible: true,
       template: body.template || "standard",
       storyTitle: body.storyTitle || "",
       storyText: body.storyText || "",

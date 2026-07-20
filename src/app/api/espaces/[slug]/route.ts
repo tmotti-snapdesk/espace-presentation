@@ -63,6 +63,9 @@ export async function PUT(
   try {
     const body = await request.json();
     const slug = params.slug;
+    // The edit form doesn't carry broker-directory visibility, so it's
+    // preserved from the current record unless the caller explicitly sends it.
+    const existing = await loadEspace(slug);
 
     const espaceData: EspaceData = {
       slug,
@@ -99,6 +102,10 @@ export async function PUT(
       leadGenMode: body.leadGenMode || "unlock",
       leadGenDismissible: body.leadGenDismissible || false,
       presentationLink: body.presentationLink || "",
+      brokerDirectoryVisible:
+        typeof body.brokerDirectoryVisible === "boolean"
+          ? body.brokerDirectoryVisible
+          : existing?.brokerDirectoryVisible ?? true,
       template: body.template || "standard",
       storyTitle: body.storyTitle || "",
       storyText: body.storyText || "",
@@ -140,6 +147,45 @@ export async function PUT(
   } catch (error) {
     const message = error instanceof Error ? error.message : "Update failed";
     console.error("Update espace error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+// PATCH: partial update, used by the admin dashboard's broker-directory
+// visibility toggle so it doesn't have to resend the entire form payload.
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const body = await request.json();
+    const slug = params.slug;
+
+    const existing = await loadEspace(slug);
+    if (!existing) {
+      return NextResponse.json({ error: "Espace non trouvé" }, { status: 404 });
+    }
+
+    const updated: EspaceData = {
+      ...existing,
+      ...(typeof body.brokerDirectoryVisible === "boolean"
+        ? { brokerDirectoryVisible: body.brokerDirectoryVisible }
+        : {}),
+    };
+
+    await put(`espaces/${slug}.json`, JSON.stringify(updated, null, 2), {
+      access: "public",
+      contentType: "application/json",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+
+    invalidate(slug);
+
+    return NextResponse.json({ success: true, slug, brokerDirectoryVisible: updated.brokerDirectoryVisible });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Update failed";
+    console.error("Patch espace error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

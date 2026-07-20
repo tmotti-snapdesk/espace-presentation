@@ -10,6 +10,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
   const [swapOpen, setSwapOpen] = useState(false);
   const [swapA, setSwapA] = useState("");
   const [swapB, setSwapB] = useState("");
@@ -80,6 +81,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleVisibility = async (slug: string, nextVisible: boolean) => {
+    setTogglingVisibility(slug);
+    setEspaces((prev) =>
+      prev.map((e) => (e.slug === slug ? { ...e, brokerDirectoryVisible: nextVisible } : e))
+    );
+    try {
+      const res = await fetch(`/api/espaces/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brokerDirectoryVisible: nextVisible }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Revert on failure
+      setEspaces((prev) =>
+        prev.map((e) => (e.slug === slug ? { ...e, brokerDirectoryVisible: !nextVisible } : e))
+      );
+    } finally {
+      setTogglingVisibility(null);
+    }
+  };
+
   const handleDelete = async (slug: string) => {
     if (!confirm(`Supprimer l'espace "${slug}" ? Cette action est irréversible.`)) return;
     setDeleting(slug);
@@ -101,6 +124,14 @@ export default function AdminDashboard() {
         title="Dashboard"
         actions={
           <>
+            <a
+              href="/espaces"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white"
+            >
+              Voir l&apos;annuaire brokers
+            </a>
             <button
               type="button"
               onClick={() => {
@@ -148,6 +179,33 @@ export default function AdminDashboard() {
                     Créé le {new Date(espace.createdAt).toLocaleDateString("fr-FR")}
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleToggleVisibility(espace.slug, !(espace.brokerDirectoryVisible !== false))
+                  }
+                  disabled={togglingVisibility === espace.slug}
+                  title="Visibilité sur l'annuaire brokers (/espaces)"
+                  className={`shrink-0 flex items-center gap-2 px-3 py-2 text-xs rounded border transition-colors disabled:opacity-50 ${
+                    espace.brokerDirectoryVisible !== false
+                      ? "border-luxury-gold/40 bg-luxury-champagne/20 text-luxury-charcoal"
+                      : "border-primary-200 text-luxury-slate"
+                  }`}
+                >
+                  <span
+                    className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+                      espace.brokerDirectoryVisible !== false ? "bg-luxury-gold" : "bg-primary-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        espace.brokerDirectoryVisible !== false ? "translate-x-3.5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </span>
+                  {espace.brokerDirectoryVisible !== false ? "Visible annuaire" : "Masqué annuaire"}
+                </button>
 
                 <div className="flex items-center gap-3 shrink-0">
                   <a

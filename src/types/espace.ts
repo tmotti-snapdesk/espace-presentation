@@ -52,6 +52,9 @@ export interface EspaceData {
   leadGenMode: LeadGenMode;
   leadGenDismissible: boolean;
   presentationLink: string;
+  // Visibility on the public /espaces broker directory. Existing espaces
+  // predating this field are treated as visible (see filtering logic).
+  brokerDirectoryVisible: boolean;
   // Prestige template fields
   template: Template;
   storyTitle: string;

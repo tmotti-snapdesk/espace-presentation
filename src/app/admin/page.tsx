@@ -158,6 +158,14 @@ export default function AdminDashboard() {
                   >
                     Voir
                   </a>
+                  <a
+                    href={`/espaces/${espace.slug}/fiche`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
+                  >
+                    Fiche broker
+                  </a>
                   <Link
                     href={`/admin/${espace.slug}`}
                     className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"

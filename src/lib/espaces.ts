@@ -51,6 +51,22 @@ export function getEspaceBySlug(slug: string): EspaceData | null {
   return JSON.parse(content) as EspaceData;
 }
 
+/** Resolves a single espace by slug, checking Blob (production) then the local fallback. */
+export async function resolveEspaceBySlug(slug: string): Promise<EspaceData | null> {
+  try {
+    const { blobs } = await list({ prefix: `espaces/${slug}` });
+    const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
+    if (jsonBlob) {
+      const res = await fetch(jsonBlob.url, { cache: "no-store" });
+      if (res.ok) return (await res.json()) as EspaceData;
+    }
+  } catch {
+    // Blob not configured
+  }
+
+  return getEspaceBySlug(slug);
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

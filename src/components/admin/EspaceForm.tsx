@@ -222,6 +222,12 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (form.isLeadGen && form.leadGenMode === "redirect" && !form.presentationLink.trim()) {
+      setError("Le lien de la présentation (section «Présentation») est requis en mode redirection.");
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setGeneratedUrl(null);
@@ -304,14 +310,24 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
             <p className="text-green-800 font-medium mb-2">
               {mode === "edit" ? "Mini-site mis à jour !" : "Mini-site créé avec succès !"}
             </p>
-            <a
-              href={generatedUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-green-600 underline hover:text-green-800"
-            >
-              Voir le mini-site &rarr;
-            </a>
+            <div className="flex flex-wrap gap-x-6 gap-y-1">
+              <a
+                href={generatedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-600 underline hover:text-green-800"
+              >
+                Voir le mini-site &rarr;
+              </a>
+              <a
+                href={`${generatedUrl}/fiche`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-600 underline hover:text-green-800"
+              >
+                Voir la fiche broker &rarr;
+              </a>
+            </div>
           </div>
         )}
 
@@ -398,7 +414,7 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
               )}
               {mode === "edit" && initialData && (
                 <p className="text-xs text-luxury-slate mt-1">
-                  URL : /espaces/{initialData.slug}
+                  URL : /espaces/{initialData.slug} &middot; Fiche broker : /espaces/{initialData.slug}/fiche
                 </p>
               )}
             </div>
@@ -679,7 +695,29 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
           </div>
         </section>
 
-        {/* Section 4: Lead Generation */}
+        {/* Section 4: Présentation */}
+        <section className="mb-12">
+          <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
+            Présentation
+          </h2>
+          <div>
+            <label className="block text-sm font-medium text-luxury-charcoal mb-2">
+              Lien de la présentation commerciale
+            </label>
+            <input
+              type="url"
+              value={form.presentationLink}
+              onChange={(e) => updateForm("presentationLink", e.target.value)}
+              className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors"
+              placeholder="https://..."
+            />
+            <p className="text-xs text-luxury-slate mt-1">
+              Utilisé sur la fiche broker de l&apos;espace et, si le mode &ldquo;redirection&rdquo; est activé ci-dessous, pour la redirection après le formulaire de lead generation.
+            </p>
+          </div>
+        </section>
+
+        {/* Section 5: Lead Generation */}
         <section className="mb-12">
           <h2 className="font-serif text-2xl text-luxury-charcoal mb-6 pb-3 border-b border-primary-200">
             Lead Generation
@@ -766,22 +804,9 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
               </div>
 
               {form.leadGenMode === "redirect" && (
-                <div>
-                  <label className="block text-sm font-medium text-luxury-charcoal mb-2">
-                    Lien de la présentation *
-                  </label>
-                  <input
-                    type="url"
-                    required={form.leadGenMode === "redirect"}
-                    value={form.presentationLink}
-                    onChange={(e) => updateForm("presentationLink", e.target.value)}
-                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors"
-                    placeholder="https://..."
-                  />
-                  <p className="text-xs text-luxury-slate mt-1">
-                    Le visiteur sera redirigé vers ce lien après soumission du formulaire.
-                  </p>
-                </div>
+                <p className="text-xs text-luxury-slate">
+                  Le visiteur sera redirigé vers le lien de la présentation (section &ldquo;Présentation&rdquo; ci-dessus) après soumission du formulaire.
+                </p>
               )}
 
               <label className="flex items-start gap-3 cursor-pointer pt-2 border-t border-primary-200">

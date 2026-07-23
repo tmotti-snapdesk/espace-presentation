@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
             "image/svg+xml",
             "image/gif",
             "video/mp4",
-            "video/quicktime",
             "application/pdf",
           ],
         };

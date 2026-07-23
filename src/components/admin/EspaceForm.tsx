@@ -1069,8 +1069,8 @@ export default function EspaceForm({ mode, initialData }: EspaceFormProps) {
             )}
             <FileDropzone
               label={existingVideo ? "Remplacer la vidéo" : "Vidéo de l'espace"}
-              description="Glissez-déposez une vidéo (MP4) ou cliquez pour sélectionner"
-              accept={{ "video/mp4": [".mp4"], "video/quicktime": [".mov"] }}
+              description="Glissez-déposez une vidéo au format MP4 (H.264) ou cliquez pour sélectionner. Les fichiers .mov (export iPhone) ne s'affichent pas sur Chrome/Firefox/Edge : convertissez-les en .mp4 avant l'import."
+              accept={{ "video/mp4": [".mp4"] }}
               onDrop={(files) => setVideoFile(files)}
               files={videoFile}
               multiple={false}

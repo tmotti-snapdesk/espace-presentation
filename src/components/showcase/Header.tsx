@@ -13,6 +13,7 @@ export default function Header({ espace }: HeaderProps) {
     <section className="relative h-screen w-full overflow-hidden">
       {/* Background Video */}
       <video
+        key={espace.videoUrl}
         autoPlay
         loop
         muted

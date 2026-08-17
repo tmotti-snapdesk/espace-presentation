@@ -9,6 +9,7 @@ import {
   SimilarEspace,
   emptyDistribution,
   sortMonthsDesc,
+  sortVisitesDesc,
 } from "@/types/rapport";
 import { getAllEspaces } from "@/lib/espaces";
 
@@ -265,8 +266,17 @@ async function getBlobRapport(espaceSlug: string): Promise<RapportData | null> {
  */
 export async function resolveRapport(espaceSlug: string): Promise<RapportData | null> {
   const blobResult = await getBlobRapport(espaceSlug);
-  if (blobResult) return blobResult;
-  return getLocalRapport(espaceSlug);
+  const rapport = blobResult || getLocalRapport(espaceSlug);
+  if (!rapport) return null;
+
+  // Les visites sont toujours réordonnées à la lecture (plus récentes en
+  // premier), quel que soit l'ordre dans lequel elles ont été enregistrées
+  // (ajout manuel, publication depuis la file d'attente...). Ça couvre aussi
+  // les rapports déjà existants, sans script de migration.
+  return {
+    ...rapport,
+    months: rapport.months.map((m) => ({ ...m, visites: sortVisitesDesc(m.visites) })),
+  };
 }
 
 /** Resolves every espace's rapport (used by the unfiltered rapports listing). */

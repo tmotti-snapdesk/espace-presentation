@@ -152,6 +152,11 @@ export function sortMonthsDesc(months: RapportMonthData[]): RapportMonthData[] {
   return [...months].sort((a, b) => b.month.localeCompare(a.month));
 }
 
+/** Visites les plus récentes en premier ; une visite sans date passe en dernier. */
+export function sortVisitesDesc(visites: RapportVisite[]): RapportVisite[] {
+  return [...visites].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
 export function formatMonthLabel(month: string): string {
   if (!/^\d{4}-\d{2}$/.test(month)) return month;
   const [year, monthNum] = month.split("-");

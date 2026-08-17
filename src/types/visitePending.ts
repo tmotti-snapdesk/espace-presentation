@@ -11,6 +11,8 @@ export interface PendingVisiteRaw {
   nombreVisite: string;
   loi: string;
   feedbacks: string;
+  activite: string;
+  postesEnvisages: string;
 }
 
 /**
@@ -29,6 +31,8 @@ export interface PendingVisite {
   espaceSlug: string | null;
   month: string;
   prospect: string;
+  activity: string;
+  workstations: string;
   feedback: string;
   outcome: string;
 

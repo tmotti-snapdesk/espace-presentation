@@ -46,6 +46,8 @@ export default function VisitesAValiderPage() {
           espaceSlug: visite.espaceSlug,
           month: visite.month,
           prospect: visite.prospect,
+          activity: visite.activity,
+          workstations: visite.workstations,
           feedback: visite.feedback,
           outcome: visite.outcome,
         }),
@@ -86,6 +88,8 @@ export default function VisitesAValiderPage() {
           espaceSlug: visite.espaceSlug,
           month: visite.month,
           prospect: visite.prospect,
+          activity: visite.activity,
+          workstations: visite.workstations,
           feedback: visite.feedback,
           outcome: visite.outcome,
         }),
@@ -185,6 +189,28 @@ export default function VisitesAValiderPage() {
                       type="text"
                       value={v.prospect}
                       onChange={(e) => updateLocal(v.id, { prospect: e.target.value })}
+                      className="w-full px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-luxury-slate mb-2">
+                      Activité
+                    </label>
+                    <input
+                      type="text"
+                      value={v.activity || ""}
+                      onChange={(e) => updateLocal(v.id, { activity: e.target.value })}
+                      className="w-full px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-luxury-slate mb-2">
+                      Postes envisagés
+                    </label>
+                    <input
+                      type="text"
+                      value={v.workstations || ""}
+                      onChange={(e) => updateLocal(v.id, { workstations: e.target.value })}
                       className="w-full px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold"
                     />
                   </div>

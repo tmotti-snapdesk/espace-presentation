@@ -32,7 +32,7 @@ Preview si besoin) :
 
 ## 3. Comportement
 
-- Dès qu'une ligne a sa case **"Envoi CR Visite ?"** cochée, toute la ligne (Date, Mois, Année, Espaces, Arrondissement, Client, Sales, Broker, Nombre de visite, LOI, Feedbacks) est envoyée à l'app.
+- Dès qu'une ligne a sa case **"Envoi CR Visite ?"** cochée, toute la ligne (Date, Mois, Année, Espaces, Arrondissement, Client, Sales, Broker, Nombre de visite, LOI, Feedbacks, Activité, Postes envisagés) est envoyée à l'app. Le script transmet automatiquement toutes les colonnes du Sheet par leur en-tête : ajouter une colonne **"Activité"** (secteur d'activité du prospect) et une colonne **"Postes envisagés"** (nombre de postes) permet de les faire remonter directement dans le compte-rendu, sans que l'admin ait besoin de les ressaisir à la main lors de la validation.
 - L'app tente de reconnaître l'espace concerné à partir de la colonne **Espaces** (comparaison du nom, insensible à la casse et aux accents). Si aucune correspondance fiable n'est trouvée, la visite arrive quand même dans la file d'attente, avec l'espace à choisir manuellement.
 - Gemini reformule les notes brutes de la colonne **Feedbacks** en un compte-rendu professionnel + une "suite donnée", à partir du contexte de la ligne (client, LOI, broker, arrondissement...).
 - Si Gemini échoue (clé manquante, erreur réseau...), la visite arrive quand même dans la file d'attente avec les notes brutes telles quelles — rien n'est jamais perdu.

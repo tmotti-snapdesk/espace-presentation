@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
       nombreVisite: String(body["Nombre de visite"] || ""),
       loi: String(body["LOI"] || ""),
       feedbacks: String(body["Feedbacks"] || ""),
+      activite: String(body["Activité"] || ""),
+      postesEnvisages: String(body["Postes envisagés"] || ""),
     };
     const sheetRowRef = String(body.rowRef ?? "");
     if (!sheetRowRef) {
@@ -88,6 +90,8 @@ export async function POST(request: NextRequest) {
       espaceSlug: existing?.espaceSlug ?? matched?.slug ?? null,
       month: existing?.month || month,
       prospect: raw.client,
+      activity: existing?.activity ?? raw.activite,
+      workstations: existing?.workstations ?? raw.postesEnvisages,
       feedback,
       outcome,
       geminiError,

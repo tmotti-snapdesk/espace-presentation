@@ -26,6 +26,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       espaceSlug: body.espaceSlug !== undefined ? body.espaceSlug : existing.espaceSlug,
       month: body.month !== undefined ? body.month : existing.month,
       prospect: body.prospect !== undefined ? body.prospect : existing.prospect,
+      activity: body.activity !== undefined ? body.activity : existing.activity,
+      workstations: body.workstations !== undefined ? body.workstations : existing.workstations,
       feedback: body.feedback !== undefined ? body.feedback : existing.feedback,
       outcome: body.outcome !== undefined ? body.outcome : existing.outcome,
       status: body.status !== undefined ? body.status : existing.status,

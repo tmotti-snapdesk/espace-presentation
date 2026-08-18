@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { list, put, del } from "@vercel/blob";
 import { resolveEspaceBySlug, pruneOrphanedMedia, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
 
-// Per-slug cache. Used by the admin edit page when loading the form.
-// Invalidated explicitly on PUT/DELETE via revalidateTag. Delegates the
-// actual Blob/local-fallback read to lib/espaces.ts so every page that
-// reads an espace (this route, the public landing, the broker fiche...)
-// goes through the exact same fetch logic and never drifts out of sync.
-const loadEspace = unstable_cache(
-  (slug: string): Promise<EspaceData | null> => resolveEspaceBySlug(slug),
-  ["espace-by-slug"],
-  { tags: ["espaces-list"], revalidate: 300 }
-);
+// This route is the admin's only view of an espace's current state — the
+// edit form primes itself from GET here, and PUT/PATCH/POST diff against
+// it before writing. It previously went through an unstable_cache with a
+// 5-minute revalidate window, invalidated via revalidateTag on every save.
+// In practice that tag invalidation isn't guaranteed to propagate
+// instantly across regions/instances, so the admin could keep loading a
+// stale snapshot for minutes after a save — reloading the form with
+// outdated "existing photos" and quietly reverting recent changes on the
+// next save, or having pruneOrphanedMedia diff against the wrong
+// baseline. Read straight through instead: the same path the public page
+// uses, bounded by the 60s cacheControlMaxAge on the Blob write itself,
+// which is a tighter and more reliable staleness bound for a low-traffic
+// admin route than a longer cache with flaky invalidation.
+const loadEspace = (slug: string): Promise<EspaceData | null> => resolveEspaceBySlug(slug);
 
 // GET a single espace
 export async function GET(

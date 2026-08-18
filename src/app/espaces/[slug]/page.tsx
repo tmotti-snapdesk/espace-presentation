@@ -1,8 +1,6 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import { getEspaceBySlug } from "@/lib/espaces";
-import { EspaceData } from "@/types/espace";
-import { list } from "@vercel/blob";
+import { resolveEspaceBySlug } from "@/lib/espaces";
 import ShowcasePage from "./ShowcasePage";
 
 // Revalidate the rendered HTML at most once per hour. After this delay,
@@ -12,35 +10,11 @@ import ShowcasePage from "./ShowcasePage";
 export const revalidate = 3600;
 
 // Dedupe Blob calls between generateMetadata() and the page component
-// during the same render pass. Without this wrapper, every request did
-// 2× list() + 2× fetch() instead of 1× each.
-const resolveEspace = cache(async (slug: string): Promise<EspaceData | null> => {
-  // 1. Try Vercel Blob first (for dynamically created/edited espaces)
-  try {
-    const { blobs } = await list({ prefix: `espaces/${slug}` });
-    const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
-    if (jsonBlob) {
-      // ISR handles invalidation via revalidatePath() called from the admin
-      // write routes, but the Blob URL is itself served through a CDN that
-      // can briefly return a stale copy right after a write (even with
-      // cache: "no-store"). Cache-bust so a fresh render always sees the
-      // latest photos instead of locking in a stale copy for the whole
-      // revalidate window.
-      const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
-      if (res.ok) {
-        return (await res.json()) as EspaceData;
-      }
-    }
-  } catch {
-    // Blob not configured or not found — fall through
-  }
-
-  // 2. Fallback to local filesystem (for demo/bundled data)
-  const localData = getEspaceBySlug(slug);
-  if (localData) return localData;
-
-  return null;
-});
+// during the same render pass, and delegate the actual read to
+// lib/espaces.ts so this page, the admin API, and the broker-facing pages
+// (fiche, rapports, directory) all resolve an espace's photos through the
+// exact same Blob/local-fallback logic — one fix there covers every page.
+const resolveEspace = cache((slug: string) => resolveEspaceBySlug(slug));
 
 export async function generateMetadata({
   params,

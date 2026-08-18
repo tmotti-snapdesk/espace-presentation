@@ -9,7 +9,9 @@ async function readEspaceBlob(slug: string): Promise<EspaceData | null> {
   const { blobs } = await list({ prefix: `espaces/${slug}` });
   const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
   if (!jsonBlob) return null;
-  const res = await fetch(jsonBlob.url, { cache: "no-store" });
+  // Cache-bust: Blob URLs are served through a CDN that can briefly
+  // return a stale copy right after a write, even with cache: "no-store".
+  const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
   if (!res.ok) return null;
   return (await res.json()) as EspaceData;
 }

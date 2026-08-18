@@ -1,5 +1,5 @@
 import { EspaceData } from "@/types/espace";
-import { list } from "@vercel/blob";
+import { list, del } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
 
@@ -69,6 +69,50 @@ export async function resolveEspaceBySlug(slug: string): Promise<EspaceData | nu
   }
 
   return getEspaceBySlug(slug);
+}
+
+const OWN_BLOB_HOSTNAME_RE = /\.public\.blob\.vercel-storage\.com$/;
+
+function isOwnBlobUrl(url: string): boolean {
+  try {
+    return OWN_BLOB_HOSTNAME_RE.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function collectMediaUrls(data: EspaceData | null): Set<string> {
+  if (!data) return new Set();
+  return new Set(
+    [
+      ...(data.photos || []),
+      data.videoUrl,
+      data.floorPlanImage,
+      ...(data.storyPhotos || []),
+      ...(data.highlightPhotos || []),
+      ...(data.neighborhoodPhotos || []),
+    ].filter((url): url is string => !!url)
+  );
+}
+
+/**
+ * Deletes Blob files referenced by `before` but no longer referenced by
+ * `after` — e.g. a photo removed or a video replaced in the admin form —
+ * so they don't keep taking up (billed) storage forever. Best-effort: a
+ * failed delete is logged but never blocks the save that triggered it.
+ */
+export async function pruneOrphanedMedia(before: EspaceData | null, after: EspaceData): Promise<void> {
+  const beforeUrls = collectMediaUrls(before);
+  const afterUrls = collectMediaUrls(after);
+  const orphaned = [...beforeUrls].filter((url) => !afterUrls.has(url) && isOwnBlobUrl(url));
+  if (orphaned.length === 0) return;
+
+  const results = await Promise.allSettled(orphaned.map((url) => del(url)));
+  results.forEach((result, i) => {
+    if (result.status === "rejected") {
+      console.error("Failed to delete orphaned media blob:", orphaned[i], result.reason);
+    }
+  });
 }
 
 export function slugify(text: string): string {

@@ -1,36 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { list, put, del } from "@vercel/blob";
-import { getEspaceBySlug } from "@/lib/espaces";
+import { resolveEspaceBySlug, pruneOrphanedMedia } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
 
 // Per-slug cache. Used by the admin edit page when loading the form.
-// Invalidated explicitly on PUT/DELETE via revalidateTag.
+// Invalidated explicitly on PUT/DELETE via revalidateTag. Delegates the
+// actual Blob/local-fallback read to lib/espaces.ts so every page that
+// reads an espace (this route, the public landing, the broker fiche...)
+// goes through the exact same fetch logic and never drifts out of sync.
 const loadEspace = unstable_cache(
-  async (slug: string): Promise<EspaceData | null> => {
-    // 1. Try Vercel Blob first (most up-to-date)
-    try {
-      const { blobs } = await list({ prefix: `espaces/${slug}` });
-      const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
-      if (jsonBlob) {
-        // Cache-bust: Blob URLs are served through a CDN that can briefly
-        // return a stale copy right after a write, even with cache: "no-store".
-        // Without this, the admin edit form can load a stale photos list and
-        // resubmit it, silently undoing a just-made deletion/addition.
-        const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
-        if (res.ok) {
-          return (await res.json()) as EspaceData;
-        }
-      }
-    } catch {
-      // Blob not configured
-    }
-
-    // 2. Fallback to local filesystem
-    return getEspaceBySlug(slug);
-  },
+  (slug: string): Promise<EspaceData | null> => resolveEspaceBySlug(slug),
   ["espace-by-slug"],
   { tags: ["espaces-list"], revalidate: 300 }
 );
@@ -140,6 +122,15 @@ export async function PUT(
       addRandomSuffix: false,
       allowOverwrite: true,
     });
+
+    // Best-effort: delete any photo/video/floor-plan blob that this save
+    // just dropped, so removed or replaced media doesn't keep costing
+    // storage forever. Never fails the save itself.
+    try {
+      await pruneOrphanedMedia(existing, espaceData);
+    } catch (err) {
+      console.error("Prune orphaned media error:", err);
+    }
 
     invalidate(slug);
 
@@ -264,12 +255,19 @@ export async function DELETE(
   { params }: { params: { slug: string } }
 ) {
   try {
-    // Delete JSON blob
+    // Delete the JSON blob and every media file uploaded under this
+    // espace's own folder. `list({ prefix })` matches by string prefix, so
+    // without the exact-boundary check below, deleting "marais" would also
+    // sweep up "marais-premium.json" and its photos — filter down to only
+    // this slug's own JSON file and its "<slug>/..." media folder.
     try {
       const { blobs } = await list({ prefix: `espaces/${params.slug}` });
-      for (const blob of blobs) {
-        await del(blob.url);
-      }
+      const ownBlobs = blobs.filter(
+        (blob) =>
+          blob.pathname === `espaces/${params.slug}.json` ||
+          blob.pathname.startsWith(`espaces/${params.slug}/`)
+      );
+      await Promise.allSettled(ownBlobs.map((blob) => del(blob.url)));
     } catch {
       // Blob not configured
     }

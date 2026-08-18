@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { list, put } from "@vercel/blob";
+import { ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
@@ -9,9 +10,7 @@ async function readEspaceBlob(slug: string): Promise<EspaceData | null> {
   const { blobs } = await list({ prefix: `espaces/${slug}` });
   const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
   if (!jsonBlob) return null;
-  // Cache-bust: Blob URLs are served through a CDN that can briefly
-  // return a stale copy right after a write, even with cache: "no-store".
-  const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
+  const res = await fetch(jsonBlob.url);
   if (!res.ok) return null;
   return (await res.json()) as EspaceData;
 }

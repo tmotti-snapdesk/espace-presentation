@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { list, put, del } from "@vercel/blob";
-import { resolveEspaceBySlug, pruneOrphanedMedia } from "@/lib/espaces";
+import { resolveEspaceBySlug, pruneOrphanedMedia, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
@@ -121,6 +121,7 @@ export async function PUT(
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
     });
 
     // Best-effort: delete any photo/video/floor-plan blob that this save
@@ -173,6 +174,7 @@ export async function PATCH(
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
     });
 
     invalidate(slug);
@@ -233,6 +235,7 @@ export async function POST(
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
     });
 
     invalidate(newSlug);

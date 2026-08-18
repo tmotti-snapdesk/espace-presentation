@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { put } from "@vercel/blob";
-import { slugify } from "@/lib/espaces";
+import { slugify, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 const DEFAULT_CONTACTS = [
@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
     });
 
     // Invalidate caches so the dashboard and the new public page reflect

@@ -5,6 +5,14 @@ import path from "path";
 
 const DATA_DIR = path.join(process.cwd(), "data", "espaces");
 
+// Vercel Blob defaults to caching a blob for a month at its CDN edge, and
+// that cache is keyed on the URL alone (it ignores query strings). Since
+// the espace JSON is overwritten in place at a stable URL on every save,
+// a long cache means an edit can stay invisible to visitors for up to a
+// month. 60 seconds is the shortest Blob allows — put() calls that write
+// espaces/<slug>.json should pass `cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE`.
+export const ESPACE_JSON_CACHE_MAX_AGE = 60;
+
 export function getAllEspaces(): EspaceData[] {
   if (!fs.existsSync(DATA_DIR)) {
     return [];
@@ -25,9 +33,12 @@ export async function resolveAllEspaces(): Promise<EspaceData[]> {
   try {
     const { blobs } = await list({ prefix: "espaces/" });
     for (const blob of blobs.filter((b) => b.pathname.endsWith(".json"))) {
-      // Cache-bust: Blob URLs are served through a CDN that can briefly
-      // return a stale copy right after a write, even with cache: "no-store".
-      const res = await fetch(`${blob.url}?t=${Date.now()}`, { cache: "no-store" });
+      // No cache-busting needed here: the espace JSON is written with a
+      // short cacheControlMaxAge (see the put() calls in the API routes),
+      // so the Blob CDN itself never holds a stale copy for long. A
+      // query-string cache-buster wouldn't help anyway — Vercel Blob's CDN
+      // ignores the query string when computing its cache key.
+      const res = await fetch(blob.url);
       if (res.ok) {
         const data = (await res.json()) as EspaceData;
         espaces.push(data);
@@ -59,9 +70,15 @@ export async function resolveEspaceBySlug(slug: string): Promise<EspaceData | nu
     const { blobs } = await list({ prefix: `espaces/${slug}` });
     const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
     if (jsonBlob) {
-      // Cache-bust: Blob URLs are served through a CDN that can briefly
-      // return a stale copy right after a write, even with cache: "no-store".
-      const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
+      // Plain fetch — this function is used from an ISR-cached page
+      // (/espaces/[slug]) as well as force-dynamic routes. Forcing
+      // cache: "no-store" here would opt the ISR page out of static
+      // caching entirely, defeating the point of `revalidate`. Freshness
+      // is instead guaranteed at the Blob layer via a short
+      // cacheControlMaxAge on write (see the put() calls) — a
+      // query-string cache-buster wouldn't help since Vercel Blob's CDN
+      // ignores the query string when computing its cache key.
+      const res = await fetch(jsonBlob.url);
       if (res.ok) return (await res.json()) as EspaceData;
     }
   } catch {

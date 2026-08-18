@@ -104,7 +104,7 @@ function collectMediaUrls(data: EspaceData | null): Set<string> {
 export async function pruneOrphanedMedia(before: EspaceData | null, after: EspaceData): Promise<void> {
   const beforeUrls = collectMediaUrls(before);
   const afterUrls = collectMediaUrls(after);
-  const orphaned = [...beforeUrls].filter((url) => !afterUrls.has(url) && isOwnBlobUrl(url));
+  const orphaned = Array.from(beforeUrls).filter((url) => !afterUrls.has(url) && isOwnBlobUrl(url));
   if (orphaned.length === 0) return;
 
   const results = await Promise.allSettled(orphaned.map((url) => del(url)));

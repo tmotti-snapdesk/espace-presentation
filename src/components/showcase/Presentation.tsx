@@ -10,6 +10,7 @@ import {
   Umbrella,
   Snowflake,
   Bike,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import { EspaceData } from "@/types/espace";
@@ -117,8 +118,9 @@ export default function Presentation({ espace }: PresentationProps) {
               {espace.amenities.map((amenity) => (
                 <span
                   key={amenity}
-                  className="px-6 py-3 border border-primary-200 text-sm text-luxury-slate tracking-wide"
+                  className="inline-flex items-center gap-2 px-6 py-3 border border-primary-200 text-sm text-luxury-slate tracking-wide"
                 >
+                  <Check className="w-3.5 h-3.5 text-luxury-gold shrink-0" strokeWidth={2} />
                   {amenity}
                 </span>
               ))}

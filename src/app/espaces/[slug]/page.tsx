@@ -18,11 +18,15 @@ const resolveEspace = cache(async (slug: string): Promise<EspaceData | null> => 
   // 1. Try Vercel Blob first (for dynamically created/edited espaces)
   try {
     const { blobs } = await list({ prefix: `espaces/${slug}` });
-    const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
+    const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
     if (jsonBlob) {
-      // Let Next.js cache the response — ISR handles invalidation via
-      // revalidatePath() called from the admin write routes.
-      const res = await fetch(jsonBlob.url);
+      // ISR handles invalidation via revalidatePath() called from the admin
+      // write routes, but the Blob URL is itself served through a CDN that
+      // can briefly return a stale copy right after a write (even with
+      // cache: "no-store"). Cache-bust so a fresh render always sees the
+      // latest photos instead of locking in a stale copy for the whole
+      // revalidate window.
+      const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         return (await res.json()) as EspaceData;
       }

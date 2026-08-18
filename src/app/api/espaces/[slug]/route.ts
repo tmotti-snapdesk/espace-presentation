@@ -13,9 +13,13 @@ const loadEspace = unstable_cache(
     // 1. Try Vercel Blob first (most up-to-date)
     try {
       const { blobs } = await list({ prefix: `espaces/${slug}` });
-      const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
+      const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
       if (jsonBlob) {
-        const res = await fetch(jsonBlob.url);
+        // Cache-bust: Blob URLs are served through a CDN that can briefly
+        // return a stale copy right after a write, even with cache: "no-store".
+        // Without this, the admin edit form can load a stale photos list and
+        // resubmit it, silently undoing a just-made deletion/addition.
+        const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           return (await res.json()) as EspaceData;
         }

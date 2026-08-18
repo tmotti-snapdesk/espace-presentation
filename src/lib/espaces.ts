@@ -25,7 +25,9 @@ export async function resolveAllEspaces(): Promise<EspaceData[]> {
   try {
     const { blobs } = await list({ prefix: "espaces/" });
     for (const blob of blobs.filter((b) => b.pathname.endsWith(".json"))) {
-      const res = await fetch(blob.url, { cache: "no-store" });
+      // Cache-bust: Blob URLs are served through a CDN that can briefly
+      // return a stale copy right after a write, even with cache: "no-store".
+      const res = await fetch(`${blob.url}?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = (await res.json()) as EspaceData;
         espaces.push(data);
@@ -57,7 +59,9 @@ export async function resolveEspaceBySlug(slug: string): Promise<EspaceData | nu
     const { blobs } = await list({ prefix: `espaces/${slug}` });
     const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
     if (jsonBlob) {
-      const res = await fetch(jsonBlob.url, { cache: "no-store" });
+      // Cache-bust: Blob URLs are served through a CDN that can briefly
+      // return a stale copy right after a write, even with cache: "no-store".
+      const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) return (await res.json()) as EspaceData;
     }
   } catch {

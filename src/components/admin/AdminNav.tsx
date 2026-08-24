@@ -38,7 +38,9 @@ export default function AdminNav({ title, eyebrow = "Snapdesk", maxWidth = "max-
     <header className="bg-luxury-charcoal text-white">
       <div className={`${maxWidth} mx-auto px-6 md:px-12 pt-8 pb-4 flex flex-wrap items-center justify-between gap-4`}>
         <div>
-          <p className="luxury-label text-luxury-gold mb-1">{eyebrow}</p>
+          <Link href="/admin/hub" className="luxury-label text-luxury-gold mb-1 inline-block hover:text-white transition-colors">
+            {eyebrow}
+          </Link>
           <h1 className="font-serif text-2xl">{title}</h1>
         </div>
         {actions && <div className="flex items-center gap-3 flex-wrap shrink-0">{actions}</div>}

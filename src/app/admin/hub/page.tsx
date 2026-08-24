@@ -39,7 +39,7 @@ const SECTIONS: HubSection[] = [
   {
     index: "03",
     title: "Brokers",
-    description: "Annuaire public des brokers et mini-sites de présentation par espace.",
+    description: "Annuaire des espaces disponibles aux brokers.",
     links: [{ label: "Annuaire brokers", href: "/espaces", newTab: true }],
   },
 ];
@@ -90,6 +90,7 @@ export default function HubPage() {
                     className="px-4 py-2.5 text-sm text-center border border-primary-200 text-luxury-charcoal hover:bg-luxury-charcoal hover:text-white transition-colors rounded"
                   >
                     {link.label}
+                    <span aria-hidden="true" className="ml-1.5 text-xs">↗</span>
                   </Link>
                 )
               )}

@@ -11,11 +11,6 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
-  const [swapOpen, setSwapOpen] = useState(false);
-  const [swapA, setSwapA] = useState("");
-  const [swapB, setSwapB] = useState("");
-  const [swapping, setSwapping] = useState(false);
-  const [swapError, setSwapError] = useState<string | null>(null);
 
   const fetchEspaces = async () => {
     try {
@@ -28,38 +23,6 @@ export default function AdminDashboard() {
       // silently fail
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSwap = async () => {
-    if (!swapA || !swapB || swapA === swapB) {
-      setSwapError("Sélectionne deux espaces différents");
-      return;
-    }
-    const a = espaces.find((e) => e.slug === swapA)?.name || swapA;
-    const b = espaces.find((e) => e.slug === swapB)?.name || swapB;
-    if (!confirm(`Échanger les URLs de "${a}" et "${b}" ? Cette action est irréversible.`)) return;
-    setSwapError(null);
-    setSwapping(true);
-    try {
-      const res = await fetch("/api/espaces/swap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slugA: swapA, slugB: swapB }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setSwapError(data.error || "Échec de l'échange");
-        return;
-      }
-      setSwapOpen(false);
-      setSwapA("");
-      setSwapB("");
-      await fetchEspaces();
-    } catch (err) {
-      setSwapError(err instanceof Error ? err.message : "Échec de l'échange");
-    } finally {
-      setSwapping(false);
     }
   };
 
@@ -123,21 +86,9 @@ export default function AdminDashboard() {
       <AdminNav
         title="Dashboard"
         actions={
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                setSwapError(null);
-                setSwapOpen(true);
-              }}
-              className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white"
-            >
-              Échanger URLs
-            </button>
-            <Link href="/admin/nouveau" className="luxury-btn text-sm">
-              + Créer un espace
-            </Link>
-          </>
+          <Link href="/admin/nouveau" className="luxury-btn text-sm">
+            + Créer un espace
+          </Link>
         }
       />
 
@@ -248,80 +199,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-
-      {swapOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => !swapping && setSwapOpen(false)}
-        >
-          <div
-            className="bg-white rounded-lg max-w-md w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="font-serif text-xl text-luxury-charcoal mb-2">
-              Échanger deux URLs
-            </h2>
-            <p className="text-sm text-luxury-slate mb-5">
-              Les contenus des deux espaces sélectionnés seront échangés sur leurs URLs respectives.
-            </p>
-
-            <label className="block text-sm text-luxury-charcoal mb-1">Espace A</label>
-            <select
-              value={swapA}
-              onChange={(e) => setSwapA(e.target.value)}
-              disabled={swapping}
-              className="w-full border border-primary-200 rounded px-3 py-2 mb-4 text-sm"
-            >
-              <option value="">— Sélectionner —</option>
-              {espaces.map((e) => (
-                <option key={e.slug} value={e.slug}>
-                  {e.name} ({e.slug})
-                </option>
-              ))}
-            </select>
-
-            <label className="block text-sm text-luxury-charcoal mb-1">Espace B</label>
-            <select
-              value={swapB}
-              onChange={(e) => setSwapB(e.target.value)}
-              disabled={swapping}
-              className="w-full border border-primary-200 rounded px-3 py-2 mb-4 text-sm"
-            >
-              <option value="">— Sélectionner —</option>
-              {espaces
-                .filter((e) => e.slug !== swapA)
-                .map((e) => (
-                  <option key={e.slug} value={e.slug}>
-                    {e.name} ({e.slug})
-                  </option>
-                ))}
-            </select>
-
-            {swapError && (
-              <p className="text-sm text-red-600 mb-3">{swapError}</p>
-            )}
-
-            <div className="flex items-center justify-end gap-3 mt-2">
-              <button
-                type="button"
-                onClick={() => setSwapOpen(false)}
-                disabled={swapping}
-                className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded disabled:opacity-50"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={handleSwap}
-                disabled={swapping || !swapA || !swapB || swapA === swapB}
-                className="luxury-btn text-sm disabled:opacity-50"
-              >
-                {swapping ? "Échange en cours..." : "Échanger"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

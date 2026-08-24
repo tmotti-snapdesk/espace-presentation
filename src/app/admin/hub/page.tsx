@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 const LINKEDIN_GENERATOR_URL = "https://snapdesk-claudio-linkedin.vercel.app/";
+const STARTUP_MAP_URL = "https://cartestartups.vercel.app/";
+const EMAIL_GENERATOR_URL = "https://mail-leads-hebdo.vercel.app/";
 
 interface HubLink {
   label: string;
@@ -30,8 +32,8 @@ const SECTIONS: HubSection[] = [
     links: [
       { label: "Générateur LinkedIn", href: LINKEDIN_GENERATOR_URL, newTab: true },
       { label: "Landing Pages", href: "/admin/lp" },
-      { label: "Outil marketing — bientôt", href: "#", soon: true },
-      { label: "Outil marketing — bientôt", href: "#", soon: true },
+      { label: "Carte des startups", href: STARTUP_MAP_URL, newTab: true },
+      { label: "Générateur d'emails", href: EMAIL_GENERATOR_URL, newTab: true },
     ],
   },
   {

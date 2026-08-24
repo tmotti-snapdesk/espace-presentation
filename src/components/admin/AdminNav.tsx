@@ -11,8 +11,6 @@ const NAV_LINKS = [
   { href: "/admin/visites", label: "Visites à valider", showBadge: true },
 ];
 
-const LINKEDIN_GENERATOR_URL = "https://snapdesk-claudio-linkedin.vercel.app/";
-
 interface AdminNavProps {
   title: string;
   eyebrow?: string;
@@ -66,18 +64,6 @@ export default function AdminNav({ title, eyebrow = "Snapdesk", maxWidth = "max-
             )}
           </Link>
         ))}
-
-        <span className="w-px h-4 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
-
-        <a
-          href={LINKEDIN_GENERATOR_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-3 py-1.5 text-sm rounded whitespace-nowrap text-white/60 hover:text-white hover:bg-white/10 transition-colors inline-flex items-center gap-1.5"
-        >
-          Générateur LinkedIn
-          <span aria-hidden="true" className="text-xs">↗</span>
-        </a>
       </nav>
     </header>
   );

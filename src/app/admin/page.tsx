@@ -124,14 +124,6 @@ export default function AdminDashboard() {
         title="Dashboard"
         actions={
           <>
-            <a
-              href="/espaces"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="luxury-btn-outline text-sm border-white/30 text-white hover:bg-white/10 hover:text-white"
-            >
-              Voir l&apos;annuaire brokers
-            </a>
             <button
               type="button"
               onClick={() => {

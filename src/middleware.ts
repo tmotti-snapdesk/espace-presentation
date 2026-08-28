@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 // template) — the file tree lives under public/lp-static/<slug>/.
 // Add a slug here to serve another hand-built static marketing page the
 // same way, no other code changes needed.
-const STATIC_LP_SLUGS = new Set(["location-bureaux-operes-full-services-paris"]);
+const STATIC_LP_SLUGS = new Set([
+  "location-bureaux-operes-full-services-paris",
+  // A/B variant: same page, lead form moved above the fold.
+  "location-bureaux-operes-full-services-paris2",
+]);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

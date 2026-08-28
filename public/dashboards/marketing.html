@@ -228,7 +228,7 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
   <section id="leadgen">
     <div class="sec-head">
       <h2>Génération de leads</h2><span class="tabref">Onglet Lead Gen</span>
-      <p>L'onglet est encore vide dans le Sheet : les valeurs ci-dessous sont simulées et s'effacent dès que vous saisissez les vraies.</p>
+      <p>Sources regroupées par famille marketing (distinctes des canaux GA4 de l'onglet Trafic). Ce qui n'est pas encore saisi reste estimé à partir des visites réelles, et disparaît dès la saisie.</p>
     </div>
     <div class="kpis" id="leadKpis"></div>
     <div class="grid two" id="leadGrid"></div>
@@ -649,6 +649,24 @@ const SQL_TO_VQL = 0.62;   /* un lead qualifié sur ~1,6 débouche sur une visit
 const MQL_TO_SQL = 0.55;   /* un MQL sur ~1,8 est retenu par les sales */
 const IG_SIM_GAIN = { "Q1 2026": 128, "Q2 2026": 171 };
 
+/* L'onglet Lead Gen regroupe les sources par famille marketing, pas par canal GA4 :
+   la jointure avec l'onglet Trafic doit donc passer par ce dictionnaire plutôt que
+   par une égalité de nom. Les canaux GA4 non listés ici tombent dans LEAD_CATCHALL. */
+const LEAD_SOURCE_MAP = {
+  "Recherche naturelle": ["Organic Search"],
+  "Référencement payant": ["Paid Search"],
+  "Email Marketing": ["Email"],
+  "Réseau social organique": ["Organic Social"],
+  "Trafic direct": ["Direct"],
+  "Campagne sociale payante": ["Paid Social"]
+};
+const LEAD_OFFLINE = "Sources hors ligne";   /* leads sans session GA4 associée */
+const LEAD_CATCHALL = "Autres campagnes";    /* reste des canaux GA4 (Referral, Display, ...) */
+const GA_TO_LEAD_BUCKET = {};
+Object.keys(LEAD_SOURCE_MAP).forEach(bucket => {
+  LEAD_SOURCE_MAP[bucket].forEach(gaSource => { GA_TO_LEAD_BUCKET[gaSource] = bucket; });
+});
+
 function largestRemainder(total, weights) {
   const tot = weights.reduce((a, b) => a + b.w, 0);
   const out = weights.map(x => {
@@ -689,7 +707,10 @@ function buildModel(blocks) {
   try { lead = parseSourceTable(parts.leadgen || [], n => /^SQL$/i.test(n) ? "sql" : /^MQL$/i.test(n) ? "mql" : /^VQL$/i.test(n) ? "vql" : null); }
   catch (e) { model.errors.leadgen = e.message; lead = { periods: [], rows: [] }; }
 
-  /* --- Lead Gen : on complète chaque trou, source par source --- */
+  /* --- Lead Gen : on complète chaque trou, famille par famille ---
+     Les familles de l'onglet Lead Gen ne portent pas les mêmes noms que les canaux
+     GA4 de l'onglet Trafic : on agrège d'abord les sessions GA4 par famille
+     (via LEAD_SOURCE_MAP / LEAD_CATCHALL) avant de joindre les vraies valeurs saisies. */
   const periods = model.trafic.periods.length ? model.trafic.periods : lead.periods;
   const funnel = { periods: periods, rows: [], anchors: {}, simulated: false };
   const realByKey = {};
@@ -697,13 +718,27 @@ function buildModel(blocks) {
     const v = (r.byPeriod[p] || {});
     realByKey[r.source + "|" + p] = { sql: v.sql, mql: v.mql, vql: v.vql };
   }));
+  const bucketNames = Object.keys(LEAD_SOURCE_MAP).concat([LEAD_OFFLINE, LEAD_CATCHALL]);
+  lead.rows.forEach(r => { if (bucketNames.indexOf(r.source) < 0) bucketNames.push(r.source); });
 
   periods.forEach(p => {
     const meta = periodMeta(p);
-    const sources = model.trafic.rows.map(r => ({
-      source: r.source,
-      sessions: (r.byPeriod[p] || {}).sessions || 0,
-      engagement: (r.byPeriod[p] || {}).engagement
+    const agg = {};
+    bucketNames.forEach(name => { agg[name] = { sessions: 0, engNum: 0, w: 0 }; });
+    model.trafic.rows.forEach(r => {
+      const v = r.byPeriod[p] || {};
+      const sess = v.sessions || 0;
+      const bucket = GA_TO_LEAD_BUCKET[r.source] || LEAD_CATCHALL;
+      if (!agg[bucket]) agg[bucket] = { sessions: 0, engNum: 0, w: 0 };
+      agg[bucket].sessions += sess;
+      if (v.engagement != null) agg[bucket].engNum += sess * v.engagement;
+      agg[bucket].w += sess * (PROPENSITY[r.source] != null ? PROPENSITY[r.source] : 2);
+    });
+    const sources = bucketNames.map(name => ({
+      source: name,
+      sessions: agg[name].sessions,
+      engagement: agg[name].sessions ? agg[name].engNum / agg[name].sessions : null,
+      weight: agg[name].w
     }));
     /* Ancre : le nombre réel de visites du trimestre, lu dans l'onglet Sales x Marketing */
     let anchor = meta ? quarterVisits(model.sales.months || [], meta.year, meta.q) : null;
@@ -713,7 +748,7 @@ function buildModel(blocks) {
     if (anchor == null) anchor = Math.round(sum(sources.map(x => x.sessions)) * 0.004);
     funnel.anchors[p] = anchor;
 
-    const weights = sources.map(x => ({ key: x.source, w: x.sessions * (PROPENSITY[x.source] != null ? PROPENSITY[x.source] : 2) }));
+    const weights = sources.map(x => ({ key: x.source, w: x.weight }));
     const share = largestRemainder(anchor, weights);
 
     sources.forEach(x => {
@@ -1542,7 +1577,7 @@ function renderMethodo(model) {
   const li = t => ul.appendChild(el("li", { text: t }));
   li("La page relit le Google Sheet à chaque ouverture, puis toutes les 5 minutes tant qu'elle reste ouverte. Le bouton « Actualiser » force une relecture immédiate.");
   li("Trafic, Social Media et Sales x Marketing sont affichés tels quels, sans retouche.");
-  li("Onglet Lead Gen : vide dans le Sheet. Les VQL sont ancrés sur le nombre réel de visites du trimestre (onglet Sales x Marketing) puis répartis entre les sources au prorata des sessions, pondérées par la propension du canal à convertir. SQL = VQL ÷ " + SQL_TO_VQL + ", MQL = SQL ÷ " + MQL_TO_SQL + ".");
+  li("Onglet Lead Gen : les familles saisies (Recherche naturelle, Référencement payant, Email Marketing, Réseau social organique, Trafic direct, Campagne sociale payante) reprennent chacune un canal GA4 de l'onglet Trafic ; « Autres campagnes » regroupe le reste des canaux GA4 ; « Sources hors ligne » n'a pas de session associée. Les valeurs saisies sont affichées telles quelles. Ce qui manque encore est estimé : VQL ancré sur le nombre réel de visites du trimestre (onglet Sales x Marketing) puis réparti au prorata des sessions de la famille, pondérées par la propension du canal à convertir ; SQL = VQL ÷ " + SQL_TO_VQL + ", MQL = SQL ÷ " + MQL_TO_SQL + ".");
   li("Instagram : aucun relevé trimestriel saisi. La trajectoire est une projection vers l'objectif de fin d'année.");
   li("Toute valeur simulée porte la mention « simulé » ou le signe ° dans les tableaux, et disparaît dès que la cellule correspondante est remplie dans le Sheet.");
   n.appendChild(ul);

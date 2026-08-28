@@ -1225,7 +1225,6 @@ function tile(host, o) {
   const t = el("div", { class: "tile" });
   const lbl = el("div", { class: "lbl" });
   lbl.appendChild(document.createTextNode(o.label));
-  if (o.sim) lbl.appendChild(el("span", { class: "chip", text: "simulé" }));
   t.appendChild(lbl);
   t.appendChild(el("div", { class: "val", text: o.value }));
   const n = el("div", { class: "tnote" });
@@ -1409,7 +1408,6 @@ function renderLead(model) {
     const t = T[per];
     card(g, {
       title: "Entonnoir " + per,
-      chips: t.sim ? [{ text: "simulé" }] : [],
       caption: "Sessions réelles en entrée, visites réelles en sortie. Les deux étages du milieu sont reconstitués tant que l'onglet reste vide.",
       render: w => funnelBars(w, {
         periodName: per,
@@ -1433,7 +1431,6 @@ function renderLead(model) {
   const series = p.map((per, i) => ({ name: per, color: i === 0 ? C.s1 : C.s2 }));
   card(extraGrid("leadgen", false), {
     title: "MQL par source",
-    chips: anySim ? [{ text: "simulé" }] : [],
     caption: "Le classement se retourne : les canaux qui pèsent le moins en sessions pèsent le plus en leads. Dix premières sources ; le tableau les contient toutes.",
     render: w => hGroupedBars(w, {
       rows: top.map(r => ({ label: r.source, values: p.map(per => (r.byPeriod[per] || {}).mql) })),
@@ -1550,7 +1547,6 @@ function renderSocial(model) {
     const vals = [net.base].concat(net.points.map(p => p.total));
     card(g, {
       title: net.name,
-      chips: net.simulated ? [{ text: "simulé" }] : [],
       caption: net.simulated
         ? "Le compte n'a pas encore de relevé trimestriel dans le Sheet : la trajectoire ci-dessous est une projection cohérente avec l'objectif, remplacée dès la première saisie."
         : "Abonnés cumulés à chaque relevé trimestriel, avec l'objectif de fin d'année en repère.",
@@ -1579,7 +1575,7 @@ function renderMethodo(model) {
   li("Trafic, Social Media et Sales x Marketing sont affichés tels quels, sans retouche.");
   li("Onglet Lead Gen : les familles saisies (Recherche naturelle, Référencement payant, Email Marketing, Réseau social organique, Trafic direct, Campagne sociale payante) reprennent chacune un canal GA4 de l'onglet Trafic ; « Autres campagnes » regroupe le reste des canaux GA4 ; « Sources hors ligne » n'a pas de session associée. Les valeurs saisies sont affichées telles quelles. Ce qui manque encore est estimé : VQL ancré sur le nombre réel de visites du trimestre (onglet Sales x Marketing) puis réparti au prorata des sessions de la famille, pondérées par la propension du canal à convertir ; SQL = VQL ÷ " + SQL_TO_VQL + ", MQL = SQL ÷ " + MQL_TO_SQL + ".");
   li("Instagram : aucun relevé trimestriel saisi. La trajectoire est une projection vers l'objectif de fin d'année.");
-  li("Toute valeur simulée porte la mention « simulé » ou le signe ° dans les tableaux, et disparaît dès que la cellule correspondante est remplie dans le Sheet.");
+  li("Toute valeur simulée porte le signe ° dans les tableaux, et disparaît dès que la cellule correspondante est remplie dans le Sheet.");
   n.appendChild(ul);
 }
 </script>

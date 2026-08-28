@@ -1,0 +1,1750 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tour de contrôle Snapdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --plane:#f2f4f1; --surface:#fcfcfb; --surface-2:#f7f8f4;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+  --grid:#e1e0d9; --rule:#c3c2b7; --hair:rgba(11,11,11,.10);
+  --accent:#2a78d6; --accent-wash:rgba(42,120,214,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --dim:#c3c2b7;
+  --ord1:#86b6ef; --ord2:#5598e7; --ord3:#2a78d6; --ord4:#1c5cab;
+  --meter-track:#cde2fb; --meter-fill:#2a78d6;
+  --good:#006300; --warn:#fab219; --crit:#d03b3b;
+  --tip-bg:#0b0b0b; --tip-ink:#fcfcfb;
+  --sim-bg:rgba(137,135,129,.14); --sim-ink:#52514e;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#0c0d0c; --surface:#1a1a19; --surface-2:#141414;
+    --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+    --grid:#2c2c2a; --rule:#383835; --hair:rgba(255,255,255,.10);
+    --accent:#3987e5; --accent-wash:rgba(57,135,229,.16);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --dim:#4a4a46;
+    --ord1:#6da7ec; --ord2:#3987e5; --ord3:#256abf; --ord4:#184f95;
+    --meter-track:#184f95; --meter-fill:#6da7ec;
+    --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+    --tip-bg:#f4f4f0; --tip-ink:#0b0b0b;
+    --sim-bg:rgba(195,194,183,.14); --sim-ink:#c3c2b7;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#0c0d0c; --surface:#1a1a19; --surface-2:#141414;
+  --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --grid:#2c2c2a; --rule:#383835; --hair:rgba(255,255,255,.10);
+  --accent:#3987e5; --accent-wash:rgba(57,135,229,.16);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --dim:#4a4a46;
+  --ord1:#6da7ec; --ord2:#3987e5; --ord3:#256abf; --ord4:#184f95;
+  --meter-track:#184f95; --meter-fill:#6da7ec;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+  --tip-bg:#f4f4f0; --tip-ink:#0b0b0b;
+  --sim-bg:rgba(195,194,183,.14); --sim-ink:#c3c2b7;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{font-family:"Familjen Grotesk","IBM Plex Sans",system-ui,sans-serif; text-wrap:balance; margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+@media (prefers-reduced-motion: reduce){*{transition:none !important; animation:none !important}}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  background:color-mix(in srgb, var(--plane) 88%, transparent);
+  backdrop-filter:saturate(1.4) blur(10px);
+  border-bottom:1px solid var(--hair);
+}
+.topbar-in{max-width:1180px; margin:0 auto; padding:12px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand strong{font-family:"Familjen Grotesk",sans-serif; font-weight:700; font-size:17px; letter-spacing:-.01em}
+.brand span{font-size:12px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase}
+.navlinks{display:flex; gap:2px; flex-wrap:wrap}
+.navlinks a{
+  font-size:13px; color:var(--ink-2); text-decoration:none; padding:5px 10px; border-radius:999px;
+}
+.navlinks a:hover{background:var(--accent-wash); color:var(--accent)}
+.sync{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-2)}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--ink-3); flex:none}
+.dot.live{background:var(--good)} .dot.warn{background:var(--warn)} .dot.err{background:var(--crit)}
+.dot.live{animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.btn{
+  font:inherit; font-size:12.5px; color:var(--ink-2); background:var(--surface);
+  border:1px solid var(--hair); border-radius:999px; padding:5px 12px; cursor:pointer;
+}
+.btn:hover{border-color:var(--rule); color:var(--ink)}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1180px; margin:0 auto; padding:0 22px 90px}
+.masthead{padding:44px 0 30px; display:grid; gap:22px; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:end}
+@media (max-width:820px){.masthead{grid-template-columns:1fr; align-items:start}}
+.masthead h1{font-size:clamp(30px,4.4vw,44px); font-weight:600; letter-spacing:-.025em; line-height:1.08}
+.masthead p{margin:12px 0 0; color:var(--ink-2); max-width:56ch; font-size:15px}
+.hero{
+  background:var(--surface); border:1px solid var(--hair); border-radius:14px; padding:20px 22px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.hero .eyebrow{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.hero .figure{font-family:"Familjen Grotesk",sans-serif; font-weight:700; font-size:clamp(46px,7vw,62px); line-height:1; letter-spacing:-.03em}
+.hero .sub{color:var(--ink-2); font-size:13.5px}
+
+section{margin-top:46px; scroll-margin-top:92px}
+@media (max-width:700px){
+  .topbar{position:static}
+  section{scroll-margin-top:14px}
+  .sec-head p{margin-left:0}
+}
+.sec-head{display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--rule)}
+.sec-head h2{font-size:23px; font-weight:600; letter-spacing:-.015em}
+.tabref{
+  font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);
+  border:1px solid var(--hair); border-radius:5px; padding:3px 8px;
+}
+.sec-head p{margin:0 0 0 auto; color:var(--ink-2); font-size:13.5px; max-width:46ch}
+
+.kpis{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); margin-top:20px}
+.tile{background:var(--surface); border:1px solid var(--hair); border-radius:12px; padding:15px 16px}
+.tile .lbl{font-size:12.5px; color:var(--ink-2); display:flex; align-items:center; gap:7px}
+.tile .val{font-family:"Familjen Grotesk",sans-serif; font-weight:600; font-size:30px; letter-spacing:-.02em; line-height:1.15; margin-top:6px}
+.tile .tnote{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+.delta{font-size:12.5px; font-weight:500}
+.delta.up{color:var(--good)} .delta.down{color:var(--crit)} .delta.flat{color:var(--ink-3)}
+
+.grid{display:grid; gap:16px; margin-top:16px; align-items:start}
+.grid.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+
+.card{background:var(--surface); border:1px solid var(--hair); border-radius:14px; padding:18px 18px 14px; position:relative}
+.card > header{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px}
+.card h3{font-size:15.5px; font-weight:600; letter-spacing:-.01em}
+.card .cap{font-size:12.5px; color:var(--ink-2); margin:0 0 14px; max-width:70ch}
+.chip{
+  font-size:11px; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:5px;
+  background:var(--sim-bg); color:var(--sim-ink); font-weight:500;
+}
+.chip.err{background:rgba(208,59,59,.14); color:var(--crit)}
+.tblbtn{margin-left:auto; font:inherit; font-size:12px; color:var(--ink-2); background:none; border:1px solid var(--hair); border-radius:999px; padding:3px 10px; cursor:pointer}
+.tblbtn:hover{border-color:var(--rule); color:var(--ink)}
+.plot{width:100%; overflow-x:auto}
+.plot svg{display:block; max-width:100%}
+.legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:12.5px; color:var(--ink-2)}
+.legend i{display:inline-block; vertical-align:middle; margin-right:6px}
+.legend i.sw{width:11px; height:11px; border-radius:2.5px}
+.legend i.ln{width:16px; height:2px; border-radius:2px}
+.tblwrap{display:none; margin-top:14px; overflow-x:auto; border-top:1px solid var(--grid); padding-top:10px}
+.tblwrap.on{display:block}
+table{border-collapse:collapse; width:100%; font-size:12.5px; font-variant-numeric:tabular-nums}
+th,td{text-align:right; padding:5px 9px; border-bottom:1px solid var(--grid); white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--ink-3); font-weight:500; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase}
+tbody tr:last-child td{border-bottom:none}
+td.sim::after{content:"°"; color:var(--ink-3); margin-left:2px}
+
+.meterrow{display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-2); margin-bottom:6px}
+.meter{height:10px; border-radius:999px; background:var(--meter-track); overflow:hidden}
+.meter > i{display:block; height:100%; border-radius:999px; background:var(--meter-fill)}
+.mnote{font-size:12px; color:var(--ink-3); margin-top:6px}
+
+.tip{
+  position:fixed; z-index:60; pointer-events:none; opacity:0; transform:translateY(3px);
+  transition:opacity .1s ease; background:var(--tip-bg); color:var(--tip-ink);
+  border-radius:9px; padding:9px 11px; font-size:12.5px; line-height:1.45; max-width:280px;
+  box-shadow:0 6px 22px rgba(0,0,0,.22);
+}
+.tip.on{opacity:1; transform:translateY(0)}
+.tip .t-head{font-weight:600; margin-bottom:5px; font-size:12.5px}
+.tip .t-row{display:flex; align-items:center; gap:8px; justify-content:space-between}
+.tip .t-row .k{display:flex; align-items:center; gap:6px; opacity:.75}
+.tip .t-row .v{font-weight:600; font-variant-numeric:tabular-nums}
+.tip i.ln{display:inline-block; width:13px; height:2px; border-radius:2px}
+.tip i.sw{display:inline-block; width:9px; height:9px; border-radius:2px}
+
+.note{margin-top:34px; padding:16px 18px; border:1px solid var(--hair); border-radius:12px; background:var(--surface-2); font-size:13px; color:var(--ink-2)}
+.note strong{color:var(--ink); font-weight:600}
+.note ul{margin:8px 0 0; padding-left:18px} .note li{margin:3px 0}
+.banner{display:none; margin-top:18px; padding:12px 15px; border-radius:11px; font-size:13.5px; border:1px solid var(--hair); background:var(--surface); color:var(--ink-2)}
+.banner.on{display:block}
+.banner b{color:var(--ink)}
+footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--ink-3); display:flex; gap:14px; flex-wrap:wrap}
+.hit{cursor:default}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+</style>
+
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><strong>Tour de contrôle</strong><span>Snapdesk</span></div>
+    <nav class="navlinks" aria-label="Sections">
+      <a href="#trafic">Trafic</a>
+      <a href="#leadgen">Lead gen</a>
+      <a href="#visites">Visites</a>
+      <a href="#social">Social</a>
+    </nav>
+    <div class="sync"><span class="dot" id="syncDot"></span><span id="syncTxt">Chargement…</span></div>
+    <button class="btn" id="refreshBtn" type="button">Actualiser</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="masthead">
+    <div>
+      <h1>Le pilotage growth de Snapdesk, branché sur la source.</h1>
+      <p>Quatre onglets d'un Google&nbsp;Sheet — Trafic, Lead&nbsp;Gen, Social&nbsp;Media, Sales&nbsp;x&nbsp;Marketing — relus à chaque ouverture et rafraîchis en continu. Vous écrivez dans le Sheet, la page suit.</p>
+    </div>
+    <div class="hero">
+      <span class="eyebrow" id="heroLbl">Visites 2026</span>
+      <span class="figure" id="heroVal">—</span>
+      <span class="sub" id="heroSub"></span>
+    </div>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <section id="trafic">
+    <div class="sec-head">
+      <h2>Acquisition</h2><span class="tabref">Onglet Trafic</span>
+      <p>D'où viennent les sessions, et lesquelles tiennent l'attention plus de quelques secondes.</p>
+    </div>
+    <div class="kpis" id="traficKpis"></div>
+    <div class="grid two" id="traficGrid"></div>
+    <div class="grid" id="traficGrid2"></div>
+  </section>
+
+  <section id="leadgen">
+    <div class="sec-head">
+      <h2>Génération de leads</h2><span class="tabref">Onglet Lead Gen</span>
+      <p>L'onglet est encore vide dans le Sheet : les valeurs ci-dessous sont simulées et s'effacent dès que vous saisissez les vraies.</p>
+    </div>
+    <div class="kpis" id="leadKpis"></div>
+    <div class="grid two" id="leadGrid"></div>
+  </section>
+
+  <section id="visites">
+    <div class="sec-head">
+      <h2>Visites</h2><span class="tabref">Onglet Sales x Marketing</span>
+      <p>Le résultat qui compte : les visites d'espaces, par mois, par année et par apporteur d'affaires.</p>
+    </div>
+    <div class="kpis" id="visKpis"></div>
+    <div class="grid" id="visGrid"></div>
+    <div class="grid two" id="visGrid2"></div>
+  </section>
+
+  <section id="social">
+    <div class="sec-head">
+      <h2>Réseaux sociaux</h2><span class="tabref">Onglet Social Media</span>
+      <p>Deux comptes, deux objectifs de fin d'année, deux échelles — donc deux graphiques séparés.</p>
+    </div>
+    <div class="grid two" id="socialGrid"></div>
+  </section>
+
+  <div class="note" id="methodo"></div>
+
+  <footer>
+    <span id="srcLine">Source : Google Sheet « Snapdesk — reporting »</span>
+    <span>°&nbsp;= valeur simulée</span>
+    <span id="stampLine"></span>
+  </footer>
+</main>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script type="text/plain" id="snapshot">
+|  |  |  |  |  |  |
+| :-: | :-: | :-: | :-: | :-: | :-: |
+|  |  |  |  |  |  |
+|  |  | Q1 2026 |  | Q2 2026 |  |
+|  | Source | Sessions | Durée d'engagement | Sessions | Durée d'engagement |
+|  | Paid Social | 19608 | 6 | 3294 | 3 |
+|  | Paid Search | 2618 | 22 | 2495 | 22 |
+|  | Direct | 2973 | 13 | 1834 | 17 |
+|  | Organic Search | 3844 | 52 | 3084 | 46 |
+|  | Organic Social | 340 | 36 | 124 | 17 |
+|  | Cross-network | 315 | 41 | 72 | 10 |
+|  | Referral | 273 | 35 | 209 | 22 |
+|  | Email | 211 | 53 | 61 | 19 |
+|  | Unassigned | 120 | 22 | 108 | 9 |
+|  | Paid other | 91 | 14 | 917 | 9 |
+|  | Organic Shopping | 12 | 0 | 0 |  |
+|  | AI Assistant | 0 | 0 | 9 | 99 |
+|  | Paid Vidéo | 0 | 0 | 1 | 0 |
+|  | Display | 0 | 0 | 1607 | 6 |
+
+|  |  |  |  |  |  |  |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+|  |  |  |  |  |  |  |
+|  | LINKEDIN |  |  |  |  |  |
+|  |  |  |  |  |  |  |
+|  | Followers au 01/01/2026 | 4100 |  |  | Objectif fin 2026 | 5300 |
+|  |  |  |  |  |  |  |
+|  |  | Nouveaux Followers | Total |  |  |  |
+|  | Q1 2026 | 208 | 4308 |  |  |  |
+|  | Q2 2026 | 209 | 4517 |  |  |  |
+|  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |
+|  | INSTAGRAM |  |  |  |  |  |
+|  |  |  |  |  |  |  |
+|  | Followers au 01/01/2026 | 485 |  |  | Objectif fin 2026 | 1500 |
+|  |  |  |  |  |  |  |
+|  |  | Nouveaux Followers | Total |  |  |  |
+|  | Q1 2026 |  |  |  |  |  |
+|  | Q2 2026 |  |  |  |  |  |
+
+|  |  |  |  |  |  |  |  |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+|  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |
+|  |  | Q1 2026 |  |  | Q2 2026 |  |  |
+|  | Source | SQL | MQL | VQL | Sessions | Durée d'engagement | VQL |
+|  | Paid Social |  |  |  |  |  |  |
+|  | Paid Search |  |  |  |  |  |  |
+|  | Direct |  |  |  |  |  |  |
+|  | Organic Search |  |  |  |  |  |  |
+|  | Organic Social |  |  |  |  |  |  |
+|  | Cross-network |  |  |  |  |  |  |
+|  | Referral |  |  |  |  |  |  |
+|  | Email |  |  |  |  |  |  |
+|  | Unassigned |  |  |  |  |  |  |
+|  | Paid other |  |  |  |  |  |  |
+|  | Organic Shopping |  |  |  |  |  |  |
+|  | AI Assistant |  |  |  |  |  |  |
+|  | Paid Vidéo |  |  |  |  |  |  |
+|  | Display |  |  |  |  |  |  |
+
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| VISITES PAR BROKER PAR ANNEE | Visites / broker | Année |  |  |  |  |  |  | VISITES PAR ANNEE PAR ESPACES | Année | Espaces | Nombre de visites |  | VISITES PAR ANNEE PAR MOIS | COUNTA de Client |  | Année |  |  |  |  |
+|  | Broker | 202200,00% | 202300,00% | 202400,00% | 202500,00% | 202600,00% |  |  |  | Total pour 2022 |  | 3 |  |  |  | Mois | 2022 | 2023 | 2024 | 2025 | 2026 |
+|  | Direct SD | 100,00% | 31,88% | 39,48% | 38,95% | 50,29% | 39,76% | 87 |  | Total pour 2023 |  | 207 |  |  | 1 | janvier |  | 9 | 48 | 28 | 22 |
+|  | FlashOffice |  | 11,59% | 5,90% | 8,56% | 8,67% | 8,46% | 15 |  | Total pour 2024 |  | 271 |  |  | 2 | février |  | 10 | 17 | 33 | 25 |
+|  | Ubiq |  | 8,21% | 8,86% | 8,29% | 1,16% | 7,19% | 2 |  | Total pour 2025 |  | 362 |  |  | 3 | mars |  | 10 | 17 | 41 | 20 |
+|  | Spliit |  | 3,38% | 3,32% | 5,25% | 5,20% | 4,33% | 9 |  | Total pour 2026 |  | 173 |  |  | 4 | avril |  | 11 | 17 | 37 | 46 |
+|  | CBRE |  | 5,31% | 6,27% | 2,76% | 1,16% | 3,94% | 2 |  | Total général |  | 1016 |  |  | 5 | mai |  | 16 | 12 | 53 | 21 |
+|  | JLL |  | 5,80% | 2,95% | 3,87% | 0,58% | 3,44% | 1 |  |  |  |  |  | 0 | 6 | juin |  | 19 | 19 | 14 | 27 |
+|  | Evolis |  | 5,80% | 4,80% | 1,38% |  | 2,95% | 0 |  |  |  |  |  |  | 7 | juillet |  | 8 | 42 | 17 | 12 |
+|  | Arrow |  | 2,42% | 2,95% | 2,21% |  | 2,07% | 0 |  |  |  |  |  | 33,25 | 8 | août |  | 22 | 13 | 10 |  |
+| Yooco | Yooco |  | 1,45% | 1,11% | 2,21% | 3,47% | 1,97% | 6 |  |  |  |  |  |  | 9 | septembre |  | 13 | 19 | 35 |  |
+| Dahlia | BNP |  | 0,48% | 1,11% | 3,87% | 1,16% | 1,97% | 2 |  |  |  |  |  |  | 10 | octobre | 2 | 20 | 12 | 28 |  |
+| KF | Leosquare |  | 2,42% | 1,85% | 0,83% | 2,89% | 1,77% | 5 |  |  |  |  |  |  | 11 | novembre | 1 | 35 | 28 | 27 |  |
+| CBRE | Equation |  | 1,93% | 1,85% | 1,38% | 2,31% | 1,77% | 4 |  |  |  |  |  |  | 12 | décembre |  | 34 | 27 | 39 |  |
+| FlashOffice | Account Snapdesk |  |  | 0,37% | 2,76% | 3,47% | 1,67% | 6 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Square Office | Space Management |  |  |  | 2,76% | 3,47% | 1,57% | 6 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | dahlia |  |  |  | 2,21% | 4,62% | 1,57% | 8 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | FlexiWork |  |  | 1,48% | 1,93% | 1,73% | 1,38% | 3 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Knight Frank |  | 0,48% | 1,11% | 2,21% |  | 1,18% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | NCT |  | 3,86% | 0,74% |  |  | 0,98% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Keen |  |  |  | 2,21% | 0,58% | 0,89% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | FiveOffice |  | 0,97% | 2,21% |  |  | 0,79% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Workin Space |  |  | 1,11% | 1,10% |  | 0,69% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | SquareOffice |  | 0,97% | 0,37% | 0,83% | 0,58% | 0,69% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | MA Partenrs |  | 0,48% |  | 0,28% | 2,31% | 0,59% | 4 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Aktis |  | 1,45% | 1,11% |  |  | 0,59% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | PKH |  | 1,45% | 0,37% | 0,28% |  | 0,49% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Office Hunter |  |  | 0,37% | 1,10% |  | 0,49% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Leaseo |  | 1,45% | 0,74% |  |  | 0,49% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Wellstone |  |  | 1,11% |  | 0,58% | 0,39% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Qwarter |  |  | 0,37% | 0,83% |  | 0,39% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Parella |  | 0,48% | 1,11% |  |  | 0,39% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Hubgrade |  | 0,48% | 0,74% | 0,28% |  | 0,39% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Flexas |  | 1,93% |  |  |  | 0,39% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Cushman |  | 0,48% |  |  | 1,73% | 0,39% | 3 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Ariane |  | 0,97% |  | 0,55% |  | 0,39% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Size |  |  | 0,37% |  | 1,16% | 0,30% | 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Savills |  |  | 0,74% |  | 0,58% | 0,30% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | DesktoDesk |  |  | 0,74% | 0,28% |  | 0,30% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | ALC |  |  | 0,74% |  | 0,58% | 0,30% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | worklib |  |  |  | 0,55% |  | 0,20% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Workaround |  |  |  | 0,28% | 0,58% | 0,20% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | TUB |  | 0,48% | 0,37% |  |  | 0,20% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | NewMark |  |  | 0,37% |  | 0,58% | 0,20% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | N REAL ESTATE |  | 0,97% |  |  |  | 0,20% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Instant |  | 0,48% | 0,37% |  |  | 0,20% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Alex Bolton |  | 0,97% |  |  |  | 0,20% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | WPS Global |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Partenaire |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Néo Nomade |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Hartdeal |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | GIF |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Dome re |  | 0,48% |  |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Colliers |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | CDA |  | 0,48% |  |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Bspoke |  |  |  |  | 0,58% | 0,10% | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  | 0,37% |  |  | 0,10% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  | Hestia |  |  |  |  | 0,00% | 0,00% | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   1. Utilitaires
+   ============================================================ */
+const FILE_ID = "1zyvdKCRUX79ZkoCZgl3dIaSYs8MRQyIto18bzfIo1SA";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + FILE_ID + "/edit";
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s, r) => (r || document).querySelector(s);
+
+function el(tag, attrs, kids) {
+  const n = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else n.setAttribute(k, v);
+  }
+  (kids || []).forEach(c => n.appendChild(c));
+  return n;
+}
+function s(tag, attrs) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in (attrs || {})) { const v = attrs[k]; if (v == null) continue; n.setAttribute(k, v); }
+  return n;
+}
+function stext(x, y, str, cls) {
+  const t = s("text", { x: x, y: y }); if (cls) t.setAttribute("class", cls);
+  t.textContent = str; return t;
+}
+const num = v => {
+  if (v == null) return null;
+  const raw = String(v).trim();
+  if (!raw) return null;
+  const c = raw.replace(/[\s  ]/g, "").replace(/%$/, "").replace(",", ".");
+  if (!/^-?\d*\.?\d+$/.test(c)) return null;
+  const f = parseFloat(c);
+  return Number.isFinite(f) ? f : null;
+};
+const nfInt = new Intl.NumberFormat("fr-FR");
+const fmtInt = n => (n == null ? "—" : nfInt.format(Math.round(n)));
+const fmtPct = (n, d) => (n == null ? "—" : n.toLocaleString("fr-FR", { minimumFractionDigits: d == null ? 1 : d, maximumFractionDigits: d == null ? 1 : d }) + " %");
+const fmtSec = n => (n == null ? "—" : nfInt.format(Math.round(n)) + " s");
+const fmtCompact = n => {
+  if (n == null) return "—";
+  const a = Math.abs(n);
+  if (a >= 1000000) return (n / 1000000).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " M";
+  if (a >= 10000) return (n / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " k";
+  return nfInt.format(Math.round(n));
+};
+const sum = a => a.reduce((x, y) => x + (y || 0), 0);
+
+/* ============================================================
+   2. Lecture du Sheet (sortie markdown de Google Drive)
+   ============================================================ */
+function parseBlocks(md) {
+  const blocks = []; let cur = [];
+  String(md).split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    if (line.startsWith("|")) cur.push(line);
+    else if (cur.length) { blocks.push(cur); cur = []; }
+  });
+  if (cur.length) blocks.push(cur);
+  return blocks.map(lines => lines
+    .filter(l => !/^\|[\s:|-]*-[\s:|-]*\|$/.test(l))
+    .map(l => l.replace(/^\|/, "").replace(/\|$/, "").split("|")
+      .map(c => c.trim().replace(/\\([[\]|])/g, "$1").replace(/^\[merged\]\s*/, "").trim()))
+  );
+}
+/* Lecture directe du Sheet publié : un CSV par onglet, sans Claude ni clé d'API.
+   L'export CSV est fidèle au byte près — contrairement à /gviz, qui écrase les
+   lignes d'en-tête fusionnées. */
+const TABS = [
+  { name: "Trafic", gid: "0" },
+  { name: "Social Media", gid: "1803723632" },
+  { name: "Lead Gen", gid: "430500294" },
+  { name: "Sales x Marketing", gid: "230398960" }
+];
+function csvUrl(gid) {
+  return "https://docs.google.com/spreadsheets/d/" + FILE_ID + "/export?format=csv&gid=" + gid + "&_=" + Date.now();
+}
+function parseCSV(text) {
+  const src = String(text).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const rows = []; let row = [], field = "", quoted = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (quoted) {
+      if (c === '"') { if (src[i + 1] === '"') { field += '"'; i++; } else quoted = false; }
+      else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim()));
+}
+function sheetFetchError(tab, code, status) {
+  const e = new Error("sheet:" + code); e.tab = tab; e.sheetCode = code; e.status = status; return e;
+}
+async function fetchSheetBlocks() {
+  return Promise.all(TABS.map(async t => {
+    let r;
+    try { r = await fetch(csvUrl(t.gid), { cache: "no-store", credentials: "omit" }); }
+    catch (e) { throw sheetFetchError(t.name, "network"); }
+    const body = await r.text();
+    if (!r.ok) throw sheetFetchError(t.name, r.status === 400 ? "missing_tab" : r.status === 404 ? "missing_file" : "denied", r.status);
+    if (/^\s*</.test(body)) throw sheetFetchError(t.name, "denied", r.status);
+    return parseCSV(body);
+  }));
+}
+
+function classify(blocks) {
+  const has = (b, re) => b.some(r => r.some(c => re.test(c)));
+  const out = {};
+  blocks.forEach(b => {
+    if (!out.social && has(b, /^LINKEDIN$/i)) out.social = b;
+    else if (!out.leadgen && has(b, /^MQL$/i)) out.leadgen = b;
+    else if (!out.sales && has(b, /VISITES PAR BROKER/i)) out.sales = b;
+    else if (!out.trafic && has(b, /^Source$/i)) out.trafic = b;
+  });
+  return out;
+}
+/* Tableau « Source × période × métrique » (onglets Trafic et Lead Gen) */
+function parseSourceTable(rows, metricKey) {
+  const h = rows.findIndex(r => r.some(c => c === "Source"));
+  if (h < 0) throw new Error("en-tête « Source » introuvable");
+  const head = rows[h], srcCol = head.indexOf("Source");
+  const above = rows[h - 1] || [];
+  const periodOf = []; let last = null;
+  for (let c = 0; c < head.length; c++) { if (above[c]) last = above[c]; periodOf[c] = last; }
+  const cols = [];
+  for (let c = srcCol + 1; c < head.length; c++) {
+    const key = metricKey(head[c] || "");
+    if (key) cols.push({ c: c, key: key, period: periodOf[c] || "—" });
+  }
+  const periods = []; cols.forEach(c => { if (periods.indexOf(c.period) < 0) periods.push(c.period); });
+  const data = [];
+  for (let r = h + 1; r < rows.length; r++) {
+    const name = rows[r][srcCol];
+    if (!name) continue;
+    const rec = { source: name, byPeriod: {} };
+    periods.forEach(p => { rec.byPeriod[p] = {}; });
+    cols.forEach(col => { rec.byPeriod[col.period][col.key] = num(rows[r][col.c]); });
+    data.push(rec);
+  }
+  return { periods: periods, rows: data };
+}
+function parseSocial(rows) {
+  const found = [];
+  rows.forEach((r, i) => r.forEach((c, j) => { if (/^(LINKEDIN|INSTAGRAM)$/i.test(c)) found.push({ raw: c, i: i, j: j }); }));
+  const after = (row, from) => { for (let c = from + 1; c < row.length; c++) { const v = num(row[c]); if (v != null) return v; } return null; };
+  return found.map((n, k) => {
+    const seg = rows.slice(n.i, k + 1 < found.length ? found[k + 1].i : rows.length);
+    let base = null, baseLbl = "", goal = null, goalLbl = "", hdr = -1, cNew = -1, cTot = -1;
+    seg.forEach((row, ri) => row.forEach((c, ci) => {
+      if (/^Followers au/i.test(c)) { base = after(row, ci); baseLbl = c; }
+      if (/^Objectif/i.test(c)) { goal = after(row, ci); goalLbl = c; }
+      if (/Nouveaux\s+Followers/i.test(c)) {
+        hdr = ri; cNew = ci;
+        cTot = row.findIndex((x, xi) => xi > ci && /^Total$/i.test(x));
+      }
+    }));
+    const points = [];
+    if (hdr >= 0) for (let ri = hdr + 1; ri < seg.length; ri++) {
+      const lbl = seg[ri].find(c => /^Q[1-4]\s*\d{4}$/i.test(c));
+      if (!lbl) continue;
+      points.push({ label: lbl, gained: num(seg[ri][cNew]), total: cTot >= 0 ? num(seg[ri][cTot]) : null });
+    }
+    const NICE = { LINKEDIN: "LinkedIn", INSTAGRAM: "Instagram" };
+    const name = NICE[n.raw.toUpperCase()] || (n.raw.charAt(0) + n.raw.slice(1).toLowerCase());
+    return { name: name, base: base, baseLabel: baseLbl, goal: goal, goalLabel: goalLbl, points: points };
+  });
+}
+const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const MONTHS_SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+function parseSales(rows) {
+  const bh = rows.findIndex(r => r.some(c => c === "Broker"));
+  if (bh < 0) throw new Error("en-tête « Broker » introuvable");
+  const head = rows[bh], bCol = head.indexOf("Broker");
+  const yearCols = [];
+  for (let c = bCol + 1; c < head.length; c++) {
+    const m = /^(\d{4})/.exec(head[c] || "");
+    if (!m) break;
+    yearCols.push({ c: c, year: +m[1] });
+  }
+  const lastY = yearCols.length ? yearCols[yearCols.length - 1].c : bCol;
+  const brokers = [];
+  for (let r = bh + 1; r < rows.length; r++) {
+    const name = rows[r][bCol];
+    if (!name) continue;
+    const shares = {};
+    yearCols.forEach(y => { shares[y.year] = num(rows[r][y.c]); });
+    brokers.push({ name: name, shares: shares, totalShare: num(rows[r][lastY + 1]), visits: num(rows[r][lastY + 2]) });
+  }
+  const mh = rows.findIndex(r => r.some(c => /^Mois$/i.test(c)));
+  const months = []; const monthYears = [];
+  if (mh >= 0) {
+    const mrow = rows[mh], mCol = mrow.findIndex(c => /^Mois$/i.test(c));
+    for (let c = mCol + 1; c < mrow.length; c++) { const m = /^(\d{4})$/.exec(mrow[c] || ""); if (m) monthYears.push({ c: c, year: +m[1] }); }
+    for (let r = mh + 1; r < rows.length; r++) {
+      const idx = MONTHS.indexOf((rows[r][mCol] || "").toLowerCase());
+      if (idx < 0) continue;
+      const by = {}; monthYears.forEach(y => { by[y.year] = num(rows[r][y.c]); });
+      months.push({ index: idx + 1, name: MONTHS[idx], short: MONTHS_SHORT[idx], byYear: by });
+    }
+    months.sort((a, b) => a.index - b.index);
+  }
+  const totals = {}; let grand = null;
+  rows.forEach(r => r.forEach((c, ci) => {
+    const m = /^Total pour (\d{4})$/i.exec(c);
+    const pick = () => { for (let k = ci + 1; k < r.length; k++) { const v = num(r[k]); if (v != null) return v; } return null; };
+    if (m) totals[+m[1]] = pick();
+    else if (/^Total g[ée]n[ée]ral$/i.test(c)) grand = pick();
+  }));
+  return {
+    brokers: brokers,
+    years: yearCols.map(y => y.year),
+    months: months,
+    monthYears: monthYears.map(y => y.year),
+    totals: totals,
+    grandTotal: grand
+  };
+}
+
+/* ============================================================
+   3. Modèle + comblement des trous (données simulées)
+   ============================================================ */
+/* Propension relative d'une session à devenir une visite, par canal.
+   Sert uniquement à répartir un total réel entre les sources. */
+const PROPENSITY = {
+  "Email": 12, "Referral": 10, "Organic Search": 9, "AI Assistant": 8, "Direct": 7.5,
+  "Paid Search": 6, "Organic Social": 4, "Cross-network": 2.5, "Unassigned": 2,
+  "Organic Shopping": 1, "Paid other": 0.9, "Paid Social": 0.8, "Paid Vidéo": 0.6, "Display": 0.5
+};
+const SQL_TO_VQL = 0.62;   /* un lead qualifié sur ~1,6 débouche sur une visite */
+const MQL_TO_SQL = 0.55;   /* un MQL sur ~1,8 est retenu par les sales */
+const IG_SIM_GAIN = { "Q1 2026": 128, "Q2 2026": 171 };
+
+function largestRemainder(total, weights) {
+  const tot = weights.reduce((a, b) => a + b.w, 0);
+  const out = weights.map(x => {
+    const exact = tot > 0 ? total * x.w / tot : 0;
+    return { key: x.key, n: Math.floor(exact), r: exact - Math.floor(exact) };
+  });
+  let rem = total - out.reduce((a, b) => a + b.n, 0);
+  const order = out.slice().sort((a, b) => b.r - a.r);
+  for (let i = 0; rem > 0 && order.length; i++, rem--) order[i % order.length].n++;
+  const map = {}; out.forEach(o => { map[o.key] = o.n; });
+  return map;
+}
+function periodMeta(label) {
+  const m = /^Q([1-4])\s*(\d{4})$/i.exec(label || "");
+  return m ? { q: +m[1], year: +m[2] } : null;
+}
+function quarterVisits(months, year, q) {
+  const a = (q - 1) * 3 + 1, b = a + 2;
+  let acc = 0, seen = 0;
+  months.forEach(m => { if (m.index >= a && m.index <= b) { const v = m.byYear[year]; if (v != null) { acc += v; seen++; } } });
+  return seen ? acc : null;
+}
+function buildModel(blocks) {
+  const parts = classify(blocks);
+  const model = { errors: {} };
+
+  try {
+    model.trafic = parseSourceTable(parts.trafic || [], n => /session/i.test(n) ? "sessions" : /engagement/i.test(n) ? "engagement" : null);
+  } catch (e) { model.errors.trafic = e.message; model.trafic = { periods: [], rows: [] }; }
+
+  try { model.sales = parseSales(parts.sales || []); }
+  catch (e) { model.errors.sales = e.message; model.sales = { brokers: [], months: [], monthYears: [], totals: {}, years: [] }; }
+
+  try { model.social = parseSocial(parts.social || []); }
+  catch (e) { model.errors.social = e.message; model.social = []; }
+
+  let lead;
+  try { lead = parseSourceTable(parts.leadgen || [], n => /^SQL$/i.test(n) ? "sql" : /^MQL$/i.test(n) ? "mql" : /^VQL$/i.test(n) ? "vql" : null); }
+  catch (e) { model.errors.leadgen = e.message; lead = { periods: [], rows: [] }; }
+
+  /* --- Lead Gen : on complète chaque trou, source par source --- */
+  const periods = model.trafic.periods.length ? model.trafic.periods : lead.periods;
+  const funnel = { periods: periods, rows: [], anchors: {}, simulated: false };
+  const realByKey = {};
+  lead.rows.forEach(r => periods.forEach(p => {
+    const v = (r.byPeriod[p] || {});
+    realByKey[r.source + "|" + p] = { sql: v.sql, mql: v.mql, vql: v.vql };
+  }));
+
+  periods.forEach(p => {
+    const meta = periodMeta(p);
+    const sources = model.trafic.rows.map(r => ({
+      source: r.source,
+      sessions: (r.byPeriod[p] || {}).sessions || 0,
+      engagement: (r.byPeriod[p] || {}).engagement
+    }));
+    /* Ancre : le nombre réel de visites du trimestre, lu dans l'onglet Sales x Marketing */
+    let anchor = meta ? quarterVisits(model.sales.months || [], meta.year, meta.q) : null;
+    const realVql = sum(sources.map(x => { const k = realByKey[x.source + "|" + p]; return k && k.vql != null ? k.vql : 0; }));
+    const anyRealVql = sources.some(x => { const k = realByKey[x.source + "|" + p]; return k && k.vql != null; });
+    if (anyRealVql) anchor = realVql;
+    if (anchor == null) anchor = Math.round(sum(sources.map(x => x.sessions)) * 0.004);
+    funnel.anchors[p] = anchor;
+
+    const weights = sources.map(x => ({ key: x.source, w: x.sessions * (PROPENSITY[x.source] != null ? PROPENSITY[x.source] : 2) }));
+    const share = largestRemainder(anchor, weights);
+
+    sources.forEach(x => {
+      const real = realByKey[x.source + "|" + p] || {};
+      const vql = real.vql != null ? real.vql : share[x.source] || 0;
+      const sql = real.sql != null ? real.sql : Math.round(vql / SQL_TO_VQL);
+      const mql = real.mql != null ? real.mql : Math.round(sql / MQL_TO_SQL);
+      const simulated = { vql: real.vql == null, sql: real.sql == null, mql: real.mql == null };
+      if (simulated.vql || simulated.sql || simulated.mql) funnel.simulated = true;
+      let row = funnel.rows.find(r => r.source === x.source);
+      if (!row) { row = { source: x.source, byPeriod: {} }; funnel.rows.push(row); }
+      row.byPeriod[p] = { sessions: x.sessions, engagement: x.engagement, vql: vql, sql: sql, mql: mql, sim: simulated };
+    });
+  });
+  model.funnel = funnel;
+
+  /* --- Social : Instagram n'a pas encore de valeurs --- */
+  model.social.forEach(net => {
+    let running = net.base;
+    net.points.forEach(pt => {
+      pt.sim = { gained: pt.gained == null, total: pt.total == null };
+      if (pt.gained == null) pt.gained = IG_SIM_GAIN[pt.label] != null ? IG_SIM_GAIN[pt.label] : null;
+      if (pt.gained == null && net.goal != null && net.base != null) pt.gained = Math.round((net.goal - net.base) / 4);
+      if (pt.total == null) { running = (running != null ? running : 0) + (pt.gained || 0); pt.total = running; }
+      else running = pt.total;
+    });
+    net.simulated = net.points.some(p => p.sim.gained || p.sim.total);
+  });
+
+  return model;
+}
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   4. Boîte à outils graphique (SVG écrit à la main)
+   ============================================================ */
+const OBSERVERS = [];
+const DRAWS = [];
+const TIP = document.getElementById("tip");
+const CH = 6.55; /* largeur moyenne d'un caractère à 12.5px */
+
+function paint(node, o) {
+  if (o.fill) node.style.fill = o.fill;
+  if (o.stroke) node.style.stroke = o.stroke;
+  if (o.sw != null) node.style.strokeWidth = o.sw;
+  if (o.op != null) node.style.opacity = o.op;
+  return node;
+}
+function axisText(x, y, str, anchor, muted) {
+  const t = stext(x, y, str);
+  t.style.fill = muted === false ? "var(--ink-2)" : "var(--ink-3)";
+  t.style.fontSize = "11.5px";
+  t.style.fontVariantNumeric = "tabular-nums";
+  if (anchor) t.setAttribute("text-anchor", anchor);
+  return t;
+}
+function valueText(x, y, str, anchor) {
+  const t = stext(x, y, str);
+  t.style.fill = "var(--ink-2)";
+  t.style.fontSize = "11.5px";
+  t.style.fontWeight = "500";
+  t.style.fontVariantNumeric = "tabular-nums";
+  if (anchor) t.setAttribute("text-anchor", anchor);
+  return t;
+}
+function labelText(x, y, str, anchor) {
+  const t = stext(x, y, str);
+  t.style.fill = "var(--ink-2)";
+  t.style.fontSize = "12.5px";
+  if (anchor) t.setAttribute("text-anchor", anchor);
+  return t;
+}
+function clip(str, px) {
+  const max = Math.max(3, Math.floor(px / CH));
+  return str.length > max ? str.slice(0, max - 1) + "…" : str;
+}
+function ticks(max, target) {
+  target = target || 5;
+  if (!(max > 0)) return [0, 1];
+  const raw = max / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const n = raw / mag;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+  const out = [];
+  for (let v = 0; v <= max + step * 0.5; v += step) out.push(Math.round(v * 1e6) / 1e6);
+  if (out.length < 2) out.push(step);
+  return out;
+}
+function hBarPath(x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w, h / 2));
+  if (w <= 0.5) return "";
+  if (r < 0.5) return "M" + x + "," + y + " H" + (x + w) + " V" + (y + h) + " H" + x + " Z";
+  return "M" + x + "," + y + " H" + (x + w - r) + " A" + r + "," + r + " 0 0 1 " + (x + w) + "," + (y + r) +
+    " V" + (y + h - r) + " A" + r + "," + r + " 0 0 1 " + (x + w - r) + "," + (y + h) + " H" + x + " Z";
+}
+function vBarPath(x, yTop, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h));
+  if (h <= 0.5) return "";
+  const b = yTop + h;
+  if (r < 0.5) return "M" + x + "," + b + " V" + yTop + " H" + (x + w) + " V" + b + " Z";
+  return "M" + x + "," + b + " V" + (yTop + r) + " A" + r + "," + r + " 0 0 1 " + (x + r) + "," + yTop +
+    " H" + (x + w - r) + " A" + r + "," + r + " 0 0 1 " + (x + w) + "," + (yTop + r) + " V" + b + " Z";
+}
+
+/* ---- infobulle ---- */
+function tipNode(head, rows, foot) {
+  const box = document.createDocumentFragment();
+  box.appendChild(el("div", { class: "t-head", text: head }));
+  rows.forEach(r => {
+    const key = el("span", { class: "k" });
+    if (r.color) { const i = el("i", { class: r.line ? "ln" : "sw" }); i.style.background = r.color; key.appendChild(i); }
+    key.appendChild(document.createTextNode(r.name));
+    box.appendChild(el("div", { class: "t-row" }, [key, el("span", { class: "v", text: r.value })]));
+  });
+  if (foot) box.appendChild(el("div", { class: "t-row" }, [el("span", { class: "k", text: foot })]));
+  return box;
+}
+function tipShow(evt, frag) {
+  TIP.textContent = "";
+  TIP.appendChild(frag);
+  TIP.classList.add("on");
+  const r = TIP.getBoundingClientRect();
+  let x = evt.clientX + 14, y = evt.clientY - r.height - 12;
+  if (x + r.width > window.innerWidth - 10) x = evt.clientX - r.width - 14;
+  if (y < 8) y = evt.clientY + 18;
+  TIP.style.left = Math.max(8, x) + "px";
+  TIP.style.top = Math.max(8, y) + "px";
+}
+function tipHide() { TIP.classList.remove("on"); }
+function hookTip(node, build) {
+  const on = e => tipShow(e, build());
+  node.addEventListener("pointerenter", on);
+  node.addEventListener("pointermove", on);
+  node.addEventListener("pointerleave", tipHide);
+  node.setAttribute("tabindex", "0");
+  node.addEventListener("focus", () => {
+    const b = node.getBoundingClientRect();
+    tipShow({ clientX: b.left + b.width / 2, clientY: b.top + 4 }, build());
+  });
+  node.addEventListener("blur", tipHide);
+}
+
+/* ---- barres horizontales groupées ---- */
+function hGroupedBars(w, spec) {
+  const series = spec.series, rows = spec.rows;
+  const labelW = Math.max(84, Math.min(spec.labelW || 168, Math.round(w * 0.32)));
+  const padR = 46, padT = 8, axisH = 26;
+  const bt = series.length > 1 ? 11 : 15;
+  const groupH = series.length * bt + (series.length - 1) * 2;
+  const stride = groupH + (series.length > 1 ? 16 : 12);
+  const plotW = Math.max(60, w - labelW - padR);
+  const h = padT + rows.length * stride + axisH;
+  const svg = s("svg", { width: w, height: h, viewBox: "0 0 " + w + " " + h, role: "img" });
+  svg.setAttribute("aria-label", spec.aria || spec.title || "");
+
+  let max = 0;
+  rows.forEach(r => r.values.forEach(v => { if (v != null && v > max) max = v; }));
+  const tk = ticks(max, w < 520 ? 3 : 5), dom = tk[tk.length - 1] || 1;
+  const X = v => labelW + (Math.max(0, v || 0) / dom) * plotW;
+
+  tk.forEach(t => {
+    const x = X(t);
+    svg.appendChild(paint(s("line", { x1: x, y1: padT, x2: x, y2: padT + rows.length * stride - 6 }),
+      { stroke: t === 0 ? "var(--rule)" : "var(--grid)", sw: 1 }));
+    svg.appendChild(axisText(x, h - 8, spec.tickFmt ? spec.tickFmt(t) : fmtCompact(t), "middle"));
+  });
+
+  const maxOf = series.map((_, si) => Math.max.apply(null, rows.map(r => r.values[si] || 0)));
+  rows.forEach((row, ri) => {
+    const gy = padT + ri * stride;
+    const lab = labelText(labelW - 10, gy + groupH / 2 + 4.5, clip(row.label, labelW - 14), "end");
+    svg.appendChild(lab);
+    series.forEach((se, si) => {
+      const v = row.values[si];
+      const y = gy + si * (bt + 2);
+      if (v != null && v > 0) {
+        const p = s("path", { d: hBarPath(labelW, y, X(v) - labelW, bt, 4) });
+        p.style.fill = se.color;
+        svg.appendChild(p);
+      }
+      const showVal = spec.labelAll || (v != null && v > 0 && v === maxOf[si]);
+      if (showVal && v != null) svg.appendChild(valueText(X(v) + 6, y + bt - 1.5, spec.fmt ? spec.fmt(v) : fmtInt(v)));
+    });
+    const hit = s("rect", { x: labelW - 4, y: gy - 5, width: plotW + padR, height: Math.max(24, groupH + 10), class: "hit" });
+    hit.style.fill = "transparent";
+    hookTip(hit, () => tipNode(row.label, series.map((se, si) => ({
+      name: se.name, color: se.color,
+      value: row.values[si] == null ? "—" : (spec.fmt ? spec.fmt(row.values[si]) : fmtInt(row.values[si]))
+    })), row.foot));
+    svg.appendChild(hit);
+  });
+  return svg;
+}
+
+/* ---- colonnes ---- */
+function columns(w, spec) {
+  const padL = 46, padR = 12, padT = 16, axisH = 40;
+  const n = spec.cats.length;
+  const plotW = Math.max(60, w - padL - padR);
+  const h = 250;
+  const plotH = h - padT - axisH;
+  const svg = s("svg", { width: w, height: h, viewBox: "0 0 " + w + " " + h, role: "img" });
+  svg.setAttribute("aria-label", spec.aria || "");
+  const max = Math.max.apply(null, spec.values.map(v => v || 0));
+  const tk = ticks(max, 4), dom = tk[tk.length - 1] || 1;
+  const Y = v => padT + plotH - (Math.max(0, v || 0) / dom) * plotH;
+  tk.forEach(t => {
+    const y = Y(t);
+    svg.appendChild(paint(s("line", { x1: padL, y1: y, x2: w - padR, y2: y }), { stroke: t === 0 ? "var(--rule)" : "var(--grid)", sw: 1 }));
+    svg.appendChild(axisText(padL - 8, y + 4, fmtCompact(t), "end"));
+  });
+  const band = plotW / n, bw = Math.min(24, band * 0.5);
+  spec.cats.forEach((c, i) => {
+    const v = spec.values[i];
+    const x = padL + band * i + (band - bw) / 2;
+    if (v != null && v > 0) {
+      const p = s("path", { d: vBarPath(x, Y(v), bw, padT + plotH - Y(v), 4) });
+      p.style.fill = spec.colors ? spec.colors[i] : "var(--s1)";
+      svg.appendChild(p);
+      svg.appendChild(valueText(x + bw / 2, Y(v) - 7, spec.fmt ? spec.fmt(v) : fmtInt(v), "middle"));
+    }
+    svg.appendChild(axisText(padL + band * i + band / 2, padT + plotH + 18, c, "middle", false));
+    if (spec.subs && spec.subs[i]) svg.appendChild(axisText(padL + band * i + band / 2, padT + plotH + 32, spec.subs[i], "middle"));
+    const hit = s("rect", { x: padL + band * i, y: padT, width: band, height: plotH, class: "hit" });
+    hit.style.fill = "transparent";
+    hookTip(hit, () => tipNode(String(c), [{ name: spec.seriesName || "Valeur", color: spec.colors ? spec.colors[i] : "var(--s1)", value: v == null ? "—" : (spec.fmt ? spec.fmt(v) : fmtInt(v)) }], spec.foots && spec.foots[i]));
+    svg.appendChild(hit);
+  });
+  return svg;
+}
+
+/* ---- lignes multiples avec réticule ---- */
+function multiLine(w, spec) {
+  const padL = 44, padR = 46, padT = 14, axisH = 34;
+  const h = spec.height || 280;
+  const plotW = Math.max(60, w - padL - padR), plotH = h - padT - axisH;
+  const svg = s("svg", { width: w, height: h, viewBox: "0 0 " + w + " " + h, role: "img" });
+  svg.setAttribute("aria-label", spec.aria || "");
+  let max = 0;
+  spec.series.forEach(se => se.values.forEach(v => { if (v != null && v > max) max = v; }));
+  if (spec.ref && spec.ref.value != null && spec.ref.value > max) max = spec.ref.value;
+  const tk = ticks(max, 4), dom = tk[tk.length - 1] || 1;
+  const n = spec.x.length;
+  const X = i => padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const Y = v => padT + plotH - (v / dom) * plotH;
+  tk.forEach(t => {
+    const y = Y(t);
+    svg.appendChild(paint(s("line", { x1: padL, y1: y, x2: w - padR, y2: y }), { stroke: t === 0 ? "var(--rule)" : "var(--grid)", sw: 1 }));
+    svg.appendChild(axisText(padL - 8, y + 4, fmtCompact(t), "end"));
+  });
+  const every = n > 8 && w < 560 ? 2 : 1;
+  spec.x.forEach((lb, i) => { if (i % every === 0) svg.appendChild(axisText(X(i), padT + plotH + 18, lb, "middle")); });
+
+  if (spec.ref && spec.ref.value != null) {
+    const ry = Y(spec.ref.value);
+    svg.appendChild(paint(s("line", { x1: padL, y1: ry, x2: w - padR, y2: ry }), { stroke: "var(--rule)", sw: 1 }));
+    svg.appendChild(axisText(w - padR, ry - 6, spec.ref.label || "", "end"));
+  }
+  const cross = paint(s("line", { x1: 0, y1: padT, x2: 0, y2: padT + plotH }), { stroke: "var(--rule)", sw: 1 });
+  cross.style.opacity = 0; svg.appendChild(cross);
+
+  const ordered = spec.series.slice().sort((a, b) => (a.dim ? 0 : 1) - (b.dim ? 0 : 1));
+  ordered.forEach(se => {
+    const pts = [];
+    se.values.forEach((v, i) => { if (v != null) pts.push([X(i), Y(v)]); });
+    if (!pts.length) return;
+    const d = pts.map((p, i) => (i ? "L" : "M") + p[0] + "," + p[1]).join(" ");
+    const path = s("path", { d: d, fill: "none" });
+    path.style.stroke = se.color; path.style.strokeWidth = 2;
+    path.style.strokeLinejoin = "round"; path.style.strokeLinecap = "round";
+    svg.appendChild(path);
+    const last = pts[pts.length - 1];
+    const ring = s("circle", { cx: last[0], cy: last[1], r: 4.5 });
+    ring.style.fill = se.color; ring.style.stroke = "var(--surface)"; ring.style.strokeWidth = 2;
+    svg.appendChild(ring);
+    if (se.endLabel) svg.appendChild(valueText(last[0] + 9, last[1] + 4, se.endLabel));
+  });
+
+  const dots = [];
+  spec.x.forEach((lb, i) => {
+    const g = s("g"); g.style.opacity = 0;
+    spec.series.forEach(se => {
+      if (se.values[i] == null) return;
+      const c = s("circle", { cx: X(i), cy: Y(se.values[i]), r: 4 });
+      c.style.fill = se.color; c.style.stroke = "var(--surface)"; c.style.strokeWidth = 2;
+      g.appendChild(c);
+    });
+    svg.appendChild(g); dots.push(g);
+  });
+  const band = plotW / Math.max(1, n - 1);
+  spec.x.forEach((lb, i) => {
+    const hit = s("rect", { x: X(i) - band / 2, y: padT, width: Math.max(24, band), height: plotH, class: "hit" });
+    hit.style.fill = "transparent";
+    const build = () => tipNode(spec.xTitle ? spec.xTitle(i) : String(lb), spec.series
+      .filter(se => se.values[i] != null)
+      .map(se => ({ name: se.name, color: se.color, line: true, value: spec.fmt ? spec.fmt(se.values[i]) : fmtInt(se.values[i]) })));
+    const enter = e => { cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.style.opacity = 1; dots.forEach((d, k) => d.style.opacity = k === i ? 1 : 0); tipShow(e, build()); };
+    hit.addEventListener("pointerenter", enter);
+    hit.addEventListener("pointermove", enter);
+    hit.addEventListener("pointerleave", () => { cross.style.opacity = 0; dots[i].style.opacity = 0; tipHide(); });
+    hit.setAttribute("tabindex", "0");
+    hit.addEventListener("focus", () => { const b = hit.getBoundingClientRect(); enter({ clientX: b.left + b.width / 2, clientY: b.top + 10 }); });
+    hit.addEventListener("blur", () => { cross.style.opacity = 0; dots[i].style.opacity = 0; tipHide(); });
+    svg.appendChild(hit);
+  });
+  return svg;
+}
+
+/* ---- nuage de points (axe X logarithmique) ---- */
+function scatter(w, spec) {
+  const padL = 44, padR = 22, padT = 18, axisH = 44;
+  const h = spec.height || 300;
+  const plotW = Math.max(60, w - padL - padR), plotH = h - padT - axisH;
+  const svg = s("svg", { width: w, height: h, viewBox: "0 0 " + w + " " + h, role: "img" });
+  svg.setAttribute("aria-label", spec.aria || "");
+  const xs = spec.points.map(p => Math.max(1, p.x));
+  const lo = Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, xs))));
+  const hi = Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, xs))));
+  const X = v => padL + (Math.log10(Math.max(1, v)) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo)) * plotW;
+  const ymax = Math.max.apply(null, spec.points.map(p => p.y || 0));
+  const tk = ticks(ymax, 4), dom = tk[tk.length - 1] || 1;
+  const Y = v => padT + plotH - (Math.max(0, v || 0) / dom) * plotH;
+  tk.forEach(t => {
+    const y = Y(t);
+    svg.appendChild(paint(s("line", { x1: padL, y1: y, x2: w - padR, y2: y }), { stroke: t === 0 ? "var(--rule)" : "var(--grid)", sw: 1 }));
+    svg.appendChild(axisText(padL - 8, y + 4, fmtCompact(t), "end"));
+  });
+  for (let v = lo; v <= hi + 0.5; v *= 10) {
+    svg.appendChild(paint(s("line", { x1: X(v), y1: padT, x2: X(v), y2: padT + plotH }), { stroke: "var(--grid)", sw: 1 }));
+    svg.appendChild(axisText(X(v), padT + plotH + 18, fmtCompact(v), "middle"));
+  }
+  svg.appendChild(axisText(padL, h - 8, spec.xTitle || "", "start"));
+  svg.appendChild(axisText(w - padR, h - 8, spec.yTitle || "", "end"));
+  spec.points.forEach(p => {
+    const cx = X(p.x), cy = Y(p.y);
+    const c = s("circle", { cx: cx, cy: cy, r: 5.5 });
+    c.style.fill = "var(--s1)"; c.style.stroke = "var(--surface)"; c.style.strokeWidth = 2;
+    svg.appendChild(c);
+    if (p.label) {
+      const anchor = cx > padL + plotW * 0.7 ? "end" : "start";
+      svg.appendChild(labelText(cx + (anchor === "end" ? -10 : 10), cy + 4, clip(p.name, 130), anchor));
+    }
+    const hit = s("circle", { cx: cx, cy: cy, r: 14, class: "hit" });
+    hit.style.fill = "transparent";
+    hookTip(hit, () => tipNode(p.name, [
+      { name: spec.xName || "X", color: "var(--s1)", value: spec.xFmt ? spec.xFmt(p.x) : fmtInt(p.x) },
+      { name: spec.yName || "Y", value: spec.yFmt ? spec.yFmt(p.y) : fmtInt(p.y) }
+    ]));
+    svg.appendChild(hit);
+  });
+  return svg;
+}
+
+/* ---- entonnoir (rampe ordinale) ---- */
+function funnelBars(w, spec) {
+  const labelW = Math.max(74, Math.min(120, Math.round(w * 0.26)));
+  const padR = 8, padT = 6;
+  const rowH = 30, gap = 20;
+  const plotW = Math.max(60, w - labelW - padR - 92);
+  const h = padT + spec.stages.length * (rowH + gap) - gap + 6;
+  const svg = s("svg", { width: w, height: h, viewBox: "0 0 " + w + " " + h, role: "img" });
+  svg.setAttribute("aria-label", spec.aria || "");
+  const max = Math.max.apply(null, spec.stages.map(x => x.value || 0)) || 1;
+  spec.stages.forEach((st, i) => {
+    const y = padT + i * (rowH + gap);
+    const bw = Math.max(2, (st.value / max) * plotW);
+    svg.appendChild(labelText(labelW - 10, y + rowH / 2 + 4.5, st.name, "end"));
+    const p = s("path", { d: hBarPath(labelW, y + 4, bw, rowH - 8, 4) });
+    p.style.fill = st.color;
+    svg.appendChild(p);
+    const vt = stext(labelW + bw + 9, y + rowH / 2 + 5, fmtInt(st.value));
+    vt.style.fill = "var(--ink)"; vt.style.fontSize = "14px"; vt.style.fontWeight = "600";
+    vt.style.fontVariantNumeric = "tabular-nums";
+    svg.appendChild(vt);
+    if (i < spec.stages.length - 1) {
+      const nxt = spec.stages[i + 1];
+      const rate = st.value ? (nxt.value / st.value) * 100 : null;
+      svg.appendChild(axisText(labelW, y + rowH + gap / 2 + 4, "↓ " + fmtPct(rate, rate != null && rate < 10 ? 1 : 0) + " passent à l'étape suivante", "start"));
+    }
+    const hit = s("rect", { x: labelW - 4, y: y, width: w - labelW, height: rowH, class: "hit" });
+    hit.style.fill = "transparent";
+    hookTip(hit, () => tipNode(st.name, [{ name: spec.periodName || "Valeur", color: st.color, value: fmtInt(st.value) }], st.sim ? "valeur simulée" : null));
+    svg.appendChild(hit);
+  });
+  return svg;
+}
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   5. Cartes, tableaux, rendu des sections
+   ============================================================ */
+const SNAP_LABEL = "28 août 2026";
+const C = { s1: "var(--s1)", s2: "var(--s2)", dim: "var(--dim)", ord: ["var(--ord1)", "var(--ord2)", "var(--ord3)", "var(--ord4)"] };
+
+function mountChart(host, renderFn) {
+  const plot = el("div", { class: "plot" });
+  host.appendChild(plot);
+  let lastW = -1;
+  const draw = force => {
+    const w = Math.round(plot.clientWidth || host.clientWidth || 600);
+    if (!force && Math.abs(w - lastW) < 8) return;
+    lastW = w;
+    plot.textContent = "";
+    plot.appendChild(renderFn(Math.max(280, w)));
+  };
+  DRAWS.push(draw);
+  requestAnimationFrame(() => draw(true));
+  if (window.ResizeObserver) {
+    let t; const ro = new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => draw(false), 90); });
+    ro.observe(plot); OBSERVERS.push(ro);
+  }
+  return plot;
+}
+function legendRow(items) {
+  const box = el("div", { class: "legend" });
+  items.forEach(it => {
+    const sw = el("i", { class: it.line ? "ln" : "sw" });
+    sw.style.background = it.color;
+    const sp = el("span"); sp.appendChild(sw); sp.appendChild(document.createTextNode(it.name));
+    box.appendChild(sp);
+  });
+  return box;
+}
+function dataTable(head, rows) {
+  const t = el("table");
+  const thead = el("thead"); const tr = el("tr");
+  head.forEach(h => tr.appendChild(el("th", { text: h, scope: "col" })));
+  thead.appendChild(tr); t.appendChild(thead);
+  const tb = el("tbody");
+  rows.forEach(r => {
+    const row = el("tr");
+    r.forEach((c, i) => {
+      const cell = c && typeof c === "object" ? c : { t: c };
+      const node = el(i === 0 ? "th" : "td", { text: cell.t == null ? "—" : String(cell.t) });
+      if (i === 0) node.setAttribute("scope", "row");
+      if (cell.sim) node.className = "sim";
+      row.appendChild(node);
+    });
+    tb.appendChild(row);
+  });
+  t.appendChild(tb);
+  return el("div", { class: "tblwrap" }, [t]);
+}
+function card(host, o) {
+  const c = el("div", { class: "card" });
+  const head = el("header");
+  head.appendChild(el("h3", { text: o.title }));
+  (o.chips || []).forEach(ch => head.appendChild(el("span", { class: "chip" + (ch.err ? " err" : ""), text: ch.text })));
+  c.appendChild(head);
+  if (o.caption) c.appendChild(el("p", { class: "cap", text: o.caption }));
+  if (o.body) c.appendChild(o.body);
+  host.appendChild(c);
+  if (o.render) mountChart(c, o.render);
+  if (o.legend) c.appendChild(legendRow(o.legend));
+  if (o.table) {
+    const tw = dataTable(o.table.head, o.table.rows);
+    const btn = el("button", { class: "tblbtn", type: "button", text: "Tableau" });
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", () => {
+      const on = tw.classList.toggle("on");
+      btn.setAttribute("aria-expanded", String(on));
+      btn.textContent = on ? "Masquer le tableau" : "Tableau";
+    });
+    head.appendChild(btn);
+    c.appendChild(tw);
+  }
+  return c;
+}
+function tile(host, o) {
+  const t = el("div", { class: "tile" });
+  const lbl = el("div", { class: "lbl" });
+  lbl.appendChild(document.createTextNode(o.label));
+  if (o.sim) lbl.appendChild(el("span", { class: "chip", text: "simulé" }));
+  t.appendChild(lbl);
+  t.appendChild(el("div", { class: "val", text: o.value }));
+  const n = el("div", { class: "tnote" });
+  if (o.delta != null) {
+    const dir = o.delta > 0 ? "up" : o.delta < 0 ? "down" : "flat";
+    const good = o.lowerIsBetter ? (o.delta < 0) : (o.delta > 0);
+    const cls = o.delta === 0 ? "flat" : (good ? "up" : "down");
+    n.appendChild(el("span", { class: "delta " + cls, text: (o.delta > 0 ? "+" : "") + o.delta.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " %" }));
+    n.appendChild(document.createTextNode(" " + (o.deltaNote || "")));
+  } else if (o.note) n.textContent = o.note;
+  if (n.childNodes.length) t.appendChild(n);
+  host.appendChild(t);
+  return t;
+}
+const pct = (a, b) => (b ? ((a - b) / b) * 100 : null);
+
+/* ---------- rendu global ---------- */
+let MODEL = null;
+function renderAll(model) {
+  MODEL = model;
+  OBSERVERS.splice(0).forEach(o => o.disconnect());
+  DRAWS.length = 0;
+  ["traficKpis", "traficGrid", "traficGrid2", "leadKpis", "leadGrid", "visKpis", "visGrid", "visGrid2", "socialGrid"].forEach(id => { const n = document.getElementById(id); if (n) n.textContent = ""; });
+  document.querySelectorAll(".js-extra").forEach(n => n.remove());
+  renderHero(model);
+  renderTrafic(model);
+  renderLead(model);
+  renderVisites(model);
+  renderSocial(model);
+  renderMethodo(model);
+}
+function extraGrid(sectionId, two) {
+  const g = el("div", { class: "grid js-extra" + (two ? " two" : "") });
+  document.getElementById(sectionId).appendChild(g);
+  return g;
+}
+
+/* ---------- héros ---------- */
+function visitYears(sales) { return (sales.monthYears || []).slice().sort((a, b) => a - b); }
+function ytd(sales, year, upTo) {
+  let acc = 0, seen = false;
+  (sales.months || []).forEach(m => {
+    if (upTo != null && m.index > upTo) return;
+    const v = m.byYear[year];
+    if (v != null) { acc += v; seen = true; }
+  });
+  return seen ? acc : null;
+}
+function lastFilledMonth(sales, year) {
+  let last = 0;
+  (sales.months || []).forEach(m => { if (m.byYear[year] != null) last = Math.max(last, m.index); });
+  return last;
+}
+function renderHero(model) {
+  const years = visitYears(model.sales);
+  const cur = years.length ? years[years.length - 1] : null;
+  if (cur == null) { $("#heroVal").textContent = "—"; return; }
+  const upTo = lastFilledMonth(model.sales, cur);
+  const now = ytd(model.sales, cur, upTo);
+  const prev = ytd(model.sales, cur - 1, upTo);
+  const d = pct(now, prev);
+  $("#heroLbl").textContent = "Visites " + cur + " · cumul à fin " + (MONTHS[upTo - 1] || "");
+  $("#heroVal").textContent = fmtInt(now);
+  const sub = $("#heroSub"); sub.textContent = "";
+  if (d != null) {
+    const cls = d >= 0 ? "up" : "down";
+    sub.appendChild(el("span", { class: "delta " + cls, text: (d > 0 ? "+" : "") + d.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " %" }));
+    sub.appendChild(document.createTextNode(" vs " + fmtInt(prev) + " sur la même période " + (cur - 1)));
+  }
+}
+
+/* ---------- Trafic ---------- */
+function orderedSources(model) {
+  const p = model.trafic.periods;
+  return model.trafic.rows.slice().sort((a, b) =>
+    sum(p.map(x => (b.byPeriod[x] || {}).sessions)) - sum(p.map(x => (a.byPeriod[x] || {}).sessions)));
+}
+function weightedEngagement(model, period) {
+  let n = 0, d = 0;
+  model.trafic.rows.forEach(r => {
+    const v = r.byPeriod[period] || {};
+    if (v.sessions && v.engagement != null) { n += v.sessions * v.engagement; d += v.sessions; }
+  });
+  return d ? n / d : null;
+}
+const PAID = /^(Paid|Display|Cross-network)/i;
+function renderTrafic(model) {
+  const p = model.trafic.periods, k = $("#traficKpis");
+  if (!p.length) { k.appendChild(el("p", { class: "cap", text: "Onglet Trafic illisible : " + (model.errors.trafic || "structure inattendue") })); return; }
+  const q1 = p[0], q2 = p[p.length - 1];
+  const tot = per => sum(model.trafic.rows.map(r => (r.byPeriod[per] || {}).sessions));
+  const paid = per => sum(model.trafic.rows.filter(r => PAID.test(r.source)).map(r => (r.byPeriod[per] || {}).sessions));
+
+  tile(k, { label: "Sessions " + p.join(" + "), value: fmtInt(sum(p.map(tot))), note: "toutes sources confondues" });
+  tile(k, { label: "Sessions " + q2, value: fmtInt(tot(q2)), delta: pct(tot(q2), tot(q1)), deltaNote: "vs " + q1 });
+  tile(k, { label: "Engagement moyen " + q2, value: fmtSec(weightedEngagement(model, q2)), delta: pct(weightedEngagement(model, q2), weightedEngagement(model, q1)), deltaNote: "vs " + q1 });
+  tile(k, { label: "Part du trafic payant " + q2, value: fmtPct(tot(q2) ? paid(q2) / tot(q2) * 100 : null), delta: pct(paid(q2) / tot(q2), paid(q1) / tot(q1)), deltaNote: "vs " + q1, lowerIsBetter: true });
+
+  const rows = orderedSources(model);
+  const series = p.map((per, i) => ({ name: per, color: i === 0 ? C.s1 : C.s2 }));
+  const g = $("#traficGrid");
+
+  card(g, {
+    title: "Sessions par source",
+    caption: "Un canal domine le volume. La hauteur des barres ne dit rien de sa qualité — le graphique suivant, oui.",
+    render: w => hGroupedBars(w, {
+      rows: rows.map(r => ({ label: r.source, values: p.map(per => (r.byPeriod[per] || {}).sessions) })),
+      series: series, fmt: fmtInt, aria: "Sessions par source et par trimestre"
+    }),
+    legend: series,
+    table: {
+      head: ["Source"].concat(p),
+      rows: rows.map(r => [r.source].concat(p.map(per => fmtInt((r.byPeriod[per] || {}).sessions))))
+    }
+  });
+
+  card(g, {
+    title: "Durée d'engagement moyenne",
+    caption: "Même ordre de sources que ci-dessus, pour lire les deux graphiques ligne à ligne. En secondes par session.",
+    render: w => hGroupedBars(w, {
+      rows: rows.map(r => ({ label: r.source, values: p.map(per => (r.byPeriod[per] || {}).engagement) })),
+      series: series, fmt: fmtSec, tickFmt: v => fmtInt(v) + " s", aria: "Durée d'engagement moyenne par source"
+    }),
+    legend: series,
+    table: {
+      head: ["Source"].concat(p.map(x => x + " (s)")),
+      rows: rows.map(r => [r.source].concat(p.map(per => fmtInt((r.byPeriod[per] || {}).engagement))))
+    }
+  });
+
+  const pts = model.trafic.rows
+    .map(r => ({ name: r.source, x: (r.byPeriod[q2] || {}).sessions || 0, y: (r.byPeriod[q2] || {}).engagement }))
+    .filter(x => x.x >= 50 && x.y != null);
+  pts.forEach(x => { x.label = x.x >= 200 || x.y >= 30; });
+  card($("#traficGrid2"), {
+    title: "Volume et attention — " + q2,
+    caption: "Chaque point est une source : son volume de sessions en abscisse (échelle logarithmique), la durée d'engagement moyenne en ordonnée. En haut à droite, le trafic idéal. Sources sous 50 sessions écartées ; toutes figurent dans le tableau.",
+    render: w => scatter(w, {
+      points: pts, height: 320,
+      xTitle: "Sessions →", yTitle: "↑ Durée d'engagement",
+      xName: "Sessions", yName: "Engagement", xFmt: fmtInt, yFmt: fmtSec,
+      aria: "Volume de sessions comparé à la durée d'engagement, par source"
+    }),
+    table: {
+      head: ["Source", "Sessions " + q2, "Engagement " + q2],
+      rows: model.trafic.rows.map(r => [r.source, fmtInt((r.byPeriod[q2] || {}).sessions), fmtInt((r.byPeriod[q2] || {}).engagement)])
+    }
+  });
+}
+</script>
+
+<script>
+"use strict";
+/* ---------- Lead Gen ---------- */
+function funnelTotals(model, period) {
+  const rows = model.funnel.rows.map(r => r.byPeriod[period]).filter(Boolean);
+  return {
+    sessions: sum(rows.map(r => r.sessions)),
+    mql: sum(rows.map(r => r.mql)),
+    sql: sum(rows.map(r => r.sql)),
+    vql: sum(rows.map(r => r.vql)),
+    sim: rows.some(r => r.sim.mql || r.sim.sql || r.sim.vql)
+  };
+}
+function renderLead(model) {
+  const p = model.funnel.periods, k = $("#leadKpis"), g = $("#leadGrid");
+  if (!p.length) { k.appendChild(el("p", { class: "cap", text: "Onglet Lead Gen illisible : " + (model.errors.leadgen || "structure inattendue") })); return; }
+  const q1 = p[0], q2 = p[p.length - 1];
+  const T = {}; p.forEach(per => { T[per] = funnelTotals(model, per); });
+  const anySim = p.some(per => T[per].sim);
+
+  tile(k, { label: "MQL " + p.join(" + "), value: fmtInt(sum(p.map(x => T[x].mql))), sim: anySim, note: "leads ayant laissé leurs coordonnées" });
+  tile(k, { label: "SQL " + p.join(" + "), value: fmtInt(sum(p.map(x => T[x].sql))), sim: anySim, note: "retenus par l'équipe commerciale" });
+  tile(k, { label: "VQL " + p.join(" + "), value: fmtInt(sum(p.map(x => T[x].vql))), sim: anySim, note: "ancrés sur les visites réelles de l'onglet Sales x Marketing" });
+  tile(k, {
+    label: "Session → MQL " + q2, value: fmtPct(T[q2].sessions ? T[q2].mql / T[q2].sessions * 100 : null, 2), sim: anySim,
+    delta: pct(T[q2].mql / (T[q2].sessions || 1), T[q1].mql / (T[q1].sessions || 1)), deltaNote: "vs " + q1
+  });
+
+  p.forEach(per => {
+    const t = T[per];
+    card(g, {
+      title: "Entonnoir " + per,
+      chips: t.sim ? [{ text: "simulé" }] : [],
+      caption: "Sessions réelles en entrée, visites réelles en sortie. Les deux étages du milieu sont reconstitués tant que l'onglet reste vide.",
+      render: w => funnelBars(w, {
+        periodName: per,
+        stages: [
+          { name: "Sessions", value: t.sessions, color: C.ord[0], sim: false },
+          { name: "MQL", value: t.mql, color: C.ord[1], sim: t.sim },
+          { name: "SQL", value: t.sql, color: C.ord[2], sim: t.sim },
+          { name: "VQL", value: t.vql, color: C.ord[3], sim: t.sim }
+        ],
+        aria: "Entonnoir de conversion " + per
+      }),
+      table: {
+        head: ["Étape", per],
+        rows: [["Sessions", fmtInt(t.sessions)], ["MQL", { t: fmtInt(t.mql), sim: t.sim }], ["SQL", { t: fmtInt(t.sql), sim: t.sim }], ["VQL", { t: fmtInt(t.vql), sim: t.sim }]]
+      }
+    });
+  });
+
+  const ranked = model.funnel.rows.slice().sort((a, b) => sum(p.map(x => (b.byPeriod[x] || {}).mql)) - sum(p.map(x => (a.byPeriod[x] || {}).mql)));
+  const top = ranked.filter(r => sum(p.map(x => (r.byPeriod[x] || {}).mql)) > 0).slice(0, 10);
+  const series = p.map((per, i) => ({ name: per, color: i === 0 ? C.s1 : C.s2 }));
+  card(extraGrid("leadgen", false), {
+    title: "MQL par source",
+    chips: anySim ? [{ text: "simulé" }] : [],
+    caption: "Le classement se retourne : les canaux qui pèsent le moins en sessions pèsent le plus en leads. Dix premières sources ; le tableau les contient toutes.",
+    render: w => hGroupedBars(w, {
+      rows: top.map(r => ({ label: r.source, values: p.map(per => (r.byPeriod[per] || {}).mql) })),
+      series: series, fmt: fmtInt, aria: "MQL par source et par trimestre"
+    }),
+    legend: series,
+    table: {
+      head: ["Source"].concat(p.map(x => "MQL " + x)).concat(p.map(x => "VQL " + x)),
+      rows: ranked.map(r => [r.source]
+        .concat(p.map(per => ({ t: fmtInt((r.byPeriod[per] || {}).mql), sim: ((r.byPeriod[per] || {}).sim || {}).mql })))
+        .concat(p.map(per => ({ t: fmtInt((r.byPeriod[per] || {}).vql), sim: ((r.byPeriod[per] || {}).sim || {}).vql }))))
+    }
+  });
+}
+
+/* ---------- Visites ---------- */
+function renderVisites(model) {
+  const sales = model.sales, k = $("#visKpis"), g = $("#visGrid");
+  const years = visitYears(sales);
+  if (!years.length) { k.appendChild(el("p", { class: "cap", text: "Onglet Sales x Marketing illisible : " + (model.errors.sales || "structure inattendue") })); return; }
+  const cur = years[years.length - 1], upTo = lastFilledMonth(sales, cur);
+  const totalsByYear = {}; years.forEach(y => { totalsByYear[y] = ytd(sales, y, 12); });
+  const best = years.slice().sort((a, b) => (totalsByYear[b] || 0) - (totalsByYear[a] || 0))[0];
+  const brokersActive = sales.brokers.filter(b => (b.visits || 0) > 0);
+  const lead = sales.brokers.slice().sort((a, b) => (b.shares[cur] || 0) - (a.shares[cur] || 0))[0];
+
+  tile(k, { label: "Visites cumulées depuis " + years[0], value: fmtInt(sales.grandTotal != null ? sales.grandTotal : sum(years.map(y => totalsByYear[y]))), note: "toutes années, tous apporteurs" });
+  tile(k, { label: "Meilleure année", value: fmtInt(totalsByYear[best]), note: String(best) });
+  if (lead) tile(k, { label: "Part de " + lead.name + " en " + cur, value: fmtPct(lead.shares[cur]), note: fmtInt(lead.visits) + " visites sur " + fmtInt(ytd(sales, cur, 12)) });
+  tile(k, { label: "Apporteurs actifs en " + cur, value: fmtInt(brokersActive.length), note: "sur " + fmtInt(sales.brokers.length) + " référencés depuis " + years[0] });
+
+  /* saisonnalité */
+  const emph = years.slice(-2);
+  const lineSeries = years.filter(y => (sales.months || []).some(m => m.byYear[y] != null))
+    .map(y => {
+      const isCur = y === cur, isPrev = y === emph[0];
+      return {
+        name: String(y), values: (sales.months || []).map(m => m.byYear[y]),
+        color: isCur ? C.s1 : isPrev ? C.s2 : C.dim, dim: !isCur && !isPrev,
+        endLabel: isCur || isPrev ? String(y) : null
+      };
+    });
+  card(g, {
+    title: "Visites mois par mois",
+    caption: "Les deux dernières années en couleur, les précédentes en gris pour la profondeur de champ. Survolez un mois pour lire toutes les années d'un coup.",
+    render: w => multiLine(w, {
+      x: (sales.months || []).map(m => m.short),
+      xTitle: i => (sales.months[i] || {}).name || "",
+      series: lineSeries, height: 300, aria: "Visites par mois et par année"
+    }),
+    legend: lineSeries.filter(x => !x.dim).map(x => ({ name: x.name, color: x.color, line: true }))
+      .concat(lineSeries.some(x => x.dim)
+        ? [{ name: lineSeries.filter(x => x.dim).map(x => x.name).join(", ") + " · contexte", color: C.dim, line: true }]
+        : []),
+    table: {
+      head: ["Mois"].concat(years.map(String)),
+      rows: (sales.months || []).map(m => [m.name].concat(years.map(y => fmtInt(m.byYear[y]))))
+    }
+  });
+
+  const g2 = $("#visGrid2");
+  card(g2, {
+    title: "Visites par année",
+    caption: "L'année en cours n'est pas terminée : elle est comparable aux autres à partir de fin " + (MONTHS[upTo - 1] || "") + " seulement.",
+    render: w => columns(w, {
+      cats: years.map(String), values: years.map(y => totalsByYear[y]),
+      subs: years.map(y => y === cur ? "à fin " + (MONTHS_SHORT[upTo - 1] || "") : ""),
+      colors: years.map(y => y === cur ? C.s2 : C.s1),
+      seriesName: "Visites", foots: years.map(y => y === cur ? "année en cours" : null),
+      aria: "Nombre de visites par année"
+    }),
+    legend: [{ name: "Années closes", color: C.s1 }, { name: cur + " · en cours", color: C.s2 }],
+    table: { head: ["Année", "Visites"], rows: years.map(y => [String(y), fmtInt(totalsByYear[y])]) }
+  });
+
+  const topB = sales.brokers.slice().sort((a, b) => (b.totalShare || 0) - (a.totalShare || 0)).slice(0, 12);
+  const bs = [{ name: "Part cumulée " + years[0] + "–" + cur, color: C.s1 }, { name: "Part en " + cur, color: C.s2 }];
+  card(g2, {
+    title: "Apporteurs d'affaires",
+    caption: "Deux barres par apporteur : son poids historique et son poids cette année. L'écart entre les deux, c'est la tendance.",
+    render: w => hGroupedBars(w, {
+      rows: topB.map(b => ({ label: b.name, values: [b.totalShare, b.shares[cur]] })),
+      series: bs, fmt: v => fmtPct(v), tickFmt: v => fmtPct(v, 0), aria: "Part des visites par apporteur d'affaires"
+    }),
+    legend: bs,
+    table: {
+      head: ["Apporteur"].concat(years.map(y => "Part " + y)).concat(["Part cumulée", "Visites " + cur]),
+      rows: sales.brokers.map(b => [b.name].concat(years.map(y => fmtPct(b.shares[y]))).concat([fmtPct(b.totalShare), fmtInt(b.visits)]))
+    }
+  });
+}
+
+/* ---------- Social ---------- */
+function renderSocial(model) {
+  const g = $("#socialGrid");
+  if (!model.social.length) { g.appendChild(el("p", { class: "cap", text: "Onglet Social Media illisible : " + (model.errors.social || "structure inattendue") })); return; }
+  model.social.forEach(net => {
+    const last = net.points[net.points.length - 1];
+    const gained = last && net.base != null ? last.total - net.base : null;
+    const need = net.goal != null && net.base != null ? net.goal - net.base : null;
+    const prog = need ? Math.max(0, Math.min(100, (gained / need) * 100)) : null;
+
+    const body = el("div");
+    const row = el("div", { class: "meterrow" });
+    row.appendChild(el("span", { text: "Objectif " + fmtInt(net.goal) + " abonnés" }));
+    row.appendChild(el("span", { text: prog == null ? "—" : fmtPct(prog, 0) + " du chemin" }));
+    body.appendChild(row);
+    const m = el("div", { class: "meter" });
+    const fill = el("i"); fill.style.width = (prog || 0) + "%";
+    m.appendChild(fill); body.appendChild(m);
+    body.appendChild(el("div", { class: "mnote", text: fmtInt(gained) + " abonnés gagnés depuis le " + (/(\d{2}\/\d{2}\/\d{4})/.exec(net.baseLabel || "") || [, "1ᵉʳ janvier"])[1] + " · il en reste " + fmtInt(need != null && gained != null ? Math.max(0, need - gained) : null) }));
+
+    const xs = ["Départ"].concat(net.points.map(p => p.label));
+    const vals = [net.base].concat(net.points.map(p => p.total));
+    card(g, {
+      title: net.name,
+      chips: net.simulated ? [{ text: "simulé" }] : [],
+      caption: net.simulated
+        ? "Le compte n'a pas encore de relevé trimestriel dans le Sheet : la trajectoire ci-dessous est une projection cohérente avec l'objectif, remplacée dès la première saisie."
+        : "Abonnés cumulés à chaque relevé trimestriel, avec l'objectif de fin d'année en repère.",
+      body: body,
+      render: w => multiLine(w, {
+        x: xs, series: [{ name: net.name, color: C.s1, values: vals, endLabel: fmtInt(vals[vals.length - 1]) }],
+        ref: { value: net.goal, label: "Objectif " + fmtInt(net.goal) },
+        height: 210, aria: "Abonnés " + net.name + " par trimestre"
+      }),
+      table: {
+        head: ["Relevé", "Nouveaux", "Total"],
+        rows: [[net.baseLabel || "Départ", "—", fmtInt(net.base)]].concat(net.points.map(p =>
+          [p.label, { t: fmtInt(p.gained), sim: p.sim.gained }, { t: fmtInt(p.total), sim: p.sim.total }]))
+      }
+    });
+  });
+}
+
+/* ---------- méthodologie ---------- */
+function renderMethodo(model) {
+  const n = $("#methodo"); n.textContent = "";
+  n.appendChild(el("strong", { text: "Ce que la page invente, et ce qu'elle ne fait qu'afficher" }));
+  const ul = el("ul");
+  const li = t => ul.appendChild(el("li", { text: t }));
+  li("La page relit le Google Sheet à chaque ouverture, puis toutes les 5 minutes tant qu'elle reste ouverte. Le bouton « Actualiser » force une relecture immédiate.");
+  li("Trafic, Social Media et Sales x Marketing sont affichés tels quels, sans retouche.");
+  li("Onglet Lead Gen : vide dans le Sheet. Les VQL sont ancrés sur le nombre réel de visites du trimestre (onglet Sales x Marketing) puis répartis entre les sources au prorata des sessions, pondérées par la propension du canal à convertir. SQL = VQL ÷ " + SQL_TO_VQL + ", MQL = SQL ÷ " + MQL_TO_SQL + ".");
+  li("Instagram : aucun relevé trimestriel saisi. La trajectoire est une projection vers l'objectif de fin d'année.");
+  li("Toute valeur simulée porte la mention « simulé » ou le signe ° dans les tableaux, et disparaît dès que la cellule correspondante est remplie dans le Sheet.");
+  n.appendChild(ul);
+}
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   6. Amorçage + branchement sur Google Drive (mises à jour vivantes)
+   ============================================================ */
+function redrawAll() { DRAWS.slice().forEach(d => { try { d(true); } catch (e) { } }); }
+window.addEventListener("load", redrawAll);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawAll).catch(() => { });
+window.addEventListener("resize", (function () { let t; return () => { clearTimeout(t); t = setTimeout(redrawAll, 120); }; })());
+
+const dot = $("#syncDot"), syncTxt = $("#syncTxt"), banner = $("#banner"), refreshBtn = $("#refreshBtn");
+let MCP = null, unwatch = null, liveOnce = false, MODE = "snapshot", lastRead = 0, polling = false;
+
+function setSync(kind, text) {
+  dot.className = "dot" + (kind ? " " + kind : "");
+  syncTxt.textContent = text;
+}
+function setBanner(strong, rest) {
+  banner.textContent = "";
+  if (!strong && !rest) { banner.classList.remove("on"); return; }
+  if (strong) banner.appendChild(el("b", { text: strong + " " }));
+  if (rest) banner.appendChild(document.createTextNode(rest));
+  banner.classList.add("on");
+}
+const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+/* -- instantané embarqué : la page est lisible avant toute connexion -- */
+const SNAPSHOT = document.getElementById("snapshot").textContent;
+function bootSnapshot() {
+  try {
+    renderAll(buildModel(parseBlocks(SNAPSHOT)));
+    MODE = "snapshot";
+    setSync("", "Instantané du " + SNAP_LABEL);
+    $("#stampLine").textContent = "Instantané embarqué du " + SNAP_LABEL;
+  } catch (e) {
+    setSync("err", "Lecture impossible");
+    setBanner("La page n'a pas pu lire son instantané.", String(e && e.message || e));
+  }
+}
+bootSnapshot();
+
+const SRC = $("#srcLine");
+SRC.textContent = "";
+SRC.appendChild(document.createTextNode("Source : "));
+SRC.appendChild(el("a", { href: SHEET_URL, target: "_blank", rel: "noopener noreferrer", text: "le Google Sheet" }));
+SRC.appendChild(document.createTextNode(" · onglets " + TABS.map(t => t.name).join(", ")));
+
+/* -- application d'une lecture, quelle que soit sa provenance -- */
+function applyBlocks(blocks, ts, revalidating, how) {
+  let model;
+  try { model = buildModel(blocks); }
+  catch (e) {
+    setSync("warn", "Format inattendu");
+    setBanner("La structure du Sheet a changé.",
+      "La page continue d'afficher les dernières données valides. Détail : " + (e && e.message || e));
+    return false;
+  }
+  renderAll(model);
+  liveOnce = true; lastRead = ts; MODE = how;
+  setSync("live", "À jour · lu à " + hhmm(ts) + (revalidating ? " (rafraîchissement…)" : ""));
+  $("#stampLine").textContent = "Dernière lecture du Sheet : " + new Date(ts).toLocaleString("fr-FR");
+  setBanner(null, null);
+  return true;
+}
+
+/* ------------------------------------------------------------
+   Voie A — hors de Claude : lecture directe du CSV publié
+   ------------------------------------------------------------ */
+const FETCH_ERRORS = {
+  network: ["Le Sheet est injoignable.", "Connexion réseau interrompue. La page réessaie toute seule dans 5 minutes."],
+  denied: ["Le Sheet n'est plus lisible par lien.", "Dans le Sheet : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur."],
+  missing_tab: ["Un onglet du Sheet est introuvable.", "Il a été supprimé ou recréé — dans ce dernier cas son identifiant a changé et l'adresse de lecture doit être mise à jour."],
+  missing_file: ["Le Sheet est introuvable.", "Il a été supprimé, déplacé hors du Drive, ou son identifiant a changé."]
+};
+async function readSheet(manual) {
+  if (polling) return;
+  polling = true;
+  setSync("warn", liveOnce ? "Relecture du Sheet…" : "Lecture du Sheet…");
+  try {
+    const blocks = await fetchSheetBlocks();
+    applyBlocks(blocks, Date.now(), false, "csv");
+  } catch (e) {
+    const code = e && e.sheetCode ? e.sheetCode : "network";
+    const copy = FETCH_ERRORS[code] || FETCH_ERRORS.network;
+    setSync(code === "network" ? "warn" : "err", code === "network" ? "Lecture retardée" : "Hors ligne");
+    setBanner(copy[0] + (e && e.tab ? " (onglet « " + e.tab + " »)" : ""),
+      copy[1] + (liveOnce ? "" : " Affichage : instantané du " + SNAP_LABEL + "."));
+  } finally { polling = false; }
+}
+function startDirectReads() {
+  MODE = "csv";
+  readSheet();
+  setInterval(readSheet, 300000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && Date.now() - lastRead > 60000) readSheet();
+  });
+}
+
+/* ------------------------------------------------------------
+   Voie B — dans claude.ai : le connecteur Google Drive du lecteur
+   (le bac à sable des artifacts interdit tout appel réseau sortant,
+   donc ici la lecture directe n'est même pas tentée)
+   ------------------------------------------------------------ */
+function extractSheetText(res) {
+  let p = res && res.payload;
+  if (p == null && res && Array.isArray(res.content)) {
+    const t = res.content.filter(b => b && b.type === "text")[0];
+    if (t) { try { p = JSON.parse(t.text); } catch (e) { p = t.text; } }
+  }
+  if (typeof p === "string") return p;
+  if (p && typeof p === "object") {
+    const keys = ["fileContent", "content", "text", "body", "markdown"];
+    for (let i = 0; i < keys.length; i++) if (typeof p[keys[i]] === "string") return p[keys[i]];
+  }
+  return null;
+}
+function applyLive(res) {
+  const md = extractSheetText(res);
+  if (!md || md.indexOf("|") < 0) {
+    setSync("warn", "Réponse inattendue");
+    setBanner("Google Drive a renvoyé un contenu illisible.", "L'instantané du " + SNAP_LABEL + " reste affiché.");
+    return;
+  }
+  const ts = res && res.cache && res.cache.storedAt ? res.cache.storedAt : Date.now();
+  applyBlocks(parseBlocks(md), ts, !!(res && res.cache && res.cache.revalidating), "mcp");
+}
+const MCP_ERRORS = {
+  needs_reauth: ["Connexion à Google Drive expirée.", "Reconnectez le connecteur dans claude.ai → Réglages → Connecteurs, puis rouvrez cette page."],
+  server_not_connected: ["Connecteur Google Drive absent.", "Ajoutez-le dans claude.ai → Réglages → Connecteurs pour que la page se mette à jour toute seule."],
+  selection_required: ["Plusieurs connecteurs Google Drive.", "Choisissez celui à utiliser dans l'invite affichée par claude.ai, puis actualisez."],
+  server_not_found: ["Le connecteur Google Drive n'existe plus.", "Reconfigurez-le dans claude.ai → Réglages → Connecteurs."],
+  blocked_by_policy: ["Lecture bloquée par la politique de votre organisation.", "Rapprochez-vous de l'administrateur de l'espace de travail."],
+  approval_required: ["Cet appel demande une approbation manuelle.", "Les artifacts ne peuvent pas encore la demander — le Sheet devra être consulté directement."],
+  not_in_manifest: ["Outil hors périmètre autorisé.", "Cette page n'a pas le droit d'appeler cet outil."],
+  server_unavailable: ["Google Drive est momentanément injoignable.", "Nouvelle tentative automatique ; les données affichées datent de la dernière lecture réussie."],
+  rate_limited: ["Trop d'appels vers Google Drive.", "La page réessaiera d'elle-même dans quelques instants."],
+  tool_error: ["Google Drive a répondu par une erreur.", ""],
+  not_granted: ["Mises à jour en direct non autorisées dans cette vue.", "La page reste lisible en instantané."],
+  capability_disabled: ["Mises à jour en direct indisponibles ici.", "La page reste lisible en instantané."],
+  capability_removed: ["Mises à jour en direct indisponibles ici.", "La page reste lisible en instantané."],
+  bad_request: ["Appel refusé par le runtime.", "La page reste lisible en instantané."],
+  cancelled: ["Lecture interrompue.", "Cliquez sur Actualiser pour réessayer."]
+};
+const RETRACTING = { needs_reauth: 1, server_not_connected: 1, blocked_by_policy: 1, approval_required: 1, selection_required: 1, server_not_found: 1 };
+function handleMcpErr(err) {
+  const code = (err && err.code) || "upstream_error";
+  const copy = MCP_ERRORS[code] || ["Lecture du Sheet impossible.", "La page continue d'afficher les dernières données lues."];
+  const detail = code === "tool_error" && err && err.message ? err.message : copy[1];
+  const soft = code === "server_unavailable" || code === "rate_limited";
+  setSync(soft ? "warn" : "err", soft ? "Lecture retardée" : "Hors ligne");
+  if (RETRACTING[code] && liveOnce) {
+    /* données issues du connecteur retirées : retour à l'instantané embarqué */
+    liveOnce = false;
+    bootSnapshot();
+    setSync("err", "Hors ligne");
+  }
+  setBanner(copy[0], (detail ? detail + " " : "") + (liveOnce ? "" : "Affichage : instantané du " + SNAP_LABEL + "."));
+}
+
+/* ------------------------------------------------------------
+   Choix de la voie
+   ------------------------------------------------------------ */
+(async function connect() {
+  if (window.claude && typeof window.claude.use === "function") {
+    setSync("warn", "Connexion à Google Drive…");
+    try { MCP = await window.claude.use("mcp"); } catch (e) { MCP = null; }
+    if (MCP) {
+      MODE = "mcp";
+      try {
+        unwatch = MCP.watchTool("Google Drive", "read_file_content", { fileId: FILE_ID }, ev => {
+          if (ev.type === "data") applyLive(ev.result);
+          else handleMcpErr(ev.error);
+        }, { cache: { staleTime: 120000, gcTime: 900000 }, refetchInterval: 300000 });
+      } catch (e) { handleMcpErr(e); }
+      return;
+    }
+    setSync("", "Instantané du " + SNAP_LABEL);
+    setBanner("Pas de connexion vivante dans cette vue.",
+      "Ouvrez la page depuis claude.ai avec le connecteur Google Drive actif, ou consultez la version hébergée qui lit le Sheet directement.");
+    refreshBtn.disabled = true;
+    return;
+  }
+  startDirectReads();
+})();
+
+refreshBtn.addEventListener("click", async () => {
+  if (MODE === "mcp" && MCP) {
+    setSync("warn", "Relecture du Sheet…");
+    try { await MCP.invalidate("Google Drive", "read_file_content", { fileId: FILE_ID }); }
+    catch (e) { /* rien en cache : la surveillance relira d'elle-même */ }
+    return;
+  }
+  readSheet(true);
+});
+window.addEventListener("beforeunload", () => { if (unwatch) try { unwatch(); } catch (e) { } });
+</script>
+
+</body>
+</html>

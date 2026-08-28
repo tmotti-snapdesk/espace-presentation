@@ -34,6 +34,7 @@ const SECTIONS: HubSection[] = [
       { label: "Landing Pages", href: "/admin/lp" },
       { label: "Carte des startups", href: STARTUP_MAP_URL, newTab: true },
       { label: "Générateur d'emails", href: EMAIL_GENERATOR_URL, newTab: true },
+      { label: "Tour de contrôle", href: "/dashboards/marketing.html", newTab: true },
     ],
   },
   {

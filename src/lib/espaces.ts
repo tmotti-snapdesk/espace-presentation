@@ -2,16 +2,13 @@ import { EspaceData } from "@/types/espace";
 import { list, del } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
+import { JSON_BLOB_CACHE_MAX_AGE } from "@/lib/blobCache";
 
 const DATA_DIR = path.join(process.cwd(), "data", "espaces");
 
-// Vercel Blob defaults to caching a blob for a month at its CDN edge, and
-// that cache is keyed on the URL alone (it ignores query strings). Since
-// the espace JSON is overwritten in place at a stable URL on every save,
-// a long cache means an edit can stay invisible to visitors for up to a
-// month. 60 seconds is the shortest Blob allows — put() calls that write
+// See src/lib/blobCache.ts for why this is needed. put() calls that write
 // espaces/<slug>.json should pass `cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE`.
-export const ESPACE_JSON_CACHE_MAX_AGE = 60;
+export const ESPACE_JSON_CACHE_MAX_AGE = JSON_BLOB_CACHE_MAX_AGE;
 
 export function getAllEspaces(): EspaceData[] {
   if (!fs.existsSync(DATA_DIR)) {

@@ -712,7 +712,7 @@ function buildModel(blocks) {
      GA4 de l'onglet Trafic : on agrège d'abord les sessions GA4 par famille
      (via LEAD_SOURCE_MAP / LEAD_CATCHALL) avant de joindre les vraies valeurs saisies. */
   const periods = model.trafic.periods.length ? model.trafic.periods : lead.periods;
-  const funnel = { periods: periods, rows: [], anchors: {}, simulated: false };
+  const funnel = { periods: periods, rows: [], anchors: {}, reconciliation: {}, simulated: false };
   const realByKey = {};
   lead.rows.forEach(r => periods.forEach(p => {
     const v = (r.byPeriod[p] || {});
@@ -740,16 +740,20 @@ function buildModel(blocks) {
       engagement: agg[name].sessions ? agg[name].engNum / agg[name].sessions : null,
       weight: agg[name].w
     }));
-    /* Ancre : le nombre réel de visites du trimestre, lu dans l'onglet Sales x Marketing */
-    let anchor = meta ? quarterVisits(model.sales.months || [], meta.year, meta.q) : null;
-    const realVql = sum(sources.map(x => { const k = realByKey[x.source + "|" + p]; return k && k.vql != null ? k.vql : 0; }));
-    const anyRealVql = sources.some(x => { const k = realByKey[x.source + "|" + p]; return k && k.vql != null; });
-    if (anyRealVql) anchor = realVql;
-    if (anchor == null) anchor = Math.round(sum(sources.map(x => x.sessions)) * 0.004);
+    /* Ancre : le nombre réel de visites du trimestre, lu dans l'onglet Sales x Marketing.
+       C'est la vérité terrain — elle ne doit jamais être remplacée par la somme des VQL
+       déjà saisis, sinon les sources encore sans VQL se partagent un total tronqué dès
+       qu'une seule source devient réelle. On ne répartit que ce que les VQL réels ne
+       couvrent pas encore, et seulement entre les sources qui n'ont pas encore de VQL. */
+    const trueVisits = meta ? quarterVisits(model.sales.months || [], meta.year, meta.q) : null;
+    const attributedVql = sum(sources.map(x => { const k = realByKey[x.source + "|" + p]; return k && k.vql != null ? k.vql : 0; }));
+    const anchor = trueVisits != null ? trueVisits : (attributedVql || Math.round(sum(sources.map(x => x.sessions)) * 0.004));
     funnel.anchors[p] = anchor;
+    funnel.reconciliation[p] = { trueVisits: trueVisits, attributedVql: attributedVql };
 
-    const weights = sources.map(x => ({ key: x.source, w: x.weight }));
-    const share = largestRemainder(anchor, weights);
+    const missing = sources.filter(x => !(realByKey[x.source + "|" + p] && realByKey[x.source + "|" + p].vql != null));
+    const weights = missing.map(x => ({ key: x.source, w: x.weight }));
+    const share = largestRemainder(Math.max(0, anchor - attributedVql), weights);
 
     sources.forEach(x => {
       const real = realByKey[x.source + "|" + p] || {};
@@ -1444,6 +1448,35 @@ function renderLead(model) {
         .concat(p.map(per => ({ t: fmtInt((r.byPeriod[per] || {}).vql), sim: ((r.byPeriod[per] || {}).sim || {}).vql }))))
     }
   });
+
+  /* Recoupement avec l'onglet Sales x Marketing : combien des visites réelles
+     du trimestre sont déjà rattachées à une source (VQL saisi), et combien
+     restent réparties par estimation faute de VQL pour toutes les sources. */
+  const rec = model.funnel.reconciliation || {};
+  const body = el("div");
+  p.forEach(per => {
+    const r = rec[per] || {};
+    const total = r.trueVisits, attributed = r.attributedVql || 0;
+    const pctAttr = total ? Math.max(0, Math.min(100, (attributed / total) * 100)) : null;
+    const row = el("div", { class: "meterrow" });
+    row.appendChild(el("span", { text: per + " · " + (total == null ? "pas de visites enregistrées" : fmtInt(total) + " visites réelles") }));
+    row.appendChild(el("span", { text: pctAttr == null ? "—" : fmtPct(pctAttr, 0) + " rattachées à une source" }));
+    body.appendChild(row);
+    const m = el("div", { class: "meter" });
+    const fill = el("i"); fill.style.width = (pctAttr || 0) + "%";
+    m.appendChild(fill); body.appendChild(m);
+    if (total != null) {
+      body.appendChild(el("div", {
+        class: "mnote",
+        text: fmtInt(attributed) + " visites rattachées à une source confirmée, " + fmtInt(Math.max(0, total - attributed)) + " encore réparties par estimation."
+      }));
+    }
+  });
+  card(extraGrid("leadgen", false), {
+    title: "Visites confirmées par source",
+    caption: "Chaque visite comptée dans l'onglet Sales x Marketing devrait, à terme, être rattachée à une source via le VQL de l'onglet Lead Gen. Cette carte confronte les deux : plus la part confirmée est haute, plus le funnel ci-dessus reflète la réalité plutôt qu'une estimation.",
+    body: body
+  });
 }
 
 /* ---------- Visites ---------- */
@@ -1574,6 +1607,7 @@ function renderMethodo(model) {
   li("La page relit le Google Sheet à chaque ouverture, puis toutes les 5 minutes tant qu'elle reste ouverte. Le bouton « Actualiser » force une relecture immédiate.");
   li("Trafic, Social Media et Sales x Marketing sont affichés tels quels, sans retouche.");
   li("Onglet Lead Gen : les familles saisies (Recherche naturelle, Référencement payant, Email Marketing, Réseau social organique, Trafic direct, Campagne sociale payante) reprennent chacune un canal GA4 de l'onglet Trafic ; « Autres campagnes » regroupe le reste des canaux GA4 ; « Sources hors ligne » n'a pas de session associée. Les valeurs saisies sont affichées telles quelles. Ce qui manque encore est estimé : VQL ancré sur le nombre réel de visites du trimestre (onglet Sales x Marketing) puis réparti au prorata des sessions de la famille, pondérées par la propension du canal à convertir ; SQL = VQL ÷ " + SQL_TO_VQL + ", MQL = SQL ÷ " + MQL_TO_SQL + ".");
+  li("« Visites confirmées par source » (bas de la section Lead Gen) confronte le total réel de visites du trimestre (onglet Sales x Marketing) à la somme des VQL effectivement saisis par source dans l'onglet Lead Gen : l'écart, c'est la part des visites du trimestre encore répartie par estimation faute de VQL renseigné pour toutes les sources.");
   li("Instagram : aucun relevé trimestriel saisi. La trajectoire est une projection vers l'objectif de fin d'année.");
   li("Toute valeur simulée porte le signe ° dans les tableaux, et disparaît dès que la cellule correspondante est remplie dans le Sheet.");
   n.appendChild(ul);

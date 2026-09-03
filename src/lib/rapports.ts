@@ -1,6 +1,7 @@
 import { list, put, del } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
+import { JSON_BLOB_CACHE_MAX_AGE } from "@/lib/blobCache";
 import {
   RapportData,
   RapportMonthData,
@@ -251,6 +252,7 @@ async function getBlobRapport(espaceSlug: string): Promise<RapportData | null> {
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: JSON_BLOB_CACHE_MAX_AGE,
     });
 
     return merged;
@@ -311,6 +313,7 @@ export async function saveRapport(rapport: RapportData): Promise<void> {
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: JSON_BLOB_CACHE_MAX_AGE,
     });
   } catch {
     // Blob not configured — write locally instead

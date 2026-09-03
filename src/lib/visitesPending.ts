@@ -2,6 +2,7 @@ import { list, put, del } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
 import { PendingVisite } from "@/types/visitePending";
+import { JSON_BLOB_CACHE_MAX_AGE } from "@/lib/blobCache";
 
 const DATA_DIR = path.join(process.cwd(), "data", "visites-pending");
 
@@ -16,9 +17,11 @@ export async function getAllPendingVisites(): Promise<PendingVisite[]> {
   try {
     const { blobs } = await list({ prefix: "visites-pending/" });
     for (const blob of blobs.filter((b) => b.pathname.endsWith(".json"))) {
-      // Cache-bust: Blob URLs are served through a CDN that can briefly
-      // return a stale copy right after a write, even with cache: "no-store".
-      const res = await fetch(`${blob.url}?t=${Date.now()}`, { cache: "no-store" });
+      // The real fix against a stale copy is cacheControlMaxAge on the
+      // put() below (Blob's CDN cache key ignores query strings, so a
+      // `?t=` cache-buster alone would do nothing) — cache: "no-store"
+      // here just keeps Next itself from also caching the response.
+      const res = await fetch(blob.url, { cache: "no-store" });
       if (res.ok) {
         const data = (await res.json()) as PendingVisite;
         results.push(data);
@@ -46,9 +49,11 @@ export async function getPendingVisite(id: string): Promise<PendingVisite | null
     const { blobs } = await list({ prefix: blobPath(id) });
     const jsonBlob = blobs.find((b) => b.pathname === blobPath(id));
     if (jsonBlob) {
-      // Cache-bust: Blob URLs are served through a CDN that can briefly
-      // return a stale copy right after a write, even with cache: "no-store".
-      const res = await fetch(`${jsonBlob.url}?t=${Date.now()}`, { cache: "no-store" });
+      // The real fix against a stale copy is cacheControlMaxAge on the
+      // put() below (Blob's CDN cache key ignores query strings, so a
+      // `?t=` cache-buster alone would do nothing) — cache: "no-store"
+      // here just keeps Next itself from also caching the response.
+      const res = await fetch(jsonBlob.url, { cache: "no-store" });
       if (res.ok) return (await res.json()) as PendingVisite;
     }
   } catch {
@@ -84,6 +89,7 @@ export async function savePendingVisite(visite: PendingVisite): Promise<void> {
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: JSON_BLOB_CACHE_MAX_AGE,
     });
   } catch {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });

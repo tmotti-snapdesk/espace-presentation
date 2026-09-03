@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import { resolveEspaceBySlug } from "@/lib/espaces";
 import ShowcasePage from "./ShowcasePage";
 
-// Revalidate the rendered HTML at most once per hour. After this delay,
-// the next request triggers a single re-render in the background. With
-// this in place, paid traffic on a single page costs ~2 Blob ops per
-// hour instead of 2 ops per visitor.
+// Nominally caches the rendered HTML for up to an hour, but
+// resolveEspaceBySlug() reads the espace JSON with cache: "no-store" (see
+// src/lib/espaces.ts), which opts every request into a fresh render anyway
+// — otherwise an edit could stay invisible for up to this window. Kept at
+// 3600 rather than removed so a future switch back to a cached fetch (e.g.
+// once revalidateTag covers this read) regains the traffic-cost benefit
+// without a second change here.
 export const revalidate = 3600;
 
 // Dedupe Blob calls between generateMetadata() and the page component

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { put } from "@vercel/blob";
 import { LandingPageData } from "@/types/lp";
+import { JSON_BLOB_CACHE_MAX_AGE } from "@/lib/blobCache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: JSON_BLOB_CACHE_MAX_AGE,
     });
 
     revalidateTag("lp-list");

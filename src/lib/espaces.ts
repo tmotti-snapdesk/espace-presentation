@@ -2,16 +2,13 @@ import { EspaceData } from "@/types/espace";
 import { list, del } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
+import { JSON_BLOB_CACHE_MAX_AGE } from "@/lib/blobCache";
 
 const DATA_DIR = path.join(process.cwd(), "data", "espaces");
 
-// Vercel Blob defaults to caching a blob for a month at its CDN edge, and
-// that cache is keyed on the URL alone (it ignores query strings). Since
-// the espace JSON is overwritten in place at a stable URL on every save,
-// a long cache means an edit can stay invisible to visitors for up to a
-// month. 60 seconds is the shortest Blob allows — put() calls that write
+// See src/lib/blobCache.ts for why this is needed. put() calls that write
 // espaces/<slug>.json should pass `cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE`.
-export const ESPACE_JSON_CACHE_MAX_AGE = 60;
+export const ESPACE_JSON_CACHE_MAX_AGE = JSON_BLOB_CACHE_MAX_AGE;
 
 export function getAllEspaces(): EspaceData[] {
   if (!fs.existsSync(DATA_DIR)) {
@@ -33,12 +30,15 @@ export async function resolveAllEspaces(): Promise<EspaceData[]> {
   try {
     const { blobs } = await list({ prefix: "espaces/" });
     for (const blob of blobs.filter((b) => b.pathname.endsWith(".json"))) {
-      // No cache-busting needed here: the espace JSON is written with a
-      // short cacheControlMaxAge (see the put() calls in the API routes),
-      // so the Blob CDN itself never holds a stale copy for long. A
-      // query-string cache-buster wouldn't help anyway — Vercel Blob's CDN
-      // ignores the query string when computing its cache key.
-      const res = await fetch(blob.url);
+      // cache: "no-store" bypasses Next's own fetch Data Cache. The short
+      // cacheControlMaxAge on write (see the put() calls) keeps Vercel
+      // Blob's CDN itself from holding a stale copy, but that's a
+      // separate layer from Next's Data Cache, which caches this fetch's
+      // result for up to the page's `revalidate` window regardless of the
+      // origin's Cache-Control header — and isn't reliably cleared by
+      // revalidatePath()/revalidateTag() for a plain, untagged fetch. See
+      // resolveEspaceBySlug() below for the same fix applied there first.
+      const res = await fetch(blob.url, { cache: "no-store" });
       if (res.ok) {
         const data = (await res.json()) as EspaceData;
         espaces.push(data);
@@ -70,15 +70,18 @@ export async function resolveEspaceBySlug(slug: string): Promise<EspaceData | nu
     const { blobs } = await list({ prefix: `espaces/${slug}` });
     const jsonBlob = blobs.find((b) => b.pathname === `espaces/${slug}.json`);
     if (jsonBlob) {
-      // Plain fetch — this function is used from an ISR-cached page
-      // (/espaces/[slug]) as well as force-dynamic routes. Forcing
-      // cache: "no-store" here would opt the ISR page out of static
-      // caching entirely, defeating the point of `revalidate`. Freshness
-      // is instead guaranteed at the Blob layer via a short
-      // cacheControlMaxAge on write (see the put() calls) — a
-      // query-string cache-buster wouldn't help since Vercel Blob's CDN
-      // ignores the query string when computing its cache key.
-      const res = await fetch(jsonBlob.url);
+      // cache: "no-store" bypasses Next's fetch Data Cache. This function
+      // is used from an ISR-cached page (/espaces/[slug], `revalidate =
+      // 3600`), and a plain fetch without "no-store" inherits that
+      // 3600s window for its own cached result — independent of Vercel
+      // Blob's own (short) Cache-Control header on the object, and not
+      // reliably cleared by the revalidatePath() call on save. That's
+      // exactly why an edit could still show the old content for up to an
+      // hour after saving. Forcing "no-store" trades the ISR page's static
+      // caching for always-fresh data (the same trade the /lp/[slug] page
+      // already makes for the identical reason) — Blob reads are cheap, a
+      // stale published page is not.
+      const res = await fetch(jsonBlob.url, { cache: "no-store" });
       if (res.ok) return (await res.json()) as EspaceData;
     }
   } catch {

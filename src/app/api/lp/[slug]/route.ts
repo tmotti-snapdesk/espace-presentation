@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { list, put, del } from "@vercel/blob";
 import { LandingPageData } from "@/types/lp";
+import { JSON_BLOB_CACHE_MAX_AGE } from "@/lib/blobCache";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +106,7 @@ export async function PUT(
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: JSON_BLOB_CACHE_MAX_AGE,
     });
 
     invalidate(slug);
@@ -154,6 +156,7 @@ export async function POST(
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: JSON_BLOB_CACHE_MAX_AGE,
     });
 
     invalidate(newSlug);

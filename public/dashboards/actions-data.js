@@ -16,20 +16,21 @@ window.SnapActions = (function () {
   };
 
   /* ---- 2. Colonnes lues — les seules utilisées ----
-     Repérées par leur titre (ligne d'en-tête), pas par leur lettre :
-     déplacer une colonne dans le Sheet ne casse rien. */
+     Chaque colonne est cherchée par son titre ; si le titre est absent
+     (ex. colonne A sans en-tête), on prend la lettre indiquée. */
   const FIELDS = [
-    { key: "nom",         label: "Espace",                     re: /^espaces?$/ },
-    { key: "jours",       label: "Jours sur le marché",        re: /(^nb|nombre).*j(ou)?rs?\b|jours? sur le marche/ },
-    { key: "visites",     label: "Nombre de visites",          re: /^((nb|nombre)( de)? )?visites?(?! virtuelle)\b/ },
-    { key: "prix",        label: "Prix",                       re: /^prix/ },
-    { key: "responsable", label: "Responsable",                re: /^responsable/ },
-    { key: "mailLeads",   label: "Dernier mail leads",         re: /mail.*leads?/ },
-    { key: "mailjet",     label: "Dernier mail Mailjet",       re: /mailjet/ },
-    { key: "linkedin",    label: "Campagne LinkedIn",          re: /^campagne.*linkedin/ },
-    { key: "broker",      label: "Diffusion broker",           re: /^diffusion.*brokers?/ },
-    { key: "panneau",     label: "Panneau",                    re: /panneaux?/ }
+    { key: "jours",       col: "A",  label: "Jours sur le marché", re: /jours? sur le marche|^(nb|nombre)( de)? jours$/ },
+    { key: "visites",     col: "D",  label: "Nombre de visites",   re: /^((nb|nombre)( de)? )?visites?$/ },
+    { key: "nom",         col: "G",  label: "Espace",              re: /^espaces?$/ },
+    { key: "prix",        col: "I",  label: "Prix",                re: /^prix$/ },
+    { key: "responsable", col: "R",  label: "Responsable",         re: /^responsable/ },
+    { key: "mailLeads",   col: "W",  label: "Dernier mail leads",  re: /mail.*leads?/ },
+    { key: "mailjet",     col: "X",  label: "Dernier mail Mailjet", re: /mailjet/ },
+    { key: "linkedin",    col: "Y",  label: "Campagne LinkedIn",   re: /^campagne.*linkedin/ },
+    { key: "broker",      col: "AA", label: "Diffusion broker",    re: /^diffusion.*brokers?/ },
+    { key: "panneau",     col: "AK", label: "Panneau",             re: /^panneaux?$/ }
   ];
+  const colIndex = letters => letters.split("").reduce((n, c) => n * 26 + (c.charCodeAt(0) - 64), 0) - 1;
 
   /* Actions datées : comptées dans « Les actions de la semaine » */
   const DATED_ACTIONS = [
@@ -105,7 +106,7 @@ window.SnapActions = (function () {
     if (h < 0) throw sheetError("format");
     const head = rows[h].map(norm);
     const col = {};
-    FIELDS.forEach(f => { const i = head.findIndex((c, ci) => f.re.test(c) && !Object.values(col).includes(ci)); if (i >= 0) col[f.key] = i; });
+    FIELDS.forEach(f => { const i = head.findIndex(c => f.re.test(c)); col[f.key] = i >= 0 ? i : colIndex(f.col); });
     const spaces = [];
     for (let r = h + 1; r < rows.length; r++) {
       const row = rows[r];
@@ -133,8 +134,7 @@ window.SnapActions = (function () {
       seen[id] = 1; s.id = id;
       s.label = count[s.nom] > 1 && s.prix ? s.nom + " · " + s.prix : s.nom;
     });
-    const missing = FIELDS.filter(f => col[f.key] == null).map(f => f.label);
-    return { status: "ok", spaces: spaces, missing: missing, readAt: now };
+    return { status: "ok", spaces: spaces, readAt: now };
   }
 
   let cache = null;

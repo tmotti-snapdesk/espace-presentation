@@ -1683,7 +1683,6 @@ function renderSpaceButtons() {
   if (ACTS.status === "error") { host.appendChild(el("div", { class: "act-empty", text: ACT_ERRORS[ACTS.code] || ACT_ERRORS.network })); return; }
   if (!ACTS.spaces.length) { host.appendChild(el("div", { class: "act-empty", text: "Aucun espace trouvé dans le Sheet (colonne G)." })); return; }
   ACTS.spaces.forEach(sp => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(sp), text: sp.label })));
-  if (ACTS.missing && ACTS.missing.length) host.appendChild(el("div", { class: "act-empty", style: "flex-basis:100%", text: "Colonnes absentes de l'onglet « Copie du Pilotage » (affichées « — ») : " + ACTS.missing.join(", ") + "." }));
 }
 function renderWeekChart() {
   const host = $("#actGrid");

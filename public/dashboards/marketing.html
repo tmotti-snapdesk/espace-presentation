@@ -88,6 +88,8 @@ a{color:var(--accent)}
   border:1px solid var(--hair); border-radius:999px; padding:5px 12px; cursor:pointer;
 }
 .btn:hover{border-color:var(--rule); color:var(--ink)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff; text-decoration:none; font-weight:500}
+.btn.accent:hover{filter:brightness(1.08); color:#fff}
 
 /* ---------- layout ---------- */
 .wrap{max-width:1180px; margin:0 auto; padding:0 22px 90px}
@@ -181,6 +183,22 @@ td.sim::after{content:"°"; color:var(--ink-3); margin-left:2px}
 .banner b{color:var(--ink)}
 footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--ink-3); display:flex; gap:14px; flex-wrap:wrap}
 .hit{cursor:default}
+/* ---------- actions par espace ---------- */
+.act-card h3{display:flex; align-items:baseline; gap:8px}
+.act-count{font-family:"IBM Plex Sans",sans-serif; font-size:12px; font-weight:500; color:var(--ink-3)}
+.act-list{list-style:none; margin:10px 0 0; padding:0}
+.act-list li{padding:10px 0; border-top:1px solid var(--grid)}
+.act-list li:first-child{border-top:none; padding-top:2px}
+.act-title{display:flex; align-items:baseline; gap:10px; justify-content:space-between; font-size:14px; color:var(--ink)}
+.act-meta{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:3px; font-size:12.5px; color:var(--ink-2)}
+.act-meta b{font-weight:500; color:var(--ink-3)}
+.status{flex:none; font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; font-weight:500; background:var(--sim-bg); color:var(--sim-ink)}
+.status.done{background:rgba(12,163,12,.14); color:var(--good)}
+.status.doing{background:var(--accent-wash); color:var(--accent)}
+.status.late{background:rgba(208,59,59,.14); color:var(--crit)}
+#actions .kpis:empty, #actions .grid:empty{display:none}
+.act-empty{margin-top:20px}
+.act-empty code{font-size:12.5px; background:var(--surface-2); border:1px solid var(--hair); border-radius:5px; padding:1px 6px}
 .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 </style>
 
@@ -197,6 +215,7 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
     </nav>
     <div class="sync"><span class="dot" id="syncDot"></span><span id="syncTxt">Chargement…</span></div>
     <button class="btn" id="refreshBtn" type="button">Actualiser</button>
+    <a class="btn accent" href="#actions">Actions par espace</a>
   </div>
 </div>
 
@@ -250,6 +269,15 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
       <p>Deux comptes, deux objectifs de fin d'année, deux échelles — donc deux graphiques séparés.</p>
     </div>
     <div class="grid two" id="socialGrid"></div>
+  </section>
+
+  <section id="actions">
+    <div class="sec-head">
+      <h2>Les actions par espaces</h2>
+      <p>Ce qui a été lancé, ou reste à lancer, espace par espace.</p>
+    </div>
+    <div class="kpis" id="actKpis"></div>
+    <div class="grid two" id="actGrid"></div>
   </section>
 
   <div class="note" id="methodo"></div>
@@ -1640,6 +1668,74 @@ function setBanner(strong, rest) {
 }
 const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
+/* ============================================================
+   Les actions par espaces — saisies ici, sans lien avec le Google Sheet.
+   Pour ajouter une action : copier une ligne { ... } et la modifier.
+   statut : "À faire", "En cours", "Fait" ou "En retard" (couleur automatique).
+   ============================================================ */
+const ACTIONS_PAR_ESPACE = [
+  // { espace: "Nom de l'espace", action: "Description de l'action", statut: "En cours", date: "septembre 2026", responsable: "Prénom" },
+];
+const norm = str => String(str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+function groupActions(list) {
+  const groups = []; const byName = {};
+  list.forEach(a => {
+    if (!a || !a.espace || !a.action) return;
+    if (!byName[a.espace]) { byName[a.espace] = { name: a.espace, items: [] }; groups.push(byName[a.espace]); }
+    const meta = [];
+    if (a.date) meta.push({ label: "Date", value: a.date });
+    if (a.responsable) meta.push({ label: "Responsable", value: a.responsable });
+    if (a.note) meta.push({ label: "Note", value: a.note });
+    byName[a.espace].items.push({ action: a.action, status: a.statut || "", meta: meta });
+  });
+  return { groups: groups, hasStatus: list.some(a => a && a.statut) };
+}
+function statusClass(st) {
+  const n = norm(st);
+  if (/^(fait|termine|fini|ok|done|realise|valide)/.test(n)) return "done";
+  if (/(retard|bloque|urgent|annule)/.test(n)) return "late";
+  if (/^(en cours|encours|lance|demarre|doing|in progress)/.test(n)) return "doing";
+  return "";
+}
+function renderActions(data, why) {
+  const kp = $("#actKpis"), grid = $("#actGrid");
+  kp.textContent = ""; grid.textContent = "";
+  $("#actions .act-empty") && $("#actions .act-empty").remove();
+  if (!data || !data.groups.length) {
+    const box = el("div", { class: "note act-empty" });
+    box.appendChild(el("strong", { text: why || "Aucune action renseignée pour l'instant." }));
+    $("#actions").appendChild(box);
+    return;
+  }
+  const all = [].concat.apply([], data.groups.map(g => g.items));
+  tile(kp, { label: "Espaces suivis", value: fmtInt(data.groups.length) });
+  tile(kp, { label: "Actions", value: fmtInt(all.length) });
+  if (data.hasStatus) {
+    const done = all.filter(i => statusClass(i.status) === "done").length;
+    const doing = all.filter(i => statusClass(i.status) === "doing").length;
+    tile(kp, { label: "Terminées", value: fmtInt(done), note: all.length ? fmtPct(done / all.length * 100, 0) + " du total" : "" });
+    tile(kp, { label: "En cours", value: fmtInt(doing) });
+  }
+  data.groups.forEach(g => {
+    const ul = el("ul", { class: "act-list" });
+    g.items.forEach(it => {
+      const li = el("li");
+      const top = el("div", { class: "act-title" }, [el("span", { text: it.action })]);
+      if (it.status) top.appendChild(el("span", { class: "status " + statusClass(it.status), text: it.status }));
+      li.appendChild(top);
+      if (it.meta.length) {
+        const m = el("div", { class: "act-meta" });
+        it.meta.forEach(x => { const s1 = el("span"); s1.appendChild(el("b", { text: x.label + " : " })); s1.appendChild(document.createTextNode(x.value)); m.appendChild(s1); });
+        li.appendChild(m);
+      }
+      ul.appendChild(li);
+    });
+    const c = card(grid, { title: g.name, body: ul });
+    c.classList.add("act-card");
+    c.querySelector("h3").appendChild(el("span", { class: "act-count", text: g.items.length + (g.items.length > 1 ? " actions" : " action") }));
+  });
+}
+
 /* -- instantané embarqué : la page est lisible avant toute connexion -- */
 const SNAPSHOT = document.getElementById("snapshot").textContent;
 function bootSnapshot() {
@@ -1654,6 +1750,7 @@ function bootSnapshot() {
   }
 }
 bootSnapshot();
+renderActions(groupActions(ACTIONS_PAR_ESPACE));
 
 const SRC = $("#srcLine");
 SRC.textContent = "";

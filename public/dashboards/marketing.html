@@ -1685,6 +1685,7 @@ function renderSpaceButtons() {
 }
 function renderWeekChart() {
   const kp = $("#actKpis"), host = $("#actGrid");
+  const tableOpen = !!host.querySelector(".tblwrap.on");
   kp.textContent = ""; host.textContent = "";
   const sp = ACTS.spaces, ok = ACTS.status === "ok";
   const withJours = sp.filter(s => s.jours != null);
@@ -1711,14 +1712,33 @@ function renderWeekChart() {
       rows: sp.map(s => [s.nom, s.jours, s.visites].concat(SA.DATED_ACTIONS.map(a => SA.fmtDate(s.dated[a.key].date) || s.dated[a.key].raw || null))
         .concat([s.panneau == null ? null : (s.panneau ? "Oui" : "Non")])) } : null
   });
+  if (tableOpen) { const btn = host.querySelector(".tblbtn"); if (btn) btn.click(); }
 }
-async function readActions(force) {
-  try { ACTS = await (force ? SA.refresh() : SA.loadSpaces()); }
-  catch (e) { ACTS = { status: "error", code: e && e.code, spaces: [] }; }
+/* Lecture en continu : toutes les minutes, et dès qu'on revient sur l'onglet.
+   On ne redessine que si le Sheet a changé (le tableau ouvert reste ouvert),
+   et une coupure passagère garde les dernières données valides à l'écran. */
+const ACT_REFRESH_MS = 60000;
+let actSig = "", actLast = 0;
+async function readActions() {
+  let next;
+  try { next = await SA.refresh(); }
+  catch (e) {
+    if (ACTS.status === "ok") return;
+    next = { status: "error", code: e && e.code, spaces: [] };
+  }
+  actLast = Date.now();
+  const sig = next.status + (next.code || "") + JSON.stringify(next.spaces);
+  if (sig === actSig) return;
+  actSig = sig; ACTS = next;
   renderSpaceButtons();
   renderWeekChart();
 }
 renderSpaceButtons();
+readActions();
+setInterval(() => { if (!document.hidden) readActions(); }, ACT_REFRESH_MS);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - actLast > 15000) readActions();
+});
 
 /* -- instantané embarqué : la page est lisible avant toute connexion -- */
 const SNAPSHOT = document.getElementById("snapshot").textContent;
@@ -1772,7 +1792,6 @@ async function readSheet(manual) {
   if (polling) return;
   polling = true;
   setSync("warn", liveOnce ? "Relecture du Sheet…" : "Lecture du Sheet…");
-  readActions(true);
   try {
     const blocks = await fetchSheetBlocks();
     applyBlocks(blocks, Date.now(), false, "csv");
@@ -1859,7 +1878,6 @@ function handleMcpErr(err) {
    ------------------------------------------------------------ */
 (async function connect() {
   if (window.claude && typeof window.claude.use === "function") {
-    readActions();
     setSync("warn", "Connexion à Google Drive…");
     try { MCP = await window.claude.use("mcp"); } catch (e) { MCP = null; }
     if (MCP) {

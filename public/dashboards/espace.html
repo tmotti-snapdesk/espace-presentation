@@ -227,7 +227,26 @@ async function boot() {
   document.title = sp.nom + " · Suivi Snapdesk";
   render(sp);
 }
-boot();
+boot().then(() => {
+  /* Lecture en continu : toutes les minutes, et dès qu'on revient sur l'onglet.
+     Une coupure passagère laisse les dernières données valides affichées. */
+  let sig = "", last = Date.now();
+  const tick = async () => {
+    let res;
+    try { res = await SA.refresh(); } catch (e) { return; }
+    last = Date.now();
+    $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const sp = id ? res.spaces.find(s => s.id === id) : null;
+    const next = JSON.stringify({ sp: sp, all: res.spaces.map(s => s.id + s.nom) });
+    if (next === sig) return;
+    if (sig && sp) { banner(null); $("#spaceName").textContent = sp.nom; $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : ""; render(sp); renderOthers(res.spaces, sp); }
+    else if (sig) boot();
+    sig = next;
+  };
+  tick();
+  setInterval(() => { if (!document.hidden) tick(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - last > 15000) tick(); });
+});
 </script>
 </body>
 </html>

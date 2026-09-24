@@ -1681,7 +1681,7 @@ function renderSpaceButtons() {
   if (ACTS.status === "loading") { host.appendChild(el("div", { class: "act-empty", text: "Chargement des espaces…" })); return; }
   if (ACTS.status === "error") { host.appendChild(el("div", { class: "act-empty", text: ACT_ERRORS[ACTS.code] || ACT_ERRORS.network })); return; }
   if (!ACTS.spaces.length) { host.appendChild(el("div", { class: "act-empty", text: "Aucun espace trouvé dans le Sheet (colonne G)." })); return; }
-  ACTS.spaces.forEach(sp => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(sp), text: sp.nom })));
+  ACTS.spaces.forEach(sp => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(sp), text: sp.label })));
 }
 function renderWeekChart() {
   const kp = $("#actKpis"), host = $("#actGrid");
@@ -1709,7 +1709,7 @@ function renderWeekChart() {
     render: w => hGroupedBars(w, { series: series, rows: wk.map(a => ({ label: a.label, values: ok ? [a.thisWeek, a.lastWeek] : [null, null] })), labelAll: true, labelW: 150, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Les actions de la semaine" }),
     legend: series,
     table: ok ? { head: ["Espace", "Jours", "Visites"].concat(SA.DATED_ACTIONS.map(a => a.label)).concat(["Panneau"]),
-      rows: sp.map(s => [s.nom, s.jours, s.visites].concat(SA.DATED_ACTIONS.map(a => SA.fmtDate(s.dated[a.key].date) || s.dated[a.key].raw || null))
+      rows: sp.map(s => [s.label, s.jours, s.visites].concat(SA.DATED_ACTIONS.map(a => SA.fmtDate(s.dated[a.key].date) || s.dated[a.key].raw || null))
         .concat([s.panneau == null ? null : (s.panneau ? "Oui" : "Non")])) } : null
   });
   if (tableOpen) { const btn = host.querySelector(".tblbtn"); if (btn) btn.click(); }

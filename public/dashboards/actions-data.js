@@ -52,8 +52,9 @@ window.SnapActions = (function () {
   function bool(v) {
     const n = norm(v);
     if (!n) return null;
-    if (/^(oui|yes|y|x|1|true|vrai|ok|✓|✔)/.test(n)) return true;
-    if (/^(non|no|n|0|false|faux|-|aucun)/.test(n)) return false;
+    if (parseDate(n)) return null;
+    if (/^(oui|yes|y|x|1|true|vrai|ok|done|fait|pose|✓|✔)(?![a-z0-9])/.test(n)) return true;
+    if (/^(non|no|n|0|false|faux|-|aucun)(?![a-z0-9])/.test(n)) return false;
     return null;
   }
   /* Dates acceptées : 12/09/2026, 12/09/26, 12-09-2026, 2026-09-12 */
@@ -115,7 +116,9 @@ window.SnapActions = (function () {
       panneau: bool(get("panneau")), panneauRaw: get("panneau"), dated: {}
     };
     DATED_ACTIONS.forEach(a => {
-      const raw = get(a.key), d = parseDate(raw);
+      let raw = get(a.key);
+      if (bool(raw) === false) raw = "";           /* « Non » dans une case de date = action pas faite */
+      const d = parseDate(raw);
       sp.dated[a.key] = { raw: raw, date: d, weeksAgo: weeksAgo(d, now), thisMonth: sameMonth(d, now) };
     });
     return sp;
@@ -134,6 +137,10 @@ window.SnapActions = (function () {
         seen[id] = 1; sp.id = id;
         spaces.push(sp);
       });
+      /* même nom sur plusieurs lignes (ex. formats de postes) : on précise le prix sur le bouton */
+      const count = {};
+      spaces.forEach(s => { count[s.nom] = (count[s.nom] || 0) + 1; });
+      spaces.forEach(s => { s.label = count[s.nom] > 1 && s.prix ? s.nom + " · " + s.prix : s.nom; });
       return { status: "ok", spaces: spaces, readAt: now };
     });
     cache.catch(() => { cache = null; });

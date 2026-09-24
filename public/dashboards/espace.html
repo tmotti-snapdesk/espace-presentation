@@ -194,7 +194,7 @@ function render(sp) {
 
 function renderOthers(spaces, current) {
   const host = $("#otherSpaces"); host.textContent = "";
-  spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.nom })));
+  spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.label })));
 }
 const ERRORS = {
   denied: ["Le Sheet des espaces n'est pas lisible.", "Il doit être partagé : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur."],
@@ -222,7 +222,7 @@ async function boot() {
     banner(id ? "Cet espace n'est plus dans le Sheet." : "Aucun espace sélectionné.", "Choisissez-en un ci-dessous.");
     return;
   }
-  $("#spaceName").textContent = sp.nom;
+  $("#spaceName").textContent = sp.label;
   $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : "";
   document.title = sp.nom + " · Suivi Snapdesk";
   render(sp);
@@ -239,7 +239,7 @@ boot().then(() => {
     const sp = id ? res.spaces.find(s => s.id === id) : null;
     const next = JSON.stringify({ sp: sp, all: res.spaces.map(s => s.id + s.nom) });
     if (next === sig) return;
-    if (sig && sp) { banner(null); $("#spaceName").textContent = sp.nom; $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : ""; render(sp); renderOthers(res.spaces, sp); }
+    if (sig && sp) { banner(null); $("#spaceName").textContent = sp.label; $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : ""; render(sp); renderOthers(res.spaces, sp); }
     else if (sig) boot();
     sig = next;
   };

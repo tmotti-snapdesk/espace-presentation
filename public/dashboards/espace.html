@@ -86,7 +86,6 @@ a{color:var(--accent)}
 .card.muted{background:transparent; border-style:dashed}
 .card.muted h2{color:var(--ink-2)}
 .card.muted .items li{color:var(--ink-3)}
-.head .who{margin-top:6px; color:var(--ink-2); font-size:14px}
 .pill.count{background:var(--accent-wash); color:var(--accent); font-variant-numeric:tabular-nums}
 
 .banner{margin-top:22px; padding:12px 15px; border-radius:11px; font-size:13.5px; border:1px dashed var(--rule); color:var(--ink-2)}
@@ -114,7 +113,6 @@ footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font
     <div>
       <div class="eyebrow">Espace</div>
       <h1 id="spaceName">—</h1>
-      <div class="who" id="who"></div>
     </div>
   </div>
 
@@ -145,51 +143,35 @@ function banner(strong, rest) {
 }
 const nf = new Intl.NumberFormat("fr-FR");
 const id = new URLSearchParams(location.search).get("e");
-const MONTH = new Date().toLocaleDateString("fr-FR", { month: "long" });
 
-function line(label, sub, pillText, pillCls) {
-  const left = el("div", {}, [el("span", { text: label })]);
-  if (sub) left.appendChild(el("span", { class: "sub", text: sub }));
-  const pill = el("span", { class: "pill" + (pillCls ? " " + pillCls : ""), text: pillText });
-  return el("li", {}, [left, pill]);
+function tileNode(lbl, val) {
+  return el("div", { class: "tile" }, [el("div", { class: "lbl", text: lbl }), el("div", { class: "val", text: val })]);
 }
-/* Action datée : Oui si la date tombe dans le mois en cours */
-function datedLine(sp, key, label) {
-  const a = sp ? sp.dated[key] : null;
-  if (!a || (!a.date && !a.raw)) return line(label + " ce mois-ci", sp ? "Jamais renseigné" : "", sp ? "Non" : "—", sp ? "no" : "");
-  const sub = a.date ? "Dernier : " + SA.fmtDate(a.date) : "Saisi : « " + a.raw + " »";
-  if (!a.date) return line(label + " ce mois-ci", sub, "?", "");
-  return line(label + " ce mois-ci", sub, a.thisMonth ? "Oui" : "Non", a.thisMonth ? "yes" : "no");
-}
-function tileNode(lbl, val, note) {
-  const n = el("div", { class: "tile" }, [el("div", { class: "lbl", text: lbl }), el("div", { class: "val", text: val })]);
-  if (note) n.appendChild(el("div", { class: "note", text: note }));
-  return n;
-}
+const show = v => (v == null || v === "") ? "—" : String(v);
+
+/* Uniquement les colonnes demandées, affichées telles qu'écrites dans le Sheet :
+   A jours · D visites · G nom · I prix · R responsable · W X Y AA dates · AK panneau */
 function render(sp) {
   const sum = $("#summary"); sum.textContent = "";
-  const doneMonth = sp ? SA.DATED_ACTIONS.filter(a => sp.dated[a.key].thisMonth).length : null;
   sum.appendChild(tileNode("Jours sur le marché", sp && sp.jours != null ? nf.format(sp.jours) + " j" : "—"));
   sum.appendChild(tileNode("Visites", sp && sp.visites != null ? nf.format(sp.visites) : "—"));
-  sum.appendChild(tileNode("Prix", sp && sp.prix ? (sp.prixNum != null && !/€/.test(sp.prix) ? nf.format(sp.prixNum) + " €" : sp.prix) : "—"));
-  sum.appendChild(tileNode("Actions en " + MONTH, sp ? doneMonth + " / " + SA.DATED_ACTIONS.length : "—", "mails, LinkedIn, diffusion broker"));
+  sum.appendChild(tileNode("Prix", show(sp && sp.prix)));
+  sum.appendChild(tileNode("Responsable", show(sp && sp.responsable)));
 
   const host = $("#groups"); host.textContent = "";
-  const card = (title, lines, muted) => host.appendChild(el("section", { class: "card" + (muted ? " muted" : "") }, [el("h2", { text: title }), el("ul", { class: "items" }, lines)]));
-  card("Communication", [
-    datedLine(sp, "mailLeads", "Mail leads"),
-    datedLine(sp, "mailjet", "Mail Mailjet"),
-    datedLine(sp, "linkedin", "Campagne LinkedIn")
-  ]);
-  const vis = sp && sp.visites != null;
-  card("Prospection", [
-    datedLine(sp, "broker", "Diffusion broker"),
-    line("Nombre de visites", "", vis ? nf.format(sp.visites) : "—", vis ? "count" : "")
-  ]);
+  const labels = { mailLeads: "Dernier mail leads", mailjet: "Dernier mail Mailjet", linkedin: "Campagne LinkedIn", broker: "Diffusion broker" };
+  const ul = el("ul", { class: "items" });
+  SA.DATED_ACTIONS.forEach(a => {
+    const v = sp ? sp.dated[a.key].raw : "";
+    ul.appendChild(el("li", {}, [el("span", { text: labels[a.key] }), el("span", { class: "pill" + (v ? " count" : ""), text: show(v) })]));
+  });
+  host.appendChild(el("section", { class: "card" }, [el("h2", { text: "Dernières actions" }), ul]));
+
   const pan = sp ? sp.panneau : null;
-  card("Visibilité", [
-    line("Panneau posé", sp && pan == null && sp.panneauRaw ? "Saisi : « " + sp.panneauRaw + " »" : "", pan === true ? "Oui" : pan === false ? "Non" : "—", pan === true ? "yes" : pan === false ? "no" : "")
-  ]);
+  const panTxt = pan === true ? "Oui" : pan === false ? "Non" : show(sp && sp.panneauRaw);
+  const pl = el("ul", { class: "items" }, [el("li", {}, [el("span", { text: "Panneau" }),
+    el("span", { class: "pill" + (pan === true ? " yes" : pan === false ? " no" : ""), text: panTxt })])]);
+  host.appendChild(el("section", { class: "card" }, [el("h2", { text: "Visibilité" }), pl]));
 }
 
 function renderOthers(spaces, current) {
@@ -224,7 +206,6 @@ async function boot() {
     return;
   }
   $("#spaceName").textContent = sp.label;
-  $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : "";
   document.title = sp.nom + " · Suivi Snapdesk";
   render(sp);
 }
@@ -240,7 +221,7 @@ boot().then(() => {
     const sp = id ? res.spaces.find(s => s.id === id) : null;
     const next = JSON.stringify({ sp: sp, all: res.spaces.map(s => s.id + s.nom) });
     if (next === sig) return;
-    if (sig && sp) { banner(null); $("#spaceName").textContent = sp.label; $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : ""; render(sp); renderOthers(res.spaces, sp); }
+    if (sig && sp) { banner(null); $("#spaceName").textContent = sp.label; render(sp); renderOthers(res.spaces, sp); }
     else if (sig) boot();
     sig = next;
   };

@@ -69,7 +69,6 @@ window.SnapActions = (function () {
     if (!date) return null;
     return Math.round((startOfWeek(now) - startOfWeek(date)) / (7 * 864e5));
   }
-  const sameMonth = (a, b) => !!a && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
   const fmtDate = d => d ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
   const sheetUrl = () => "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/edit";
 
@@ -102,10 +101,9 @@ window.SnapActions = (function () {
       panneau: bool(get("panneau")), panneauRaw: get("panneau"), dated: {}
     };
     DATED_ACTIONS.forEach(a => {
-      let raw = get(a.key);
-      if (bool(raw) === false) raw = "";           /* « Non » dans une case de date = action pas faite */
+      const raw = get(a.key);                      /* texte de la cellule, tel quel */
       const d = parseDate(raw);
-      sp.dated[a.key] = { raw: raw, date: d, weeksAgo: weeksAgo(d, now), thisMonth: sameMonth(d, now) };
+      sp.dated[a.key] = { raw: raw, date: d, weeksAgo: weeksAgo(d, now) };
     });
     return sp;
   }

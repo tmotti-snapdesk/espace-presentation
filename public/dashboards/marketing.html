@@ -268,10 +268,9 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
   <section id="actions">
     <div class="sec-head">
       <h2>Les actions par espaces</h2><span class="tabref">Sheet des espaces</span>
-      <p>Un bouton par espace du Sheet des espaces, vers sa page de suivi. En dessous, l'état du parc et les actions de la semaine.</p>
+      <p>Un bouton par espace, vers sa page de suivi. En dessous, les actions de la semaine.</p>
     </div>
     <div class="space-btns" id="spaceBtns"></div>
-    <div class="kpis" id="actKpis"></div>
     <div class="grid" id="actGrid"></div>
   </section>
 
@@ -1685,18 +1684,10 @@ function renderSpaceButtons() {
   ACTS.spaces.forEach(sp => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(sp), text: sp.label })));
 }
 function renderWeekChart() {
-  const kp = $("#actKpis"), host = $("#actGrid");
+  const host = $("#actGrid");
   const tableOpen = !!host.querySelector(".tblwrap.on");
-  kp.textContent = ""; host.textContent = "";
+  host.textContent = "";
   const sp = ACTS.spaces, ok = ACTS.status === "ok";
-  const withJours = sp.filter(s => s.jours != null);
-  const withPanneau = sp.filter(s => s.panneau != null);
-  tile(kp, { label: "Espaces sur le marché", value: ok ? fmtInt(sp.length) : "—" });
-  tile(kp, { label: "Durée moyenne sur le marché", value: ok && withJours.length ? fmtInt(sum(withJours.map(s => s.jours)) / withJours.length) + " j" : "—",
-    note: ok && withJours.length ? "max. " + fmtInt(Math.max.apply(null, withJours.map(s => s.jours))) + " j" : "" });
-  tile(kp, { label: "Visites cumulées", value: ok ? fmtInt(sum(sp.map(s => s.visites))) : "—" });
-  tile(kp, { label: "Panneaux posés", value: ok ? fmtInt(sp.filter(s => s.panneau === true).length) : "—",
-    note: ok && withPanneau.length ? "sur " + fmtInt(sp.length) + " espaces" : "" });
 
   const wk = SA.weekSummary(sp);
   const series = [{ name: "Cette semaine", color: "var(--s1)" }, { name: "Semaine dernière", color: "var(--dim)" }];
@@ -1709,9 +1700,9 @@ function renderWeekChart() {
     caption: "Nombre d'espaces ayant reçu chaque action, selon les dates des colonnes W, X, Y et AA (semaine du lundi au dimanche).",
     render: w => hGroupedBars(w, { series: series, rows: wk.map(a => ({ label: a.label, values: ok ? [a.thisWeek, a.lastWeek] : [null, null] })), labelAll: true, labelW: 150, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Les actions de la semaine" }),
     legend: series,
-    table: ok ? { head: ["Espace", "Jours", "Visites"].concat(SA.DATED_ACTIONS.map(a => a.label)).concat(["Panneau"]),
-      rows: sp.map(s => [s.label, s.jours, s.visites].concat(SA.DATED_ACTIONS.map(a => SA.fmtDate(s.dated[a.key].date) || s.dated[a.key].raw || null))
-        .concat([s.panneau == null ? null : (s.panneau ? "Oui" : "Non")])) } : null
+    table: ok ? { head: ["Espace", "Jours sur le marché", "Visites", "Prix", "Responsable", "Dernier mail leads", "Dernier mail Mailjet", "Campagne LinkedIn", "Diffusion broker", "Panneau"],
+      rows: sp.map(s => [s.label, s.jours, s.visites, s.prix || null, s.responsable || null]
+        .concat(SA.DATED_ACTIONS.map(a => s.dated[a.key].raw || null)).concat([s.panneauRaw || null])) } : null
   });
   if (tableOpen) { const btn = host.querySelector(".tblbtn"); if (btn) btn.click(); }
 }

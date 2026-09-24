@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Suivi d'espace Snapdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Mêmes couleurs que la Tour de contrôle (marketing.html) */
+:root{
+  color-scheme: light;
+  --plane:#f2f4f1; --surface:#fcfcfb; --surface-2:#f7f8f4;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+  --grid:#e1e0d9; --rule:#c3c2b7; --hair:rgba(11,11,11,.10);
+  --accent:#2a78d6; --accent-wash:rgba(42,120,214,.10);
+  --good:#006300; --good-wash:rgba(12,163,12,.13); --crit:#d03b3b; --crit-wash:rgba(208,59,59,.12);
+  --muted-wash:rgba(137,135,129,.14);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#0c0d0c; --surface:#1a1a19; --surface-2:#141414;
+    --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+    --grid:#2c2c2a; --rule:#383835; --hair:rgba(255,255,255,.10);
+    --accent:#3987e5; --accent-wash:rgba(57,135,229,.16);
+    --good:#0ca30c; --good-wash:rgba(12,163,12,.18); --crit:#e05656; --crit-wash:rgba(208,59,59,.18);
+    --muted-wash:rgba(195,194,183,.14);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#0c0d0c; --surface:#1a1a19; --surface-2:#141414;
+  --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --grid:#2c2c2a; --rule:#383835; --hair:rgba(255,255,255,.10);
+  --accent:#3987e5; --accent-wash:rgba(57,135,229,.16);
+  --good:#0ca30c; --good-wash:rgba(12,163,12,.18); --crit:#e05656; --crit-wash:rgba(208,59,59,.18);
+  --muted-wash:rgba(195,194,183,.14);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:"Familjen Grotesk","IBM Plex Sans",system-ui,sans-serif; margin:0; text-wrap:balance}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+
+.topbar{position:sticky; top:0; z-index:40; background:color-mix(in srgb, var(--plane) 88%, transparent); backdrop-filter:saturate(1.4) blur(10px); border-bottom:1px solid var(--hair)}
+.topbar-in{max-width:1080px; margin:0 auto; padding:12px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.back{font-size:13px; color:var(--ink-2); text-decoration:none; border:1px solid var(--hair); border-radius:999px; padding:5px 12px; background:var(--surface)}
+.back:hover{border-color:var(--rule); color:var(--ink)}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand strong{font-family:"Familjen Grotesk",sans-serif; font-weight:700; font-size:17px}
+.brand span{font-size:12px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase}
+.sync{font-size:12.5px; color:var(--ink-2)}
+
+.wrap{max-width:1080px; margin:0 auto; padding:0 22px 80px}
+.head{padding:40px 0 24px; display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; border-bottom:1px solid var(--rule)}
+.eyebrow{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.head h1{font-size:clamp(30px,4.4vw,42px); font-weight:600; letter-spacing:-.025em; line-height:1.08; margin-top:4px}
+.period{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-2)}
+.period[hidden]{display:none}
+.period select{font:inherit; font-size:13.5px; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:8px; padding:6px 10px}
+
+.summary{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-top:22px}
+.tile{background:var(--surface); border:1px solid var(--hair); border-radius:12px; padding:15px 16px}
+.tile .lbl{font-size:12.5px; color:var(--ink-2)}
+.tile .val{font-family:"Familjen Grotesk",sans-serif; font-weight:600; font-size:30px; letter-spacing:-.02em; line-height:1.15; margin-top:6px}
+.tile .note{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+
+.groups{display:grid; gap:16px; margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); align-items:start}
+.card{background:var(--surface); border:1px solid var(--hair); border-radius:14px; padding:18px}
+.card h2{font-size:15.5px; font-weight:600; letter-spacing:-.01em; margin-bottom:6px}
+.items{list-style:none; margin:0; padding:0}
+.items li{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--grid); font-size:14px}
+.items li:first-child{border-top:none}
+.pill{flex:none; min-width:52px; text-align:center; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px; background:var(--muted-wash); color:var(--ink-3)}
+.pill.yes{background:var(--good-wash); color:var(--good)}
+.pill.no{background:var(--crit-wash); color:var(--crit)}
+.pill.count{background:var(--accent-wash); color:var(--accent); font-variant-numeric:tabular-nums}
+
+.banner{margin-top:22px; padding:12px 15px; border-radius:11px; font-size:13.5px; border:1px dashed var(--rule); color:var(--ink-2)}
+.banner b{color:var(--ink)}
+.banner[hidden]{display:none}
+.space-btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+.space-btn{display:inline-flex; gap:8px; text-decoration:none; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500}
+.space-btn:hover{border-color:var(--accent); color:var(--accent)}
+.space-btn::after{content:"→"; color:var(--ink-3)}
+footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--ink-3)}
+@media (max-width:700px){ .topbar{position:static} .period{margin-left:0} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="back" href="marketing.html#actions">← Tour de contrôle</a>
+    <div class="brand"><strong>Suivi d'espace</strong><span>Snapdesk</span></div>
+    <span class="sync" id="syncTxt">Chargement…</span>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="head">
+    <div>
+      <div class="eyebrow">Espace</div>
+      <h1 id="spaceName">—</h1>
+    </div>
+    <label class="period" id="periodBox" hidden>Mois
+      <select id="periodSel"></select>
+    </label>
+  </div>
+
+  <div class="banner" id="banner" hidden></div>
+  <div class="summary" id="summary"></div>
+  <div class="groups" id="groups"></div>
+  <div class="space-btns" id="otherSpaces"></div>
+
+  <footer id="foot">Source : Sheet des actions commerciales.</footer>
+</main>
+
+<script src="actions-data.js"></script>
+<script>
+"use strict";
+const SA = window.SnapActions;
+const $ = s => document.querySelector(s);
+function el(tag, attrs, kids) {
+  const n = document.createElement(tag);
+  for (const k in (attrs || {})) { const v = attrs[k]; if (v == null) continue; if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v); }
+  (kids || []).forEach(c => n.appendChild(c));
+  return n;
+}
+function banner(strong, rest) {
+  const b = $("#banner"); b.textContent = "";
+  if (!strong) { b.hidden = true; return; }
+  b.appendChild(el("b", { text: strong + " " })); if (rest) b.appendChild(document.createTextNode(rest));
+  b.hidden = false;
+}
+
+const id = new URLSearchParams(location.search).get("e");
+const espace = id ? SA.findEspace(id) : null;
+const ITEMS = [].concat.apply([], SA.SPACE_GROUPS.map(g => g.items));
+
+/* Les questions sont toujours affichées, même sans donnée : « — » = non renseigné */
+function render(month) {
+  const v = month ? month.values : {};
+  const sum = $("#summary"); sum.textContent = "";
+  const bools = ITEMS.filter(it => it.type === "bool");
+  const known = bools.filter(it => v[it.key] != null);
+  const yes = bools.filter(it => v[it.key] === true).length;
+  const visites = v.visites;
+  [
+    { lbl: "Actions réalisées", val: month && known.length ? yes + " / " + bools.length : "—", note: month ? (known.length < bools.length ? (bools.length - known.length) + " non renseignée(s)" : "") : "En attente de données" },
+    { lbl: "Visites", val: visites != null ? String(visites) : "—", note: month ? "sur " + month.label : "En attente de données" }
+  ].forEach(t => {
+    const n = el("div", { class: "tile" }, [el("div", { class: "lbl", text: t.lbl }), el("div", { class: "val", text: t.val })]);
+    if (t.note) n.appendChild(el("div", { class: "note", text: t.note }));
+    sum.appendChild(n);
+  });
+
+  const host = $("#groups"); host.textContent = "";
+  SA.SPACE_GROUPS.forEach(g => {
+    const ul = el("ul", { class: "items" });
+    g.items.forEach(it => {
+      const val = v[it.key];
+      let cls = "pill", txt = "—";
+      if (it.type === "count") { if (val != null) { cls += " count"; txt = String(val); } }
+      else if (val === true) { cls += " yes"; txt = "Oui"; }
+      else if (val === false) { cls += " no"; txt = "Non"; }
+      const pill = el("span", { class: cls, text: txt });
+      if (txt === "—") pill.title = "Non renseigné";
+      ul.appendChild(el("li", {}, [el("span", { text: it.label }), pill]));
+    });
+    host.appendChild(el("section", { class: "card" }, [el("h2", { text: g.title }), ul]));
+  });
+}
+
+function renderOthers() {
+  const host = $("#otherSpaces"); host.textContent = "";
+  SA.ESPACES.filter(e => e !== espace).forEach(e => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(e), text: e.nom })));
+}
+
+async function boot() {
+  renderOthers();
+  if (!espace) {
+    $("#spaceName").textContent = id ? "Espace introuvable" : "Choisissez un espace";
+    document.title = "Suivi d'espace Snapdesk";
+    $("#syncTxt").textContent = "";
+    render(null);
+    banner(id ? "Cet espace n'est pas dans la liste." : "Aucun espace sélectionné.",
+      SA.ESPACES.length ? "Choisissez-en un ci-dessous." : "La liste des espaces n'est pas encore renseignée.");
+    return;
+  }
+  $("#spaceName").textContent = espace.nom;
+  document.title = espace.nom + " · Suivi Snapdesk";
+  render(null);
+  let res;
+  try { res = await SA.loadSpace(espace.nom); }
+  catch (e) {
+    $("#syncTxt").textContent = "Lecture impossible";
+    banner("Le Sheet des actions n'a pas pu être lu.", String(e && e.message || e));
+    return;
+  }
+  if (res.status === "not_connected") {
+    $("#syncTxt").textContent = "Sheet non connecté";
+    banner("Pas encore de données.", "Le Sheet des actions n'est pas encore connecté : les questions s'afficheront avec leurs réponses dès qu'il le sera.");
+    return;
+  }
+  $("#syncTxt").textContent = "À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const url = SA.sheetUrl();
+  if (url) { const f = $("#foot"); f.textContent = "Source : "; f.appendChild(el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Sheet des actions commerciales" })); }
+  if (!res.months.length) { banner("Rien de saisi pour cet espace.", "Ajoutez une ligne à son nom dans le Sheet des actions."); return; }
+  /* le mois le plus récent (dernière ligne saisie) est affiché par défaut */
+  const sel = $("#periodSel"); sel.textContent = "";
+  res.months.forEach((m, i) => sel.appendChild(el("option", { value: String(i), text: m.label })));
+  sel.value = String(res.months.length - 1);
+  sel.onchange = () => render(res.months[+sel.value]);
+  $("#periodBox").hidden = res.months.length < 2;
+  render(res.months[res.months.length - 1]);
+}
+boot();
+</script>
+</body>
+</html>

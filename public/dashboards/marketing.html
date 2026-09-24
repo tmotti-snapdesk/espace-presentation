@@ -184,21 +184,15 @@ td.sim::after{content:"°"; color:var(--ink-3); margin-left:2px}
 footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--ink-3); display:flex; gap:14px; flex-wrap:wrap}
 .hit{cursor:default}
 /* ---------- actions par espace ---------- */
-.act-card h3{display:flex; align-items:baseline; gap:8px}
-.act-count{font-family:"IBM Plex Sans",sans-serif; font-size:12px; font-weight:500; color:var(--ink-3)}
-.act-list{list-style:none; margin:10px 0 0; padding:0}
-.act-list li{padding:10px 0; border-top:1px solid var(--grid)}
-.act-list li:first-child{border-top:none; padding-top:2px}
-.act-title{display:flex; align-items:baseline; gap:10px; justify-content:space-between; font-size:14px; color:var(--ink)}
-.act-meta{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:3px; font-size:12.5px; color:var(--ink-2)}
-.act-meta b{font-weight:500; color:var(--ink-3)}
-.status{flex:none; font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; font-weight:500; background:var(--sim-bg); color:var(--sim-ink)}
-.status.done{background:rgba(12,163,12,.14); color:var(--good)}
-.status.doing{background:var(--accent-wash); color:var(--accent)}
-.status.late{background:rgba(208,59,59,.14); color:var(--crit)}
-#actions .kpis:empty, #actions .grid:empty{display:none}
-.act-empty{margin-top:20px}
-.act-empty code{font-size:12.5px; background:var(--surface-2); border:1px solid var(--hair); border-radius:5px; padding:1px 6px}
+.space-btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:20px}
+.space-btn{
+  display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink);
+  background:var(--surface); border:1px solid var(--hair); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500;
+}
+.space-btn:hover{border-color:var(--accent); color:var(--accent)}
+.space-btn::after{content:"→"; color:var(--ink-3)}
+.space-btn:hover::after{color:var(--accent)}
+.act-empty{padding:14px 16px; border:1px dashed var(--rule); border-radius:12px; font-size:13.5px; color:var(--ink-2)}
 .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 </style>
 
@@ -273,11 +267,11 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
 
   <section id="actions">
     <div class="sec-head">
-      <h2>Les actions par espaces</h2>
-      <p>Ce qui a été lancé, ou reste à lancer, espace par espace.</p>
+      <h2>Les actions par espaces</h2><span class="tabref">Sheet des actions</span>
+      <p>Chaque espace a sa page de suivi. En dessous, l'effort commercial de la semaine, tous espaces confondus.</p>
     </div>
-    <div class="kpis" id="actKpis"></div>
-    <div class="grid two" id="actGrid"></div>
+    <div class="space-btns" id="spaceBtns"></div>
+    <div class="grid" id="actGrid"></div>
   </section>
 
   <div class="note" id="methodo"></div>
@@ -437,6 +431,7 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
 |  |  |  |  |  |  |  |  | 0 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 </script>
 
+<script src="actions-data.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -1287,6 +1282,7 @@ function renderAll(model) {
   renderVisites(model);
   renderSocial(model);
   renderMethodo(model);
+  if (typeof renderWeekChart === "function") renderWeekChart();
 }
 function extraGrid(sectionId, two) {
   const g = el("div", { class: "grid js-extra" + (two ? " two" : "") });
@@ -1669,72 +1665,48 @@ function setBanner(strong, rest) {
 const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
 /* ============================================================
-   Les actions par espaces — saisies ici, sans lien avec le Google Sheet.
-   Pour ajouter une action : copier une ligne { ... } et la modifier.
-   statut : "À faire", "En cours", "Fait" ou "En retard" (couleur automatique).
+   Les actions par espaces — lit uniquement le Sheet des actions
+   (actions-data.js), jamais le Sheet du reporting ci-dessus.
    ============================================================ */
-const ACTIONS_PAR_ESPACE = [
-  // { espace: "Nom de l'espace", action: "Description de l'action", statut: "En cours", date: "septembre 2026", responsable: "Prénom" },
-];
-const norm = str => String(str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-function groupActions(list) {
-  const groups = []; const byName = {};
-  list.forEach(a => {
-    if (!a || !a.espace || !a.action) return;
-    if (!byName[a.espace]) { byName[a.espace] = { name: a.espace, items: [] }; groups.push(byName[a.espace]); }
-    const meta = [];
-    if (a.date) meta.push({ label: "Date", value: a.date });
-    if (a.responsable) meta.push({ label: "Responsable", value: a.responsable });
-    if (a.note) meta.push({ label: "Note", value: a.note });
-    byName[a.espace].items.push({ action: a.action, status: a.statut || "", meta: meta });
-  });
-  return { groups: groups, hasStatus: list.some(a => a && a.statut) };
-}
-function statusClass(st) {
-  const n = norm(st);
-  if (/^(fait|termine|fini|ok|done|realise|valide)/.test(n)) return "done";
-  if (/(retard|bloque|urgent|annule)/.test(n)) return "late";
-  if (/^(en cours|encours|lance|demarre|doing|in progress)/.test(n)) return "doing";
-  return "";
-}
-function renderActions(data, why) {
-  const kp = $("#actKpis"), grid = $("#actGrid");
-  kp.textContent = ""; grid.textContent = "";
-  $("#actions .act-empty") && $("#actions .act-empty").remove();
-  if (!data || !data.groups.length) {
-    const box = el("div", { class: "note act-empty" });
-    box.appendChild(el("strong", { text: why || "Aucune action renseignée pour l'instant." }));
-    $("#actions").appendChild(box);
+const SA = window.SnapActions;
+let WEEKS = { status: "loading", weeks: [] };
+function renderSpaceButtons() {
+  const host = $("#spaceBtns"); host.textContent = "";
+  if (!SA.ESPACES.length) {
+    host.appendChild(el("div", { class: "act-empty", text: "Les boutons des espaces apparaîtront ici dès que la liste des espaces sera renseignée." }));
     return;
   }
-  const all = [].concat.apply([], data.groups.map(g => g.items));
-  tile(kp, { label: "Espaces suivis", value: fmtInt(data.groups.length) });
-  tile(kp, { label: "Actions", value: fmtInt(all.length) });
-  if (data.hasStatus) {
-    const done = all.filter(i => statusClass(i.status) === "done").length;
-    const doing = all.filter(i => statusClass(i.status) === "doing").length;
-    tile(kp, { label: "Terminées", value: fmtInt(done), note: all.length ? fmtPct(done / all.length * 100, 0) + " du total" : "" });
-    tile(kp, { label: "En cours", value: fmtInt(doing) });
-  }
-  data.groups.forEach(g => {
-    const ul = el("ul", { class: "act-list" });
-    g.items.forEach(it => {
-      const li = el("li");
-      const top = el("div", { class: "act-title" }, [el("span", { text: it.action })]);
-      if (it.status) top.appendChild(el("span", { class: "status " + statusClass(it.status), text: it.status }));
-      li.appendChild(top);
-      if (it.meta.length) {
-        const m = el("div", { class: "act-meta" });
-        it.meta.forEach(x => { const s1 = el("span"); s1.appendChild(el("b", { text: x.label + " : " })); s1.appendChild(document.createTextNode(x.value)); m.appendChild(s1); });
-        li.appendChild(m);
-      }
-      ul.appendChild(li);
-    });
-    const c = card(grid, { title: g.name, body: ul });
-    c.classList.add("act-card");
-    c.querySelector("h3").appendChild(el("span", { class: "act-count", text: g.items.length + (g.items.length > 1 ? " actions" : " action") }));
+  SA.ESPACES.forEach(e => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(e), text: e.nom })));
+}
+function renderWeekChart() {
+  const host = $("#actGrid"); host.textContent = "";
+  const M = SA.WEEK_METRICS;
+  const weeks = WEEKS.weeks;
+  const cur = weeks[weeks.length - 1] || null, prev = weeks[weeks.length - 2] || null;
+  const chips = [];
+  if (WEEKS.status === "not_connected") chips.push({ text: "Sheet non connecté" });
+  else if (WEEKS.status === "loading") chips.push({ text: "Chargement…" });
+  else if (WEEKS.status === "error") chips.push({ text: "Lecture impossible", err: true });
+  else if (!cur) chips.push({ text: "Aucune semaine saisie" });
+  const series = [{ name: cur ? cur.label : "Semaine en cours", color: "var(--s1)" }];
+  if (prev) series.push({ name: prev.label, color: "var(--dim)" });
+  const rows = M.map(m => ({ label: m.label, values: series.map((_, si) => { const wk = si === 0 ? cur : prev; return wk ? wk.values[m.key] : null; }) }));
+  card(host, {
+    title: "Les actions de la semaine",
+    chips: chips,
+    caption: cur ? (prev ? "Semaine « " + cur.label + " » comparée à la précédente." : "Semaine « " + cur.label + " ».")
+      : "Mails envoyés, clics sur les mails, calls, visites et panneaux placés — tous espaces confondus.",
+    render: w => hGroupedBars(w, { series: series, rows: rows, labelAll: true, labelW: 150, aria: "Les actions de la semaine" }),
+    legend: series.length > 1 ? series.map(se => ({ name: se.name, color: se.color })) : null,
+    table: weeks.length ? { head: ["Semaine"].concat(M.map(m => m.label)), rows: weeks.slice().reverse().map(wk => [wk.label].concat(M.map(m => wk.values[m.key]))) } : null
   });
 }
+async function readActions() {
+  try { WEEKS = await SA.loadWeeks(); }
+  catch (e) { WEEKS = { status: "error", weeks: [], error: e }; }
+  renderWeekChart();
+}
+renderSpaceButtons();
 
 /* -- instantané embarqué : la page est lisible avant toute connexion -- */
 const SNAPSHOT = document.getElementById("snapshot").textContent;
@@ -1750,7 +1722,6 @@ function bootSnapshot() {
   }
 }
 bootSnapshot();
-renderActions(groupActions(ACTIONS_PAR_ESPACE));
 
 const SRC = $("#srcLine");
 SRC.textContent = "";
@@ -1789,6 +1760,7 @@ async function readSheet(manual) {
   if (polling) return;
   polling = true;
   setSync("warn", liveOnce ? "Relecture du Sheet…" : "Lecture du Sheet…");
+  readActions();
   try {
     const blocks = await fetchSheetBlocks();
     applyBlocks(blocks, Date.now(), false, "csv");
@@ -1875,6 +1847,7 @@ function handleMcpErr(err) {
    ------------------------------------------------------------ */
 (async function connect() {
   if (window.claude && typeof window.claude.use === "function") {
+    readActions();
     setSync("warn", "Connexion à Google Drive…");
     try { MCP = await window.claude.use("mcp"); } catch (e) { MCP = null; }
     if (MCP) {

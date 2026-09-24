@@ -9,12 +9,9 @@
 window.SnapActions = (function () {
   "use strict";
 
-  /* ---- 1. Connexion au Google Sheet des espaces ----
-     gid : numéro de l'onglet (dans l'adresse, après « gid= »). Vide = premier onglet.
-     Le Sheet doit être partagé en « Tout le monde avec le lien », rôle Lecteur. */
+  /* ---- 1. Google Sheet des espaces (« Pilotage Bizdev »), lu en lecture seule ---- */
   const CONFIG = {
-    fileId: "1-jtOh2OcprjvKZ8tKnKzDYn-KqfJ9M72JAzl8r-fgSI",
-    gid: ""
+    fileId: "1-jtOh2OcprjvKZ8tKnKzDYn-KqfJ9M72JAzl8r-fgSI"
   };
 
   /* ---- 2. Colonnes lues (lettre de colonne dans le Sheet) — les seules utilisées ---- */
@@ -74,32 +71,21 @@ window.SnapActions = (function () {
   }
   const sameMonth = (a, b) => !!a && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
   const fmtDate = d => d ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
-  function parseCSV(text) {
-    const src = String(text).replace(/\r\n?/g, "\n");
-    const rows = []; let row = [], field = "", q = false;
-    for (let i = 0; i < src.length; i++) {
-      const c = src[i];
-      if (q) { if (c === '"') { if (src[i + 1] === '"') { field += '"'; i++; } else q = false; } else field += c; }
-      else if (c === '"') q = true;
-      else if (c === ",") { row.push(field); field = ""; }
-      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-      else field += c;
-    }
-    if (field.length || row.length) { row.push(field); rows.push(row); }
-    return rows.map(r => r.map(c => c.trim()));
-  }
-  const sheetUrl = () => "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/edit" + (CONFIG.gid ? "#gid=" + CONFIG.gid : "");
+  const sheetUrl = () => "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/edit";
 
   function sheetError(code, status) { const e = new Error(code); e.code = code; e.status = status; return e; }
+  /* Le Sheet reste privé : il est lu côté serveur par /api/espaces-sheet (lecture seule,
+     avec le compte Google du propriétaire), qui ne renvoie que les 10 colonnes ci-dessus. */
+  const API_URL = "/api/espaces-sheet";
   async function fetchRows() {
-    const url = "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/export?format=csv" + (CONFIG.gid ? "&gid=" + CONFIG.gid : "") + "&_=" + Date.now();
     let r;
-    try { r = await fetch(url, { cache: "no-store", credentials: "omit" }); }
+    try { r = await fetch(API_URL + "?_=" + Date.now(), { cache: "no-store", credentials: "same-origin" }); }
     catch (e) { throw sheetError("network"); }
-    const body = await r.text();
-    /* Google répond par une page de connexion (HTML) quand le Sheet n'est pas partagé */
-    if (!r.ok || /^\s*</.test(body)) throw sheetError(r.status === 404 ? "missing" : "denied", r.status);
-    return parseCSV(body);
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !Array.isArray(data.rows)) {
+      throw sheetError(data && data.error === "not_configured" ? "not_configured" : r.status === 404 ? "missing" : "denied", r.status);
+    }
+    return data.rows.map(row => row.map(c => String(c == null ? "" : c).trim()));
   }
 
   /* Une ligne est un espace si sa colonne G est remplie et qu'elle porte au moins un chiffre

@@ -1672,9 +1672,10 @@ const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", m
 const SA = window.SnapActions;
 let ACTS = { status: "loading", spaces: [] };
 const ACT_ERRORS = {
-  denied: "Le Sheet des espaces n'est pas partagé en lecture : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur.",
+  not_configured: "La lecture du Sheet des espaces n'est pas encore activée sur le site (accès Google à renseigner dans Vercel).",
+  denied: "Google refuse la lecture du Sheet des espaces : l'accès renseigné dans Vercel a expiré ou n'a plus les droits.",
   missing: "Le Sheet des espaces est introuvable (supprimé, ou identifiant changé).",
-  network: "Le Sheet des espaces est illisible : soit il n'est pas partagé en lecture (Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur), soit la connexion est coupée."
+  network: "Le Sheet des espaces est injoignable pour le moment : nouvelle tentative dans une minute."
 };
 function renderSpaceButtons() {
   const host = $("#spaceBtns"); host.textContent = "";

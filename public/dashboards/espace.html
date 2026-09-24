@@ -197,9 +197,10 @@ function renderOthers(spaces, current) {
   spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.label })));
 }
 const ERRORS = {
-  denied: ["Le Sheet des espaces n'est pas lisible.", "Il doit être partagé : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur."],
+  not_configured: ["Lecture du Sheet pas encore activée.", "L'accès Google en lecture seule doit être renseigné dans Vercel."],
+  denied: ["Google refuse la lecture du Sheet des espaces.", "L'accès renseigné dans Vercel a expiré ou n'a plus les droits."],
   missing: ["Le Sheet des espaces est introuvable.", "Il a été supprimé, ou son identifiant a changé."],
-  network: ["Le Sheet des espaces est illisible.", "Soit il n'est pas partagé en lecture (Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur), soit la connexion est coupée."]
+  network: ["Le Sheet des espaces est injoignable.", "Nouvelle tentative automatique dans une minute."]
 };
 async function boot() {
   render(null);

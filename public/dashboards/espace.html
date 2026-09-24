@@ -121,7 +121,7 @@ footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font
   <div class="groups" id="groups"></div>
   <div class="space-btns" id="otherSpaces"></div>
 
-  <footer id="foot">Source : Sheet des espaces.</footer>
+  <footer id="foot">Source : onglet « Copie du Pilotage ».</footer>
 </main>
 
 <script src="actions-data.js"></script>
@@ -179,10 +179,11 @@ function renderOthers(spaces, current) {
   spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.label })));
 }
 const ERRORS = {
-  not_configured: ["Lecture du Sheet pas encore activée.", "L'accès Google en lecture seule doit être renseigné dans Vercel."],
-  denied: ["Google refuse la lecture du Sheet des espaces.", "L'accès renseigné dans Vercel a expiré ou n'a plus les droits."],
-  missing: ["Le Sheet des espaces est introuvable.", "Il a été supprimé, ou son identifiant a changé."],
-  network: ["Le Sheet des espaces est injoignable.", "Nouvelle tentative automatique dans une minute."]
+  denied: ["Le Sheet n'est plus lisible par lien.", "Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur."],
+  missing_tab: ["L'onglet « Copie du Pilotage » est introuvable.", "Il a été supprimé ou recréé."],
+  format: ["La colonne « Espace » est introuvable.", "Vérifiez l'en-tête de l'onglet « Copie du Pilotage »."],
+  missing: ["Le Sheet est introuvable.", "Il a été supprimé, ou son identifiant a changé."],
+  network: ["Le Sheet est injoignable.", "Nouvelle tentative automatique dans une minute."]
 };
 async function boot() {
   render(null);
@@ -197,7 +198,7 @@ async function boot() {
   }
   $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const f = $("#foot"); f.textContent = "Source : ";
-  f.appendChild(el("a", { href: SA.sheetUrl(), target: "_blank", rel: "noopener noreferrer", text: "Sheet des espaces" }));
+  f.appendChild(el("a", { href: SA.sheetUrl(), target: "_blank", rel: "noopener noreferrer", text: "onglet « Copie du Pilotage »" }));
   const sp = id ? res.spaces.find(s => s.id === id) : null;
   renderOthers(res.spaces, sp);
   if (!sp) {

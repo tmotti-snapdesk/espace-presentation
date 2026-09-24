@@ -267,7 +267,7 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
 
   <section id="actions">
     <div class="sec-head">
-      <h2>Les actions par espaces</h2><span class="tabref">Sheet des espaces</span>
+      <h2>Les actions par espaces</h2><span class="tabref">Onglet Copie du Pilotage</span>
       <p>Un bouton par espace, vers sa page de suivi. En dessous, les actions de la semaine.</p>
     </div>
     <div class="space-btns" id="spaceBtns"></div>
@@ -1671,10 +1671,11 @@ const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", m
 const SA = window.SnapActions;
 let ACTS = { status: "loading", spaces: [] };
 const ACT_ERRORS = {
-  not_configured: "La lecture du Sheet des espaces n'est pas encore activée sur le site (accès Google à renseigner dans Vercel).",
-  denied: "Google refuse la lecture du Sheet des espaces : l'accès renseigné dans Vercel a expiré ou n'a plus les droits.",
-  missing: "Le Sheet des espaces est introuvable (supprimé, ou identifiant changé).",
-  network: "Le Sheet des espaces est injoignable pour le moment : nouvelle tentative dans une minute."
+  denied: "Le Sheet n'est plus lisible par lien : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur.",
+  missing: "Le Sheet est introuvable (supprimé, ou identifiant changé).",
+  missing_tab: "L'onglet « Copie du Pilotage » est introuvable (supprimé ou recréé).",
+  format: "Dans l'onglet « Copie du Pilotage », la colonne « Espace » est introuvable.",
+  network: "Le Sheet est injoignable pour le moment : nouvelle tentative dans une minute."
 };
 function renderSpaceButtons() {
   const host = $("#spaceBtns"); host.textContent = "";
@@ -1682,6 +1683,7 @@ function renderSpaceButtons() {
   if (ACTS.status === "error") { host.appendChild(el("div", { class: "act-empty", text: ACT_ERRORS[ACTS.code] || ACT_ERRORS.network })); return; }
   if (!ACTS.spaces.length) { host.appendChild(el("div", { class: "act-empty", text: "Aucun espace trouvé dans le Sheet (colonne G)." })); return; }
   ACTS.spaces.forEach(sp => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(sp), text: sp.label })));
+  if (ACTS.missing && ACTS.missing.length) host.appendChild(el("div", { class: "act-empty", style: "flex-basis:100%", text: "Colonnes absentes de l'onglet « Copie du Pilotage » (affichées « — ») : " + ACTS.missing.join(", ") + "." }));
 }
 function renderWeekChart() {
   const host = $("#actGrid");
@@ -1697,7 +1699,7 @@ function renderWeekChart() {
   card(host, {
     title: "Les actions de la semaine",
     chips: chips,
-    caption: "Nombre d'espaces ayant reçu chaque action, selon les dates des colonnes W, X, Y et AA (semaine du lundi au dimanche).",
+    caption: "Nombre d'espaces ayant reçu chaque action cette semaine (du lundi au dimanche), selon les dates « Dernier Mail Leads », « Dernier Mail MAILJET », « Campagne LinkedIn » et « Diffusion Brokers ».",
     render: w => hGroupedBars(w, { series: series, rows: wk.map(a => ({ label: a.label, values: ok ? [a.thisWeek, a.lastWeek] : [null, null] })), labelAll: true, labelW: 150, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Les actions de la semaine" }),
     legend: series,
     table: ok ? { head: ["Espace", "Jours sur le marché", "Visites", "Prix", "Responsable", "Dernier mail leads", "Dernier mail Mailjet", "Campagne LinkedIn", "Diffusion broker", "Panneau"],
@@ -1751,7 +1753,7 @@ const SRC = $("#srcLine");
 SRC.textContent = "";
 SRC.appendChild(document.createTextNode("Source : "));
 SRC.appendChild(el("a", { href: SHEET_URL, target: "_blank", rel: "noopener noreferrer", text: "le Google Sheet" }));
-SRC.appendChild(document.createTextNode(" · onglets " + TABS.map(t => t.name).join(", ")));
+SRC.appendChild(document.createTextNode(" · onglets " + TABS.map(t => t.name).concat("Copie du Pilotage").join(", ")));
 
 /* -- application d'une lecture, quelle que soit sa provenance -- */
 function applyBlocks(blocks, ts, revalidating, how) {

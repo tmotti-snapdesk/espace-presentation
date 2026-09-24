@@ -3,76 +3,76 @@
    Utilisé par : marketing.html (bloc « Les actions par espaces »)
                  espace.html (page dédiée à chaque espace)
    Ce second Google Sheet est distinct de celui du reporting growth :
-   il n'est lu que par le graphique des actions et par les pages espace.
+   il n'est lu que par ce bloc et par les pages espace.
+   Une ligne du Sheet = un espace.
    ============================================================ */
 window.SnapActions = (function () {
   "use strict";
 
-  /* ---- 1. Connexion au Google Sheet des actions (à remplir) ----
-     fileId    : l'identifiant du Sheet (dans son adresse, entre /d/ et /edit)
-     weeksGid  : le numéro « gid » de l'onglet des actions de la semaine
-     spacesGid : le numéro « gid » de l'onglet du suivi par espace
-     Tant que fileId est vide, les pages affichent « en attente de données ». */
+  /* ---- 1. Connexion au Google Sheet des espaces ----
+     gid : numéro de l'onglet (dans l'adresse, après « gid= »). Vide = premier onglet.
+     Le Sheet doit être partagé en « Tout le monde avec le lien », rôle Lecteur. */
   const CONFIG = {
-    fileId: "",
-    weeksGid: "",
-    spacesGid: ""
+    fileId: "1-jtOh2OcprjvKZ8tKnKzDYn-KqfJ9M72JAzl8r-fgSI",
+    gid: ""
   };
 
-  /* ---- 2. Les espaces (un bouton + une page chacun) ----
-     id  : identifiant court, sans espace ni accent (sert dans l'adresse de la page)
-     nom : nom affiché, et tel qu'écrit dans la colonne « Espace » du Sheet */
-  const ESPACES = [
-    // { id: "opera", nom: "Espace Opéra" },
+  /* ---- 2. Colonnes lues (lettre de colonne dans le Sheet) — les seules utilisées ---- */
+  const COLS = {
+    jours:       "A",   // nombre de jours sur le marché
+    visites:     "D",   // nombre de visites
+    nom:         "G",   // nom de l'espace
+    prix:        "I",   // prix
+    responsable: "R",   // responsable de l'espace
+    mailLeads:   "W",   // date du dernier mail leads
+    mailjet:     "X",   // date du dernier mail Mailjet
+    linkedin:    "Y",   // date de la campagne LinkedIn
+    broker:      "AA",  // date de diffusion broker
+    panneau:     "AK"   // panneau oui / non
+  };
+
+  /* Actions datées : comptées dans « Les actions de la semaine » et dans les pages espace */
+  const DATED_ACTIONS = [
+    { key: "mailLeads", label: "Mail leads" },
+    { key: "mailjet",   label: "Mail Mailjet" },
+    { key: "linkedin",  label: "Campagne LinkedIn" },
+    { key: "broker",    label: "Diffusion broker" }
   ];
 
-  /* ---- 3. Indicateurs du graphique « Les actions de la semaine » ---- */
-  const WEEK_METRICS = [
-    { key: "mails",    label: "Mails envoyés",      re: /mail/ },
-    { key: "clics",    label: "Clics sur les mails", re: /clic/ },
-    { key: "calls",    label: "Calls",               re: /call|appel/ },
-    { key: "visites",  label: "Visites",             re: /visite/ },
-    { key: "panneaux", label: "Panneaux placés",     re: /panneau/ }
-  ];
-
-  /* ---- 4. Questions de la page espace, par thème ----
-     type "bool"  : oui / non
-     type "count" : un nombre */
-  const SPACE_GROUPS = [
-    { title: "Communication", items: [
-      { key: "mail",      label: "Un mail a été envoyé ce mois-ci",   type: "bool",  re: /^mail/ },
-      { key: "linkedin",  label: "Post LinkedIn",                     type: "bool",  re: /post.*(linkedin|lk)/ },
-      { key: "instagram", label: "Post Instagram",                    type: "bool",  re: /post.*(instagram|insta)/ }
-    ] },
-    { title: "Prospection et demandes entrantes", items: [
-      { key: "coldcall",  label: "Cold call",                         type: "bool",  re: /cold\s*call/ },
-      { key: "prospect",  label: "Un prospect nous a contactés",      type: "bool",  re: /prospect/ },
-      { key: "broker",    label: "Un broker nous a contactés",        type: "bool",  re: /broker/ },
-      { key: "visites",   label: "Nombre de visites",                 type: "count", re: /visite/ }
-    ] },
-    { title: "Visibilité et publicité", items: [
-      { key: "panneau",   label: "Panneau posé",                      type: "bool",  re: /panneau/ },
-      { key: "meta",      label: "Pub Meta",                          type: "bool",  re: /meta|facebook/ },
-      { key: "pubLk",     label: "Pub LinkedIn",                      type: "bool",  re: /pub.*(linkedin|lk)/ },
-      { key: "gads",      label: "Google Ads",                        type: "bool",  re: /google/ }
-    ] }
-  ];
 
   /* ---- utilitaires ---- */
+  const colIndex = letters => letters.toUpperCase().split("").reduce((n, c) => n * 26 + (c.charCodeAt(0) - 64), 0) - 1;
   const norm = str => String(str || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
   const slug = str => norm(str).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   function num(v) {
-    const c = String(v == null ? "" : v).replace(/[\s  ]/g, "").replace(",", ".");
+    const c = String(v == null ? "" : v).replace(/[\s  €]/g, "").replace(",", ".");
     if (!/^-?\d*\.?\d+$/.test(c)) return null;
     const f = parseFloat(c); return Number.isFinite(f) ? f : null;
   }
   function bool(v) {
     const n = norm(v);
     if (!n) return null;
-    if (/^(oui|yes|y|x|1|true|vrai|ok|fait|✓|✔)$/.test(n)) return true;
-    if (/^(non|no|n|0|false|faux|-)$/.test(n)) return false;
-    return num(n) != null ? num(n) > 0 : true;
+    if (/^(oui|yes|y|x|1|true|vrai|ok|✓|✔)/.test(n)) return true;
+    if (/^(non|no|n|0|false|faux|-|aucun)/.test(n)) return false;
+    return null;
   }
+  /* Dates acceptées : 12/09/2026, 12/09/26, 12-09-2026, 2026-09-12 */
+  function parseDate(v) {
+    const s = String(v || "").trim();
+    let m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/.exec(s);
+    if (m) { let y = +m[3]; if (y < 100) y += 2000; const d = new Date(y, +m[2] - 1, +m[1]); return isNaN(d) ? null : d; }
+    m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+    if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d) ? null : d; }
+    return null;
+  }
+  function startOfWeek(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  /* 0 = semaine en cours (lundi → dimanche), 1 = semaine dernière, etc. */
+  function weeksAgo(date, now) {
+    if (!date) return null;
+    return Math.round((startOfWeek(now) - startOfWeek(date)) / (7 * 864e5));
+  }
+  const sameMonth = (a, b) => !!a && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  const fmtDate = d => d ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
   function parseCSV(text) {
     const src = String(text).replace(/\r\n?/g, "\n");
     const rows = []; let row = [], field = "", q = false;
@@ -87,75 +87,73 @@ window.SnapActions = (function () {
     if (field.length || row.length) { row.push(field); rows.push(row); }
     return rows.map(r => r.map(c => c.trim()));
   }
-  const connected = () => !!(CONFIG.fileId && CONFIG.weeksGid !== "" && CONFIG.spacesGid !== "");
-  const sheetUrl = () => CONFIG.fileId ? "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/edit" : null;
+  const sheetUrl = () => "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/edit" + (CONFIG.gid ? "#gid=" + CONFIG.gid : "");
 
-  async function fetchTab(gid) {
-    const url = "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/export?format=csv&gid=" + gid + "&_=" + Date.now();
-    const r = await fetch(url, { cache: "no-store", credentials: "omit" });
+  function sheetError(code, status) { const e = new Error(code); e.code = code; e.status = status; return e; }
+  async function fetchRows() {
+    const url = "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/export?format=csv" + (CONFIG.gid ? "&gid=" + CONFIG.gid : "") + "&_=" + Date.now();
+    let r;
+    try { r = await fetch(url, { cache: "no-store", credentials: "omit" }); }
+    catch (e) { throw sheetError("network"); }
     const body = await r.text();
-    if (!r.ok || /^\s*</.test(body)) throw new Error("Sheet des actions illisible (" + r.status + ")");
+    /* Google répond par une page de connexion (HTML) quand le Sheet n'est pas partagé */
+    if (!r.ok || /^\s*</.test(body)) throw sheetError(r.status === 404 ? "missing" : "denied", r.status);
     return parseCSV(body);
   }
-  /* Repère la ligne d'en-tête : la première qui contient la colonne attendue */
-  function headerIndex(rows, re) { return rows.findIndex(r => r.some(c => re.test(norm(c)))); }
-  function mapColumns(head, defs, skip) {
-    const cols = {};
-    defs.forEach(d => {
-      const i = head.findIndex((c, ci) => skip.indexOf(ci) < 0 && d.re.test(norm(c)));
-      if (i >= 0) cols[d.key] = i;
+
+  /* Une ligne est un espace si sa colonne G est remplie et qu'elle porte au moins un chiffre
+     dans A (jours) ou D (visites) — ce qui écarte les lignes de titre et d'en-tête. */
+  function toSpace(row, now) {
+    const get = k => row[colIndex(COLS[k])] || "";
+    const nom = get("nom");
+    if (!nom) return null;
+    const jours = num(get("jours")), visites = num(get("visites"));
+    if (jours == null && visites == null && !parseDate(get("mailLeads")) && !parseDate(get("mailjet"))) return null;
+    const sp = {
+      id: slug(nom), nom: nom, jours: jours, visites: visites,
+      prix: get("prix"), prixNum: num(get("prix")), responsable: get("responsable"),
+      panneau: bool(get("panneau")), panneauRaw: get("panneau"), dated: {}
+    };
+    DATED_ACTIONS.forEach(a => {
+      const raw = get(a.key), d = parseDate(raw);
+      sp.dated[a.key] = { raw: raw, date: d, weeksAgo: weeksAgo(d, now), thisMonth: sameMonth(d, now) };
     });
-    return cols;
+    return sp;
   }
 
-  /* Onglet « semaines » : une ligne par semaine — Semaine | Mails envoyés | Clics | Calls | Visites | Panneaux */
-  async function loadWeeks() {
-    if (!connected()) return { status: "not_connected", weeks: [] };
-    const rows = await fetchTab(CONFIG.weeksGid);
-    const h = headerIndex(rows, /^semaine/);
-    if (h < 0) throw new Error("colonne « Semaine » introuvable dans l'onglet des actions");
-    const wCol = rows[h].findIndex(c => /^semaine/.test(norm(c)));
-    const cols = mapColumns(rows[h], WEEK_METRICS, [wCol]);
-    const weeks = [];
-    for (let r = h + 1; r < rows.length; r++) {
-      const label = rows[r][wCol];
-      if (!label) continue;
-      const values = {};
-      WEEK_METRICS.forEach(m => { values[m.key] = cols[m.key] != null ? num(rows[r][cols[m.key]]) : null; });
-      if (WEEK_METRICS.every(m => values[m.key] == null)) continue;
-      weeks.push({ label: label, values: values });
-    }
-    return { status: "ok", weeks: weeks };
-  }
-
-  /* Onglet « espaces » : une ligne par espace et par mois — Espace | Mois | Mail | Post LinkedIn | … */
-  async function loadSpace(nom) {
-    if (!connected()) return { status: "not_connected", months: [] };
-    const rows = await fetchTab(CONFIG.spacesGid);
-    const h = headerIndex(rows, /^espaces?$/);
-    if (h < 0) throw new Error("colonne « Espace » introuvable dans l'onglet des espaces");
-    const head = rows[h];
-    const eCol = head.findIndex(c => /^espaces?$/.test(norm(c)));
-    const mCol = head.findIndex(c => /^(mois|periode|date)$/.test(norm(c)));
-    const items = [].concat.apply([], SPACE_GROUPS.map(g => g.items));
-    const cols = mapColumns(head, items, [eCol, mCol]);
-    const months = [];
-    for (let r = h + 1; r < rows.length; r++) {
-      if (norm(rows[r][eCol]) !== norm(nom)) continue;
-      const values = {};
-      items.forEach(it => {
-        const raw = cols[it.key] != null ? rows[r][cols[it.key]] : "";
-        values[it.key] = it.type === "count" ? num(raw) : bool(raw);
+  let cache = null;
+  function loadSpaces() {
+    if (!cache) cache = fetchRows().then(rows => {
+      const now = new Date(), seen = {};
+      const spaces = [];
+      rows.forEach(r => {
+        const sp = toSpace(r, now);
+        if (!sp) return;
+        let id = sp.id, k = 2;
+        while (seen[id]) id = sp.id + "-" + (k++);     /* deux espaces au même nom */
+        seen[id] = 1; sp.id = id;
+        spaces.push(sp);
       });
-      months.push({ label: mCol >= 0 ? rows[r][mCol] || "—" : "—", values: values });
-    }
-    return { status: "ok", months: months };
+      return { status: "ok", spaces: spaces, readAt: now };
+    });
+    cache.catch(() => { cache = null; });
+    return cache;
+  }
+  function refresh() { cache = null; return loadSpaces(); }
+
+  /* Graphique hebdo : pour chaque action datée, nombre d'espaces touchés cette semaine / la précédente */
+  function weekSummary(spaces) {
+    return DATED_ACTIONS.map(a => ({
+      key: a.key, label: a.label,
+      thisWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 0).length,
+      lastWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 1).length
+    }));
   }
 
   return {
-    CONFIG: CONFIG, ESPACES: ESPACES, WEEK_METRICS: WEEK_METRICS, SPACE_GROUPS: SPACE_GROUPS,
-    connected: connected, sheetUrl: sheetUrl, loadWeeks: loadWeeks, loadSpace: loadSpace,
-    espaceUrl: e => "espace.html?e=" + encodeURIComponent(e.id || slug(e.nom)),
-    findEspace: id => ESPACES.find(e => (e.id || slug(e.nom)) === id) || null
+    CONFIG: CONFIG, COLS: COLS, DATED_ACTIONS: DATED_ACTIONS,
+    loadSpaces: loadSpaces, refresh: refresh, weekSummary: weekSummary,
+    sheetUrl: sheetUrl, fmtDate: fmtDate,
+    espaceUrl: s => "espace.html?e=" + encodeURIComponent(s.id)
   };
 })();

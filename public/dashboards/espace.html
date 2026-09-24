@@ -81,6 +81,12 @@ a{color:var(--accent)}
 .pill{flex:none; min-width:52px; text-align:center; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px; background:var(--muted-wash); color:var(--ink-3)}
 .pill.yes{background:var(--good-wash); color:var(--good)}
 .pill.no{background:var(--crit-wash); color:var(--crit)}
+.items li > div{min-width:0}
+.items .sub{display:block; font-size:12.5px; color:var(--ink-3); margin-top:1px}
+.card.muted{background:transparent; border-style:dashed}
+.card.muted h2{color:var(--ink-2)}
+.card.muted .items li{color:var(--ink-3)}
+.head .who{margin-top:6px; color:var(--ink-2); font-size:14px}
 .pill.count{background:var(--accent-wash); color:var(--accent); font-variant-numeric:tabular-nums}
 
 .banner{margin-top:22px; padding:12px 15px; border-radius:11px; font-size:13.5px; border:1px dashed var(--rule); color:var(--ink-2)}
@@ -108,10 +114,8 @@ footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font
     <div>
       <div class="eyebrow">Espace</div>
       <h1 id="spaceName">—</h1>
+      <div class="who" id="who"></div>
     </div>
-    <label class="period" id="periodBox" hidden>Mois
-      <select id="periodSel"></select>
-    </label>
   </div>
 
   <div class="banner" id="banner" hidden></div>
@@ -119,7 +123,7 @@ footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font
   <div class="groups" id="groups"></div>
   <div class="space-btns" id="otherSpaces"></div>
 
-  <footer id="foot">Source : Sheet des actions commerciales.</footer>
+  <footer id="foot">Source : Sheet des espaces.</footer>
 </main>
 
 <script src="actions-data.js"></script>
@@ -139,87 +143,89 @@ function banner(strong, rest) {
   b.appendChild(el("b", { text: strong + " " })); if (rest) b.appendChild(document.createTextNode(rest));
   b.hidden = false;
 }
-
+const nf = new Intl.NumberFormat("fr-FR");
 const id = new URLSearchParams(location.search).get("e");
-const espace = id ? SA.findEspace(id) : null;
-const ITEMS = [].concat.apply([], SA.SPACE_GROUPS.map(g => g.items));
+const MONTH = new Date().toLocaleDateString("fr-FR", { month: "long" });
 
-/* Les questions sont toujours affichées, même sans donnée : « — » = non renseigné */
-function render(month) {
-  const v = month ? month.values : {};
+function line(label, sub, pillText, pillCls) {
+  const left = el("div", {}, [el("span", { text: label })]);
+  if (sub) left.appendChild(el("span", { class: "sub", text: sub }));
+  const pill = el("span", { class: "pill" + (pillCls ? " " + pillCls : ""), text: pillText });
+  return el("li", {}, [left, pill]);
+}
+/* Action datée : Oui si la date tombe dans le mois en cours */
+function datedLine(sp, key, label) {
+  const a = sp ? sp.dated[key] : null;
+  if (!a || (!a.date && !a.raw)) return line(label + " ce mois-ci", sp ? "Jamais renseigné" : "", sp ? "Non" : "—", sp ? "no" : "");
+  const sub = a.date ? "Dernier : " + SA.fmtDate(a.date) : "Saisi : « " + a.raw + " »";
+  if (!a.date) return line(label + " ce mois-ci", sub, "?", "");
+  return line(label + " ce mois-ci", sub, a.thisMonth ? "Oui" : "Non", a.thisMonth ? "yes" : "no");
+}
+function tileNode(lbl, val, note) {
+  const n = el("div", { class: "tile" }, [el("div", { class: "lbl", text: lbl }), el("div", { class: "val", text: val })]);
+  if (note) n.appendChild(el("div", { class: "note", text: note }));
+  return n;
+}
+function render(sp) {
   const sum = $("#summary"); sum.textContent = "";
-  const bools = ITEMS.filter(it => it.type === "bool");
-  const known = bools.filter(it => v[it.key] != null);
-  const yes = bools.filter(it => v[it.key] === true).length;
-  const visites = v.visites;
-  [
-    { lbl: "Actions réalisées", val: month && known.length ? yes + " / " + bools.length : "—", note: month ? (known.length < bools.length ? (bools.length - known.length) + " non renseignée(s)" : "") : "En attente de données" },
-    { lbl: "Visites", val: visites != null ? String(visites) : "—", note: month ? "sur " + month.label : "En attente de données" }
-  ].forEach(t => {
-    const n = el("div", { class: "tile" }, [el("div", { class: "lbl", text: t.lbl }), el("div", { class: "val", text: t.val })]);
-    if (t.note) n.appendChild(el("div", { class: "note", text: t.note }));
-    sum.appendChild(n);
-  });
+  const doneMonth = sp ? SA.DATED_ACTIONS.filter(a => sp.dated[a.key].thisMonth).length : null;
+  sum.appendChild(tileNode("Jours sur le marché", sp && sp.jours != null ? nf.format(sp.jours) + " j" : "—"));
+  sum.appendChild(tileNode("Visites", sp && sp.visites != null ? nf.format(sp.visites) : "—"));
+  sum.appendChild(tileNode("Prix", sp && sp.prix ? (sp.prixNum != null && !/€/.test(sp.prix) ? nf.format(sp.prixNum) + " €" : sp.prix) : "—"));
+  sum.appendChild(tileNode("Actions en " + MONTH, sp ? doneMonth + " / " + SA.DATED_ACTIONS.length : "—", "mails, LinkedIn, diffusion broker"));
 
   const host = $("#groups"); host.textContent = "";
-  SA.SPACE_GROUPS.forEach(g => {
-    const ul = el("ul", { class: "items" });
-    g.items.forEach(it => {
-      const val = v[it.key];
-      let cls = "pill", txt = "—";
-      if (it.type === "count") { if (val != null) { cls += " count"; txt = String(val); } }
-      else if (val === true) { cls += " yes"; txt = "Oui"; }
-      else if (val === false) { cls += " no"; txt = "Non"; }
-      const pill = el("span", { class: cls, text: txt });
-      if (txt === "—") pill.title = "Non renseigné";
-      ul.appendChild(el("li", {}, [el("span", { text: it.label }), pill]));
-    });
-    host.appendChild(el("section", { class: "card" }, [el("h2", { text: g.title }), ul]));
-  });
+  const card = (title, lines, muted) => host.appendChild(el("section", { class: "card" + (muted ? " muted" : "") }, [el("h2", { text: title }), el("ul", { class: "items" }, lines)]));
+  card("Communication", [
+    datedLine(sp, "mailLeads", "Mail leads"),
+    datedLine(sp, "mailjet", "Mail Mailjet"),
+    datedLine(sp, "linkedin", "Campagne LinkedIn")
+  ]);
+  const vis = sp && sp.visites != null;
+  card("Prospection", [
+    datedLine(sp, "broker", "Diffusion broker"),
+    line("Nombre de visites", "", vis ? nf.format(sp.visites) : "—", vis ? "count" : "")
+  ]);
+  const pan = sp ? sp.panneau : null;
+  card("Visibilité", [
+    line("Panneau posé", sp && pan == null && sp.panneauRaw ? "Saisi : « " + sp.panneauRaw + " »" : "", pan === true ? "Oui" : pan === false ? "Non" : "—", pan === true ? "yes" : pan === false ? "no" : "")
+  ]);
 }
 
-function renderOthers() {
+function renderOthers(spaces, current) {
   const host = $("#otherSpaces"); host.textContent = "";
-  SA.ESPACES.filter(e => e !== espace).forEach(e => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(e), text: e.nom })));
+  spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.nom })));
 }
-
+const ERRORS = {
+  denied: ["Le Sheet des espaces n'est pas lisible.", "Il doit être partagé : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur."],
+  missing: ["Le Sheet des espaces est introuvable.", "Il a été supprimé, ou son identifiant a changé."],
+  network: ["Le Sheet des espaces est illisible.", "Soit il n'est pas partagé en lecture (Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur), soit la connexion est coupée."]
+};
 async function boot() {
-  renderOthers();
-  if (!espace) {
-    $("#spaceName").textContent = id ? "Espace introuvable" : "Choisissez un espace";
-    document.title = "Suivi d'espace Snapdesk";
-    $("#syncTxt").textContent = "";
-    render(null);
-    banner(id ? "Cet espace n'est pas dans la liste." : "Aucun espace sélectionné.",
-      SA.ESPACES.length ? "Choisissez-en un ci-dessous." : "La liste des espaces n'est pas encore renseignée.");
-    return;
-  }
-  $("#spaceName").textContent = espace.nom;
-  document.title = espace.nom + " · Suivi Snapdesk";
   render(null);
   let res;
-  try { res = await SA.loadSpace(espace.nom); }
+  try { res = await SA.loadSpaces(); }
   catch (e) {
+    const c = ERRORS[e && e.code] || ERRORS.network;
     $("#syncTxt").textContent = "Lecture impossible";
-    banner("Le Sheet des actions n'a pas pu être lu.", String(e && e.message || e));
+    $("#spaceName").textContent = "—";
+    banner(c[0], c[1]);
     return;
   }
-  if (res.status === "not_connected") {
-    $("#syncTxt").textContent = "Sheet non connecté";
-    banner("Pas encore de données.", "Le Sheet des actions n'est pas encore connecté : les questions s'afficheront avec leurs réponses dès qu'il le sera.");
+  $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const f = $("#foot"); f.textContent = "Source : ";
+  f.appendChild(el("a", { href: SA.sheetUrl(), target: "_blank", rel: "noopener noreferrer", text: "Sheet des espaces" }));
+  const sp = id ? res.spaces.find(s => s.id === id) : null;
+  renderOthers(res.spaces, sp);
+  if (!sp) {
+    $("#spaceName").textContent = id ? "Espace introuvable" : "Choisissez un espace";
+    banner(id ? "Cet espace n'est plus dans le Sheet." : "Aucun espace sélectionné.", "Choisissez-en un ci-dessous.");
     return;
   }
-  $("#syncTxt").textContent = "À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  const url = SA.sheetUrl();
-  if (url) { const f = $("#foot"); f.textContent = "Source : "; f.appendChild(el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Sheet des actions commerciales" })); }
-  if (!res.months.length) { banner("Rien de saisi pour cet espace.", "Ajoutez une ligne à son nom dans le Sheet des actions."); return; }
-  /* le mois le plus récent (dernière ligne saisie) est affiché par défaut */
-  const sel = $("#periodSel"); sel.textContent = "";
-  res.months.forEach((m, i) => sel.appendChild(el("option", { value: String(i), text: m.label })));
-  sel.value = String(res.months.length - 1);
-  sel.onchange = () => render(res.months[+sel.value]);
-  $("#periodBox").hidden = res.months.length < 2;
-  render(res.months[res.months.length - 1]);
+  $("#spaceName").textContent = sp.nom;
+  $("#who").textContent = sp.responsable ? "Responsable : " + sp.responsable : "";
+  document.title = sp.nom + " · Suivi Snapdesk";
+  render(sp);
 }
 boot();
 </script>

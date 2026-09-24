@@ -267,10 +267,11 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
 
   <section id="actions">
     <div class="sec-head">
-      <h2>Les actions par espaces</h2><span class="tabref">Sheet des actions</span>
-      <p>Chaque espace a sa page de suivi. En dessous, l'effort commercial de la semaine, tous espaces confondus.</p>
+      <h2>Les actions par espaces</h2><span class="tabref">Sheet des espaces</span>
+      <p>Un bouton par espace du Sheet des espaces, vers sa page de suivi. En dessous, l'état du parc et les actions de la semaine.</p>
     </div>
     <div class="space-btns" id="spaceBtns"></div>
+    <div class="kpis" id="actKpis"></div>
     <div class="grid" id="actGrid"></div>
   </section>
 
@@ -1669,41 +1670,52 @@ const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", m
    (actions-data.js), jamais le Sheet du reporting ci-dessus.
    ============================================================ */
 const SA = window.SnapActions;
-let WEEKS = { status: "loading", weeks: [] };
+let ACTS = { status: "loading", spaces: [] };
+const ACT_ERRORS = {
+  denied: "Le Sheet des espaces n'est pas partagé en lecture : Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur.",
+  missing: "Le Sheet des espaces est introuvable (supprimé, ou identifiant changé).",
+  network: "Le Sheet des espaces est illisible : soit il n'est pas partagé en lecture (Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur), soit la connexion est coupée."
+};
 function renderSpaceButtons() {
   const host = $("#spaceBtns"); host.textContent = "";
-  if (!SA.ESPACES.length) {
-    host.appendChild(el("div", { class: "act-empty", text: "Les boutons des espaces apparaîtront ici dès que la liste des espaces sera renseignée." }));
-    return;
-  }
-  SA.ESPACES.forEach(e => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(e), text: e.nom })));
+  if (ACTS.status === "loading") { host.appendChild(el("div", { class: "act-empty", text: "Chargement des espaces…" })); return; }
+  if (ACTS.status === "error") { host.appendChild(el("div", { class: "act-empty", text: ACT_ERRORS[ACTS.code] || ACT_ERRORS.network })); return; }
+  if (!ACTS.spaces.length) { host.appendChild(el("div", { class: "act-empty", text: "Aucun espace trouvé dans le Sheet (colonne G)." })); return; }
+  ACTS.spaces.forEach(sp => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(sp), text: sp.nom })));
 }
 function renderWeekChart() {
-  const host = $("#actGrid"); host.textContent = "";
-  const M = SA.WEEK_METRICS;
-  const weeks = WEEKS.weeks;
-  const cur = weeks[weeks.length - 1] || null, prev = weeks[weeks.length - 2] || null;
+  const kp = $("#actKpis"), host = $("#actGrid");
+  kp.textContent = ""; host.textContent = "";
+  const sp = ACTS.spaces, ok = ACTS.status === "ok";
+  const withJours = sp.filter(s => s.jours != null);
+  const withPanneau = sp.filter(s => s.panneau != null);
+  tile(kp, { label: "Espaces sur le marché", value: ok ? fmtInt(sp.length) : "—" });
+  tile(kp, { label: "Durée moyenne sur le marché", value: ok && withJours.length ? fmtInt(sum(withJours.map(s => s.jours)) / withJours.length) + " j" : "—",
+    note: ok && withJours.length ? "max. " + fmtInt(Math.max.apply(null, withJours.map(s => s.jours))) + " j" : "" });
+  tile(kp, { label: "Visites cumulées", value: ok ? fmtInt(sum(sp.map(s => s.visites))) : "—" });
+  tile(kp, { label: "Panneaux posés", value: ok ? fmtInt(sp.filter(s => s.panneau === true).length) : "—",
+    note: ok && withPanneau.length ? "sur " + fmtInt(sp.length) + " espaces" : "" });
+
+  const wk = SA.weekSummary(sp);
+  const series = [{ name: "Cette semaine", color: "var(--s1)" }, { name: "Semaine dernière", color: "var(--dim)" }];
   const chips = [];
-  if (WEEKS.status === "not_connected") chips.push({ text: "Sheet non connecté" });
-  else if (WEEKS.status === "loading") chips.push({ text: "Chargement…" });
-  else if (WEEKS.status === "error") chips.push({ text: "Lecture impossible", err: true });
-  else if (!cur) chips.push({ text: "Aucune semaine saisie" });
-  const series = [{ name: cur ? cur.label : "Semaine en cours", color: "var(--s1)" }];
-  if (prev) series.push({ name: prev.label, color: "var(--dim)" });
-  const rows = M.map(m => ({ label: m.label, values: series.map((_, si) => { const wk = si === 0 ? cur : prev; return wk ? wk.values[m.key] : null; }) }));
+  if (ACTS.status === "loading") chips.push({ text: "Chargement…" });
+  else if (!ok) chips.push({ text: "Sheet non lisible", err: true });
   card(host, {
     title: "Les actions de la semaine",
     chips: chips,
-    caption: cur ? (prev ? "Semaine « " + cur.label + " » comparée à la précédente." : "Semaine « " + cur.label + " ».")
-      : "Mails envoyés, clics sur les mails, calls, visites et panneaux placés — tous espaces confondus.",
-    render: w => hGroupedBars(w, { series: series, rows: rows, labelAll: true, labelW: 150, aria: "Les actions de la semaine" }),
-    legend: series.length > 1 ? series.map(se => ({ name: se.name, color: se.color })) : null,
-    table: weeks.length ? { head: ["Semaine"].concat(M.map(m => m.label)), rows: weeks.slice().reverse().map(wk => [wk.label].concat(M.map(m => wk.values[m.key]))) } : null
+    caption: "Nombre d'espaces ayant reçu chaque action, selon les dates des colonnes W, X, Y et AA (semaine du lundi au dimanche).",
+    render: w => hGroupedBars(w, { series: series, rows: wk.map(a => ({ label: a.label, values: ok ? [a.thisWeek, a.lastWeek] : [null, null] })), labelAll: true, labelW: 150, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Les actions de la semaine" }),
+    legend: series,
+    table: ok ? { head: ["Espace", "Jours", "Visites"].concat(SA.DATED_ACTIONS.map(a => a.label)).concat(["Panneau"]),
+      rows: sp.map(s => [s.nom, s.jours, s.visites].concat(SA.DATED_ACTIONS.map(a => SA.fmtDate(s.dated[a.key].date) || s.dated[a.key].raw || null))
+        .concat([s.panneau == null ? null : (s.panneau ? "Oui" : "Non")])) } : null
   });
 }
-async function readActions() {
-  try { WEEKS = await SA.loadWeeks(); }
-  catch (e) { WEEKS = { status: "error", weeks: [], error: e }; }
+async function readActions(force) {
+  try { ACTS = await (force ? SA.refresh() : SA.loadSpaces()); }
+  catch (e) { ACTS = { status: "error", code: e && e.code, spaces: [] }; }
+  renderSpaceButtons();
   renderWeekChart();
 }
 renderSpaceButtons();
@@ -1760,7 +1772,7 @@ async function readSheet(manual) {
   if (polling) return;
   polling = true;
   setSync("warn", liveOnce ? "Relecture du Sheet…" : "Lecture du Sheet…");
-  readActions();
+  readActions(true);
   try {
     const blocks = await fetchSheetBlocks();
     applyBlocks(blocks, Date.now(), false, "csv");

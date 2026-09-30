@@ -38,36 +38,51 @@ Réponds uniquement avec un objet JSON de la forme {"feedback": "...", "outcome"
 }
 
 /**
+ * Calls Gemini and returns the raw JSON text of its answer.
+ * If the configured model no longer exists (HTTP 404 — Google retires model
+ * versions), falls back to the "gemini-flash-latest" alias, which always
+ * points to the current Flash model.
+ */
+async function generateJson(prompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY n'est pas configurée");
+  const models = Array.from(new Set([process.env.GEMINI_MODEL || "gemini-2.5-flash", "gemini-flash-latest"]));
+
+  let lastError: Error | null = null;
+  for (const model of models) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" },
+        }),
+      }
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      lastError = new Error(`Gemini API error (${res.status}): ${body}`);
+      if (res.status === 404) continue; // modèle retiré : on essaie le suivant
+      throw lastError;
+    }
+    const data = await res.json();
+    const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Réponse Gemini vide ou inattendue");
+    return text;
+  }
+  throw lastError || new Error("Aucun modèle Gemini disponible");
+}
+
+/**
  * Calls the Gemini API to turn a BizDev's raw visit notes into a polished
  * feedback/outcome pair, matching the tone of the rest of the rapport.
  */
 export async function reformulateVisite(
   input: ReformulateVisiteInput
 ): Promise<ReformulateVisiteOutput> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY n'est pas configurée");
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildPrompt(input) }] }],
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Gemini API error (${res.status}): ${text}`);
-  }
-
-  const data = await res.json();
-  const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Réponse Gemini vide ou inattendue");
+  const text = await generateJson(buildPrompt(input));
 
   const parsed = JSON.parse(text);
   return {
@@ -122,30 +137,7 @@ export async function summarizeEspace(
   espaceName: string,
   visites: VisiteForSummary[]
 ): Promise<EspaceSummary> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY n'est pas configurée");
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildSummaryPrompt(espaceName, visites) }] }],
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Gemini API error (${res.status}): ${text}`);
-  }
-
-  const data = await res.json();
-  const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Réponse Gemini vide ou inattendue");
+  const text = await generateJson(buildSummaryPrompt(espaceName, visites));
 
   const parsed = JSON.parse(text);
   const list = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : []);

@@ -149,7 +149,8 @@ window.SnapActions = (function () {
 
   /* Graphique hebdo : pour chaque action datée, nombre d'espaces touchés cette semaine / la précédente */
   function weekSummary(spaces) {
-    const rows = DATED_ACTIONS.map(a => ({
+    /* le graphique ne montre que les campagnes : LinkedIn (datée) et Meta ads (oui / non) */
+    const rows = DATED_ACTIONS.filter(a => a.key === "linkedin").map(a => ({
       key: a.key, label: a.label,
       thisWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 0).length,
       lastWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 1).length

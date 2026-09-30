@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     // En cas d'échec, on garde le dernier résumé connu plutôt que rien
     if (cached) return NextResponse.json({ ...cached, stale: true });
     // Code HTTP renvoyé par Gemini (ex. 400 clé invalide, 403 accès refusé, 429 quota) pour le diagnostic
-    const code = /Gemini API error \((\d+)\)/.exec(String(e))?.[1] || null;
-    return NextResponse.json({ error: "gemini_error", code, visites: visites.length }, { status: 502 });
+    const m = /Gemini API error \((\d+)\) \[([^\]]+)\]/.exec(String(e));
+    return NextResponse.json({ error: "gemini_error", code: m?.[1] || null, model: m?.[2] || null, visites: visites.length }, { status: 502 });
   }
 }

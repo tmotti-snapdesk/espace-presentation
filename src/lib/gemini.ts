@@ -40,13 +40,19 @@ Réponds uniquement avec un objet JSON de la forme {"feedback": "...", "outcome"
 /**
  * Calls Gemini and returns the raw JSON text of its answer.
  * If the configured model no longer exists (HTTP 404 — Google retires model
- * versions), falls back to the "gemini-flash-latest" alias, which always
- * points to the current Flash model.
+ * versions) or is overloaded (429/500/503), tries the next model of the list,
+ * starting with the "gemini-flash-latest" alias (always the current Flash model).
  */
 async function generateJson(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY n'est pas configurée");
-  const models = Array.from(new Set([process.env.GEMINI_MODEL || "gemini-2.5-flash", "gemini-flash-latest"]));
+  const models = Array.from(new Set([
+    process.env.GEMINI_MODEL || "gemini-2.5-flash",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+  ]));
 
   let lastError: Error | null = null;
   for (const model of models) {
@@ -63,8 +69,9 @@ async function generateJson(prompt: string): Promise<string> {
     );
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      lastError = new Error(`Gemini API error (${res.status}): ${body}`);
-      if (res.status === 404) continue; // modèle retiré : on essaie le suivant
+      lastError = new Error(`Gemini API error (${res.status}) [${model}]: ${body}`);
+      // modèle retiré (404) ou surchargé (429, 500, 503) : on essaie le suivant
+      if ([404, 429, 500, 503].includes(res.status)) continue;
       throw lastError;
     }
     const data = await res.json();

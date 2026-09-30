@@ -95,6 +95,23 @@ a{color:var(--accent)}
 .space-btn{display:inline-flex; gap:8px; text-decoration:none; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500}
 .space-btn:hover{border-color:var(--accent); color:var(--accent)}
 .space-btn::after{content:"→"; color:var(--ink-3)}
+/* compte rendu + origine des visites */
+.visits{display:grid; gap:16px; margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); align-items:start}
+.card .sub{font-size:12.5px; color:var(--ink-3); margin:-2px 0 12px}
+.cr{display:grid; gap:14px}
+.cr h3{font-family:"IBM Plex Sans",sans-serif; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin:0 0 6px}
+.cr h3.good{color:var(--good)} .cr h3.said{color:var(--accent)} .cr h3.todo{color:var(--crit)}
+.cr ul{margin:0; padding-left:18px; font-size:14px; line-height:1.5}
+.cr li{margin:3px 0}
+.bars{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.bars li{display:grid; grid-template-columns:minmax(90px,34%) 1fr auto; align-items:center; gap:10px; font-size:14px}
+.bars .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bars .track{height:12px; border-radius:999px; background:var(--grid); overflow:hidden}
+.bars .fill{display:block; height:100%; border-radius:999px; background:var(--accent)}
+.bars li.direct .fill{background:var(--good)}
+.bars .n{font-variant-numeric:tabular-nums; font-weight:600; min-width:44px; text-align:right}
+.bars .n small{font-weight:400; color:var(--ink-3)}
+.empty{font-size:13.5px; color:var(--ink-3)}
 footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--ink-3)}
 @media (max-width:700px){ .topbar{position:static} .period{margin-left:0} }
 </style>
@@ -119,12 +136,13 @@ footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font
   <div class="banner" id="banner" hidden></div>
   <div class="summary" id="summary"></div>
   <div class="groups" id="groups"></div>
+  <div class="visits" id="visits"></div>
   <div class="space-btns" id="otherSpaces"></div>
 
-  <footer id="foot">Source : onglet « Copie du Pilotage ».</footer>
+  <footer id="foot">Sources : onglets « Copie du Pilotage » et « Copie Visite ».</footer>
 </main>
 
-<script src="actions-data.js?v=202609301334"></script>
+<script src="actions-data.js?v=202609301358"></script>
 <script>
 "use strict";
 const SA = window.SnapActions;
@@ -181,6 +199,79 @@ function render(sp) {
   host.appendChild(el("section", { class: "card" }, [el("h2", { text: "Visibilité" }), pl]));
 }
 
+/* ---- Compte rendu général + origine des visites (onglet « Copie Visite », depuis janvier 2026) ---- */
+let lastVisitsSig = "", lastReport = null, reportFor = "";
+const REPORT_ERRORS = {
+  not_configured: "Le résumé automatique n'est pas encore activé : la clé Gemini (GEMINI_API_KEY) doit être renseignée dans Vercel.",
+  gemini_error: "Le résumé automatique n'a pas pu être rédigé pour le moment. Nouvel essai à la prochaine mise à jour.",
+  sheet_error: "L'onglet « Copie Visite » n'a pas pu être lu.",
+  network: "Le résumé automatique est momentanément indisponible."
+};
+async function renderVisits(sp) {
+  const host = $("#visits");
+  if (!sp) { host.textContent = ""; lastVisitsSig = ""; lastReport = null; return; }
+  if (reportFor !== sp.nom) { lastReport = null; reportFor = sp.nom; }
+  let v = null, err = false;
+  try { v = await SA.loadVisits(sp.nom); } catch (e) { err = true; }
+  if (err && lastVisitsSig) return;             /* coupure passagère : on garde l'affichage */
+  /* Résumé : si un premier résumé doit être rédigé, on affiche d'abord le graphique */
+  if (!lastReport) draw(v, err, { pending: true });
+  let rep;
+  try { rep = await SA.loadReport(sp.nom); lastReport = rep; }
+  catch (e) { rep = lastReport || { error: (e && e.code) || "network" }; }
+  draw(v, err, rep);
+}
+function draw(v, err, rep) {
+  const sig = JSON.stringify([v, err, rep]);
+  if (sig === lastVisitsSig) return;
+  lastVisitsSig = sig;
+  const host = $("#visits");
+  host.textContent = "";
+
+  /* Compte rendu général (automatique) */
+  const crCard = el("section", { class: "card" }, [el("h2", { text: "Compte rendu des visites" })]);
+  const s = rep && rep.summary;
+  if (rep && rep.pending) {
+    crCard.appendChild(el("p", { class: "empty", text: v && v.total ? "Rédaction du compte rendu à partir des commentaires de visite…" : "Aucune visite depuis janvier 2026." }));
+  } else if (s) {
+    const when = rep.generatedAt ? new Date(rep.generatedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+    let sub = "Résumé automatique de " + rep.visites + " compte" + (rep.visites > 1 ? "s" : "") + " rendu" + (rep.visites > 1 ? "s" : "") + " de visite depuis janvier 2026" + (when ? ", mis à jour le " + when : "");
+    if (rep.stale) sub += " · mise à jour en attente";
+    crCard.appendChild(el("p", { class: "sub", text: sub }));
+    const block = (cls, title, items) => el("div", {}, [el("h3", { class: cls, text: title }), el("ul", {}, (items || []).map(x => el("li", { text: x })))]);
+    crCard.appendChild(el("div", { class: "cr" }, [
+      block("good", "Ce qui va bien", s.forts),
+      block("said", "Ce qu'ont dit les clients", s.clients),
+      block("todo", "À améliorer", s.ameliorer)
+    ]));
+  } else if (rep && rep.error) {
+    crCard.appendChild(el("p", { class: "empty", text: REPORT_ERRORS[rep.error] || REPORT_ERRORS.network }));
+  } else {
+    crCard.appendChild(el("p", { class: "empty", text: "Aucun compte rendu de visite depuis janvier 2026." }));
+  }
+  host.appendChild(crCard);
+
+  /* Origine des visites */
+  const oCard = el("section", { class: "card" }, [el("h2", { text: "Origine des visites" })]);
+  if (err) oCard.appendChild(el("p", { class: "empty", text: "L'onglet « Copie Visite » n'a pas pu être lu." }));
+  else if (!v.total) oCard.appendChild(el("p", { class: "empty", text: "Aucune visite depuis janvier 2026." }));
+  else {
+    const direct = v.byBroker.filter(b => b.name === "Direct").reduce((s, b) => s + b.count, 0);
+    oCard.appendChild(el("p", { class: "sub", text: v.total + " visite" + (v.total > 1 ? "s" : "") + " depuis janvier 2026 · " + direct + " en direct, " + (v.total - direct) + " via broker" }));
+    const max = v.byBroker[0].count;
+    const ul = el("ul", { class: "bars", role: "list" });
+    v.byBroker.forEach(b => {
+      const fill = el("span", { class: "fill" }); fill.style.width = (b.count / max * 100) + "%";
+      const n = el("span", { class: "n" }); n.appendChild(document.createTextNode(b.count + " "));
+      n.appendChild(el("small", { text: Math.round(b.count / v.total * 100) + " %" }));
+      ul.appendChild(el("li", { class: b.name === "Direct" ? "direct" : "", "aria-label": b.name + " : " + b.count + " visites" },
+        [el("span", { class: "name", text: b.name, title: b.name }), el("span", { class: "track" }, [fill]), n]));
+    });
+    oCard.appendChild(ul);
+  }
+  host.appendChild(oCard);
+}
+
 function renderOthers(spaces, current) {
   const host = $("#otherSpaces"); host.textContent = "";
   spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.label })));
@@ -204,8 +295,9 @@ async function boot() {
     return;
   }
   $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  const f = $("#foot"); f.textContent = "Source : ";
+  const f = $("#foot"); f.textContent = "Sources : ";
   f.appendChild(el("a", { href: SA.sheetUrl(), target: "_blank", rel: "noopener noreferrer", text: "onglet « Copie du Pilotage »" }));
+  f.appendChild(document.createTextNode(" · comptes rendus et origine des visites : onglet « Copie Visite », depuis janvier 2026"));
   const sp = id ? res.spaces.find(s => s.id === id) : null;
   renderOthers(res.spaces, sp);
   if (!sp) {
@@ -216,6 +308,7 @@ async function boot() {
   $("#spaceName").textContent = sp.label;
   document.title = sp.nom + " · Suivi Snapdesk";
   render(sp);
+  renderVisits(sp);
 }
 boot().then(() => {
   /* Lecture en continu : toutes les minutes, et dès qu'on revient sur l'onglet.
@@ -228,6 +321,7 @@ boot().then(() => {
     $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     const sp = id ? res.spaces.find(s => s.id === id) : null;
     const next = JSON.stringify({ sp: sp, all: res.spaces.map(s => s.id + s.nom) });
+    if (sp) renderVisits(sp);            /* nouveaux comptes rendus : graphique et résumé suivent */
     if (next === sig) return;
     if (sig && sp) { banner(null); $("#spaceName").textContent = sp.label; render(sp); renderOthers(res.spaces, sp); }
     else if (sig) boot();

@@ -147,6 +147,49 @@ window.SnapActions = (function () {
   }
   function refresh() { cache = null; return loadSpaces(); }
 
+  /* ---- Visites : onglet « Copie Visite » (une ligne = une visite), depuis le 01/01/2026 ----
+     Colonnes repérées par leur titre : Date, Espaces, Broker. */
+  const VISITS_GID = "1442027368";
+  const VISITS_SINCE = new Date(2026, 0, 1);
+  async function loadVisits(nom) {
+    const url = "https://docs.google.com/spreadsheets/d/" + CONFIG.fileId + "/export?format=csv&gid=" + VISITS_GID + "&_=" + Date.now();
+    let r;
+    try { r = await fetch(url, { cache: "no-store", credentials: "omit" }); }
+    catch (e) { throw sheetError("network"); }
+    const body = await r.text();
+    if (!r.ok || /^\s*</.test(body)) throw sheetError(r.ok ? "denied" : r.status === 400 ? "missing_tab" : "denied", r.status);
+    const rows = parseCSV(body);
+    const h = rows.findIndex(row => row.some(c => /^espaces?$/.test(norm(c))));
+    if (h < 0) throw sheetError("format");
+    const head = rows[h].map(norm);
+    const cDate = head.findIndex(c => c === "date"), cEsp = head.findIndex(c => /^espaces?$/.test(c)), cBrk = head.findIndex(c => c === "broker");
+    const counts = {};
+    let total = 0;
+    for (let i = h + 1; i < rows.length; i++) {
+      const row = rows[i];
+      const d = parseDate(row[cDate]);
+      if (!d || d < VISITS_SINCE || norm(row[cEsp]) !== norm(nom)) continue;
+      let b = (row[cBrk] || "").trim() || "Non renseigné";
+      if (/^direct/i.test(b)) b = "Direct";               /* « Direct SD » = visite en direct, sans broker */
+      counts[b] = (counts[b] || 0) + 1;
+      total++;
+    }
+    const byBroker = Object.keys(counts).map(k => ({ name: k, count: counts[k] })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    return { total: total, byBroker: byBroker };
+  }
+
+  /* ---- Compte rendu général automatique : rédigé côté serveur (/api/espaces-cr) à partir
+     des commentaires de visite, et refait seulement quand un compte rendu change ---- */
+  async function loadReport(nom) {
+    let r;
+    try { r = await fetch("/api/espaces-cr?espace=" + encodeURIComponent(nom), { cache: "no-store" }); }
+    catch (e) { throw sheetError("network"); }
+    const data = await r.json().catch(() => null);
+    if (!data) throw sheetError("network");
+    if (!r.ok) throw sheetError(data.error || "network", r.status);
+    return data;   /* { visites, summary: {forts, clients, ameliorer} | null, generatedAt, stale? } */
+  }
+
   /* Graphique hebdo : pour chaque action datée, nombre d'espaces touchés cette semaine / la précédente */
   /* Graphique : nombre de campagnes qui tournent, par plateforme.
      Une campagne compte si sa case vaut « oui » (ou « done », ou une date) ; « non » ou vide = pas de campagne. */
@@ -160,7 +203,7 @@ window.SnapActions = (function () {
 
   return {
     CONFIG: CONFIG, FIELDS: FIELDS, DATED_ACTIONS: DATED_ACTIONS,
-    loadSpaces: loadSpaces, refresh: refresh, campaignSummary: campaignSummary, sheetUrl: sheetUrl,
+    loadSpaces: loadSpaces, refresh: refresh, loadVisits: loadVisits, loadReport: loadReport, campaignSummary: campaignSummary, sheetUrl: sheetUrl,
     espaceUrl: s => "espace.html?e=" + encodeURIComponent(s.id)
   };
 })();

@@ -75,3 +75,79 @@ export async function reformulateVisite(
     outcome: String(parsed.outcome || ""),
   };
 }
+
+export interface VisiteForSummary {
+  date: string;
+  sales: string;
+  client: string;
+  broker: string;
+  loi: string;
+  feedback: string;
+}
+
+export interface EspaceSummary {
+  /** Ce qui va bien dans l'espace. */
+  forts: string[];
+  /** Ce qu'ont dit les clients (retours, intérêt, suites). */
+  clients: string[];
+  /** Les choses à améliorer. */
+  ameliorer: string[];
+}
+
+function buildSummaryPrompt(espaceName: string, visites: VisiteForSummary[]): string {
+  const lines = visites
+    .map(
+      (v) =>
+        `- ${v.date} · BizDev : ${v.sales || "?"} · Prospect : ${v.client || "?"} · Broker : ${v.broker || "?"} · LOI : ${v.loi || "?"}\n  Notes : ${v.feedback}`
+    )
+    .join("\n");
+  return `Tu es consultant en immobilier de bureaux chez Snapdesk. Voici tous les comptes rendus de visite de l'espace « ${espaceName} » depuis janvier 2026, du plus ancien au plus récent.
+
+${lines}
+
+Rédige un compte rendu général de l'espace, en français, en trois listes de points courts (une phrase chacun, 2 à 5 points par liste) :
+- "forts" : ce qui plaît et fonctionne bien dans l'espace (points cités par plusieurs visiteurs en priorité) ;
+- "clients" : ce qu'ont dit les clients — niveau d'intérêt, LOI obtenues ou en cours, raisons de refus, tendances ; cite le nom du prospect quand c'est utile ;
+- "ameliorer" : les freins et les choses à améliorer, les plus fréquents d'abord.
+
+Reste strictement factuel : n'invente rien qui ne figure pas dans les notes. Style professionnel, sans langage familier.
+
+Réponds uniquement avec un objet JSON de la forme {"forts": ["..."], "clients": ["..."], "ameliorer": ["..."]}, sans texte autour.`;
+}
+
+/**
+ * Asks Gemini for a general report of a space from all its visit notes.
+ */
+export async function summarizeEspace(
+  espaceName: string,
+  visites: VisiteForSummary[]
+): Promise<EspaceSummary> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY n'est pas configurée");
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: buildSummaryPrompt(espaceName, visites) }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Gemini API error (${res.status}): ${text}`);
+  }
+
+  const data = await res.json();
+  const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Réponse Gemini vide ou inattendue");
+
+  const parsed = JSON.parse(text);
+  const list = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : []);
+  return { forts: list(parsed.forts), clients: list(parsed.clients), ameliorer: list(parsed.ameliorer) };
+}

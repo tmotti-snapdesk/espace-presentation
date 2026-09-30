@@ -168,6 +168,8 @@ export async function GET(request: NextRequest) {
     console.error("CR espace — Gemini :", e);
     // En cas d'échec, on garde le dernier résumé connu plutôt que rien
     if (cached) return NextResponse.json({ ...cached, stale: true });
-    return NextResponse.json({ error: "gemini_error", visites: visites.length }, { status: 502 });
+    // Code HTTP renvoyé par Gemini (ex. 400 clé invalide, 403 accès refusé, 429 quota) pour le diagnostic
+    const code = /Gemini API error \((\d+)\)/.exec(String(e))?.[1] || null;
+    return NextResponse.json({ error: "gemini_error", code, visites: visites.length }, { status: 502 });
   }
 }

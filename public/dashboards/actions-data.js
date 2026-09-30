@@ -149,11 +149,19 @@ window.SnapActions = (function () {
 
   /* Graphique hebdo : pour chaque action datée, nombre d'espaces touchés cette semaine / la précédente */
   function weekSummary(spaces) {
-    return DATED_ACTIONS.map(a => ({
+    const rows = DATED_ACTIONS.map(a => ({
       key: a.key, label: a.label,
       thisWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 0).length,
       lastWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 1).length
     }));
+    /* « Campagne Meta ads » est un oui / non sans date : on compte les espaces à « oui »
+       aujourd'hui ; la semaine dernière n'est pas connue (pas de barre grise). */
+    rows.push({
+      key: "instagram", label: "Campagne Meta ads",
+      thisWeek: spaces.filter(s => s.instagram === true).length,
+      lastWeek: null
+    });
+    return rows;
   }
 
   return {

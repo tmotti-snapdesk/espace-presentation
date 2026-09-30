@@ -268,7 +268,7 @@ footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--hair); font
   <section id="actions">
     <div class="sec-head">
       <h2>Les actions par espaces</h2><span class="tabref">Onglet Copie du Pilotage</span>
-      <p>Un bouton par espace, vers sa page de suivi. En dessous, les actions de la semaine.</p>
+      <p>Un bouton par espace, vers sa page de suivi. En dessous, les campagnes en cours par plateforme.</p>
     </div>
     <div class="space-btns" id="spaceBtns"></div>
     <div class="grid" id="actGrid"></div>
@@ -1690,17 +1690,16 @@ function renderWeekChart() {
   host.textContent = "";
   const sp = ACTS.spaces, ok = ACTS.status === "ok";
 
-  const wk = SA.weekSummary(sp);
-  const series = [{ name: "Cette semaine", color: "var(--s1)" }, { name: "Semaine dernière", color: "var(--dim)" }];
+  const camp = SA.campaignSummary(sp);
+  const series = [{ name: "Campagnes en cours", color: "var(--s1)" }];
   const chips = [];
   if (ACTS.status === "loading") chips.push({ text: "Chargement…" });
   else if (!ok) chips.push({ text: "Sheet non lisible", err: true });
   card(host, {
-    title: "Les actions de la semaine",
+    title: "Campagnes en cours",
     chips: chips,
-    caption: "Campagne LinkedIn : espaces dont la date de campagne tombe cette semaine (du lundi au dimanche), comparés à la semaine dernière. Campagne Meta ads : espaces marqués « oui » aujourd'hui (pas de date, donc pas de comparaison).",
-    render: w => hGroupedBars(w, { series: series, rows: wk.map(a => ({ label: a.label, values: ok ? [a.thisWeek, a.lastWeek] : [null, null] })), labelAll: true, labelW: 150, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Les actions de la semaine" }),
-    legend: series,
+    caption: "Nombre d'espaces avec une campagne qui tourne sur chaque plateforme, d'après les colonnes « Campagne LinkedIn » et « Campagne Meta ads ».",
+    render: w => hGroupedBars(w, { series: series, rows: camp.map(a => ({ label: a.label, values: ok ? [a.count] : [null] })), labelAll: true, labelW: 110, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Campagnes en cours par plateforme" }),
     table: ok ? { head: ["Espace", "Jours sur le marché", "Visites", "Prix", "Responsable", "Dernier mail leads", "Dernier mail Mailjet", "Campagne LinkedIn", "Diffusion broker", "Campagne Instagram", "Panneau"],
       rows: sp.map(s => [s.label, s.jours, s.visites, s.prix || null, s.responsable || null]
         .concat(SA.DATED_ACTIONS.map(a => s.dated[a.key].raw || null)).concat([s.instagramRaw || null, s.panneauRaw || null])) } : null

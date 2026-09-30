@@ -148,26 +148,19 @@ window.SnapActions = (function () {
   function refresh() { cache = null; return loadSpaces(); }
 
   /* Graphique hebdo : pour chaque action datée, nombre d'espaces touchés cette semaine / la précédente */
-  function weekSummary(spaces) {
-    /* le graphique ne montre que les campagnes : LinkedIn (datée) et Meta ads (oui / non) */
-    const rows = DATED_ACTIONS.filter(a => a.key === "linkedin").map(a => ({
-      key: a.key, label: a.label,
-      thisWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 0).length,
-      lastWeek: spaces.filter(s => s.dated[a.key].weeksAgo === 1).length
-    }));
-    /* « Campagne Meta ads » est un oui / non sans date : on compte les espaces à « oui »
-       aujourd'hui ; la semaine dernière n'est pas connue (pas de barre grise). */
-    rows.push({
-      key: "instagram", label: "Campagne Meta ads",
-      thisWeek: spaces.filter(s => s.instagram === true).length,
-      lastWeek: null
-    });
-    return rows;
+  /* Graphique : nombre de campagnes qui tournent, par plateforme.
+     Une campagne compte si sa case vaut « oui » (ou « done », ou une date) ; « non » ou vide = pas de campagne. */
+  const running = raw => bool(raw) === true || !!parseDate(raw);
+  function campaignSummary(spaces) {
+    return [
+      { key: "linkedin",  label: "LinkedIn", count: spaces.filter(s => running(s.dated.linkedin.raw)).length },
+      { key: "instagram", label: "Meta ads", count: spaces.filter(s => running(s.instagramRaw)).length }
+    ];
   }
 
   return {
     CONFIG: CONFIG, FIELDS: FIELDS, DATED_ACTIONS: DATED_ACTIONS,
-    loadSpaces: loadSpaces, refresh: refresh, weekSummary: weekSummary, sheetUrl: sheetUrl,
+    loadSpaces: loadSpaces, refresh: refresh, campaignSummary: campaignSummary, sheetUrl: sheetUrl,
     espaceUrl: s => "espace.html?e=" + encodeURIComponent(s.id)
   };
 })();

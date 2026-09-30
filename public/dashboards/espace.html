@@ -142,7 +142,7 @@ footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font
   <footer id="foot">Sources : onglets « Copie du Pilotage » et « Copie Visite ».</footer>
 </main>
 
-<script src="actions-data.js?v=202609301358"></script>
+<script src="actions-data.js?v=202609301525"></script>
 <script>
 "use strict";
 const SA = window.SnapActions;
@@ -172,7 +172,9 @@ const show = v => (v == null || v === "") ? "—" : String(v);
 function render(sp) {
   const sum = $("#summary"); sum.textContent = "";
   sum.appendChild(tileNode("Jours sur le marché", sp && sp.jours != null ? nf.format(sp.jours) + " j" : "—"));
-  sum.appendChild(tileNode("Visites", sp && sp.visites != null ? nf.format(sp.visites) : "—"));
+  /* Visites = nombre de clients différents venus visiter depuis janvier 2026 (1re visite de chaque client) */
+  const vt = tileNode("Visites depuis janv. 2026", visitsTileText()); vt.id = "visitsTile";
+  sum.appendChild(vt);
   sum.appendChild(tileNode("Prix", show(sp && sp.prix)));
   sum.appendChild(tileNode("Responsable", show(sp && sp.responsable)));
 
@@ -209,7 +211,7 @@ const REPORT_ERRORS = {
 };
 async function renderVisits(sp) {
   const host = $("#visits");
-  if (!sp) { host.textContent = ""; lastVisitsSig = ""; lastReport = null; return; }
+  if (!sp) { host.textContent = ""; lastVisitsSig = ""; lastReport = null; lastV = null; return; }
   if (reportFor !== sp.nom) { lastReport = null; reportFor = sp.nom; }
   let v = null, err = false;
   try { v = await SA.loadVisits(sp.nom); } catch (e) { err = true; }
@@ -221,7 +223,10 @@ async function renderVisits(sp) {
   catch (e) { rep = lastReport || { error: (e && e.code) || "network" }; }
   draw(v, err, rep);
 }
+let lastV = null;
+const visitsTileText = () => lastV && lastV.total != null ? nf.format(lastV.total) : "—";
 function draw(v, err, rep) {
+  if (v) { lastV = v; const tv = $("#visitsTile .val"); if (tv) tv.textContent = visitsTileText(); }
   const sig = JSON.stringify([v, err, rep]);
   if (sig === lastVisitsSig) return;
   lastVisitsSig = sig;
@@ -257,7 +262,7 @@ function draw(v, err, rep) {
   else if (!v.total) oCard.appendChild(el("p", { class: "empty", text: "Aucune visite depuis janvier 2026." }));
   else {
     const direct = v.byBroker.filter(b => b.name === "Direct").reduce((s, b) => s + b.count, 0);
-    oCard.appendChild(el("p", { class: "sub", text: v.total + " visite" + (v.total > 1 ? "s" : "") + " depuis janvier 2026 · " + direct + " en direct, " + (v.total - direct) + " via broker" }));
+    oCard.appendChild(el("p", { class: "sub", text: v.total + " client" + (v.total > 1 ? "s" : "") + " depuis janvier 2026 (1re visite de chaque client) · " + direct + " en direct, " + (v.total - direct) + " via broker" }));
     const max = v.byBroker[0].count;
     const ul = el("ul", { class: "bars", role: "list" });
     v.byBroker.forEach(b => {

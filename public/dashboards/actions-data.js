@@ -162,20 +162,30 @@ window.SnapActions = (function () {
     const h = rows.findIndex(row => row.some(c => /^espaces?$/.test(norm(c))));
     if (h < 0) throw sheetError("format");
     const head = rows[h].map(norm);
-    const cDate = head.findIndex(c => c === "date"), cEsp = head.findIndex(c => /^espaces?$/.test(c)), cBrk = head.findIndex(c => c === "broker");
-    const counts = {};
-    let total = 0;
+    const cDate = head.findIndex(c => c === "date"), cEsp = head.findIndex(c => /^espaces?$/.test(c)),
+      cBrk = head.findIndex(c => c === "broker"), cCli = head.findIndex(c => c === "client");
+    /* visites de l'espace depuis janvier 2026, de la plus ancienne à la plus récente */
+    const visits = [];
     for (let i = h + 1; i < rows.length; i++) {
       const row = rows[i];
       const d = parseDate(row[cDate]);
       if (!d || d < VISITS_SINCE || norm(row[cEsp]) !== norm(nom)) continue;
-      let b = (row[cBrk] || "").trim() || "Non renseigné";
+      visits.push({ d: d, i: i, client: norm(row[cCli]), broker: (row[cBrk] || "").trim() });
+    }
+    visits.sort((a, b) => a.d - b.d || a.i - b.i);
+    /* un client qui revient (contre-visite) ne compte qu'une fois : on garde sa première visite.
+       Un client non renseigné compte à chaque fois (impossible de savoir si c'est le même). */
+    const seen = {}, counts = {};
+    let total = 0;
+    visits.forEach(v => {
+      if (v.client) { if (seen[v.client]) return; seen[v.client] = 1; }
+      let b = v.broker || "Non renseigné";
       if (/^direct/i.test(b)) b = "Direct";               /* « Direct SD » = visite en direct, sans broker */
       counts[b] = (counts[b] || 0) + 1;
       total++;
-    }
+    });
     const byBroker = Object.keys(counts).map(k => ({ name: k, count: counts[k] })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-    return { total: total, byBroker: byBroker };
+    return { total: total, allVisits: visits.length, byBroker: byBroker };
   }
 
   /* ---- Compte rendu général automatique : rédigé côté serveur (/api/espaces-cr) à partir

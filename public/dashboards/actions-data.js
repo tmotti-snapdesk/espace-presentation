@@ -27,8 +27,9 @@ window.SnapActions = (function () {
     { key: "mailLeads",   col: "W",  label: "Dernier mail leads",  re: /mail.*leads?/ },
     { key: "mailjet",     col: "X",  label: "Dernier mail Mailjet", re: /mailjet/ },
     { key: "linkedin",    col: "Y",  label: "Campagne LinkedIn",   re: /^campagne.*linkedin/ },
-    { key: "broker",      col: "AA", label: "Diffusion broker",    re: /^diffusion.*brokers?/ },
-    { key: "panneau",     col: "AK", label: "Panneau",             re: /^panneaux?$/ }
+    { key: "instagram",   col: "Z",  label: "Campagne Instagram",  re: /^campagne.*(meta|instagram|insta)/ },
+    { key: "broker",      col: "AB", label: "Diffusion broker",    re: /^diffusion.*brokers?/ },
+    { key: "panneau",     col: "AL", label: "Panneau",             re: /^panneaux?$/ }
   ];
   const colIndex = letters => letters.split("").reduce((n, c) => n * 26 + (c.charCodeAt(0) - 64), 0) - 1;
 
@@ -118,6 +119,7 @@ window.SnapActions = (function () {
         id: slug(nom), nom: nom,
         jours: num(get("jours")), visites: num(get("visites")),
         prix: get("prix"), responsable: get("responsable"),
+        instagram: bool(get("instagram")), instagramRaw: get("instagram"),
         panneau: bool(get("panneau")), panneauRaw: get("panneau"), dated: {}
       };
       DATED_ACTIONS.forEach(a => {

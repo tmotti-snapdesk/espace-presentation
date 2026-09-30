@@ -160,10 +160,17 @@ function render(sp) {
 
   const host = $("#groups"); host.textContent = "";
   const labels = { mailLeads: "Dernier mail leads", mailjet: "Dernier mail Mailjet", linkedin: "Campagne LinkedIn", broker: "Diffusion broker" };
+  const yesNo = (label, b, raw) => el("li", {}, [el("span", { text: label }),
+    el("span", { class: "pill" + (b === true ? " yes" : b === false ? " no" : ""), text: b === true ? "Oui" : b === false ? "Non" : show(raw) })]);
   const ul = el("ul", { class: "items" });
   SA.DATED_ACTIONS.forEach(a => {
     const v = sp ? sp.dated[a.key].raw : "";
-    ul.appendChild(el("li", {}, [el("span", { text: labels[a.key] }), el("span", { class: "pill" + (v ? " count" : ""), text: show(v) })]));
+    /* une date s'affiche en bleu ; « oui » / « non » écrits à la place d'une date en vert / rouge */
+    const yn = /^(oui|done)$/i.test(v) ? true : /^non$/i.test(v) ? false : null;
+    if (yn != null) ul.appendChild(yesNo(labels[a.key], yn, v));
+    else ul.appendChild(el("li", {}, [el("span", { text: labels[a.key] }), el("span", { class: "pill" + (v ? " count" : ""), text: show(v) })]));
+    /* Campagne Instagram (colonne « Campagne Meta ads ») : oui / non, juste après LinkedIn */
+    if (a.key === "linkedin") ul.appendChild(yesNo("Campagne Instagram", sp ? sp.instagram : null, sp && sp.instagramRaw));
   });
   host.appendChild(el("section", { class: "card" }, [el("h2", { text: "Dernières actions" }), ul]));
 

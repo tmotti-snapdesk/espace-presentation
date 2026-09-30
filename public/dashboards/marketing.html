@@ -1701,9 +1701,9 @@ function renderWeekChart() {
     caption: "Nombre d'espaces ayant reçu chaque action cette semaine (du lundi au dimanche), selon les dates « Dernier Mail Leads », « Dernier Mail MAILJET », « Campagne LinkedIn » et « Diffusion Brokers ».",
     render: w => hGroupedBars(w, { series: series, rows: wk.map(a => ({ label: a.label, values: ok ? [a.thisWeek, a.lastWeek] : [null, null] })), labelAll: true, labelW: 150, tickFmt: v => Number.isInteger(v) ? fmtInt(v) : "", aria: "Les actions de la semaine" }),
     legend: series,
-    table: ok ? { head: ["Espace", "Jours sur le marché", "Visites", "Prix", "Responsable", "Dernier mail leads", "Dernier mail Mailjet", "Campagne LinkedIn", "Diffusion broker", "Panneau"],
+    table: ok ? { head: ["Espace", "Jours sur le marché", "Visites", "Prix", "Responsable", "Dernier mail leads", "Dernier mail Mailjet", "Campagne LinkedIn", "Diffusion broker", "Campagne Instagram", "Panneau"],
       rows: sp.map(s => [s.label, s.jours, s.visites, s.prix || null, s.responsable || null]
-        .concat(SA.DATED_ACTIONS.map(a => s.dated[a.key].raw || null)).concat([s.panneauRaw || null])) } : null
+        .concat(SA.DATED_ACTIONS.map(a => s.dated[a.key].raw || null)).concat([s.instagramRaw || null, s.panneauRaw || null])) } : null
   });
   if (tableOpen) { const btn = host.querySelector(".tblbtn"); if (btn) btn.click(); }
 }

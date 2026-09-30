@@ -21,6 +21,8 @@ const SHEET_ID = "1zyvdKCRUX79ZkoCZgl3dIaSYs8MRQyIto18bzfIo1SA";
 const VISITS_GID = "1442027368"; // onglet « Copie Visite »
 const SINCE = new Date(2026, 0, 1);
 const SHEET_CACHE_MS = 30_000;
+/** À incrémenter quand la consigne donnée à Gemini change : tous les résumés sont alors refaits. */
+const PROMPT_VERSION = "2";
 
 interface Stored {
   hash: string;
@@ -136,7 +138,7 @@ export async function GET(request: NextRequest) {
   }
   if (!visites.length) return NextResponse.json({ visites: 0, summary: null });
 
-  const hash = createHash("sha256").update(JSON.stringify(visites)).digest("hex").slice(0, 16);
+  const hash = createHash("sha256").update(PROMPT_VERSION + JSON.stringify(visites)).digest("hex").slice(0, 16);
   const cached = memory.get(key) || (await readStored(espace));
   if (cached && cached.hash === hash) {
     memory.set(key, cached);

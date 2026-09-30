@@ -116,11 +116,14 @@ export interface EspaceSummary {
   ameliorer: string[];
 }
 
+/** Colonne LOI du Sheet : 1 = lettre d'intention obtenue, 0 = non. */
+const loiLabel = (loi: string) => (/^1$/.test(loi.trim()) ? "oui" : /^0$/.test(loi.trim()) ? "non" : loi || "?");
+
 function buildSummaryPrompt(espaceName: string, visites: VisiteForSummary[]): string {
   const lines = visites
     .map(
       (v) =>
-        `- ${v.date} · BizDev : ${v.sales || "?"} · Prospect : ${v.client || "?"} · Broker : ${v.broker || "?"} · LOI : ${v.loi || "?"}\n  Notes : ${v.feedback}`
+        `- ${v.date} · BizDev : ${v.sales || "?"} · Prospect : ${v.client || "?"} · Broker : ${v.broker || "?"} · LOI obtenue : ${loiLabel(v.loi)}\n  Notes : ${v.feedback}`
     )
     .join("\n");
   return `Tu es consultant en immobilier de bureaux chez Snapdesk. Voici tous les comptes rendus de visite de l'espace « ${espaceName} » depuis janvier 2026, du plus ancien au plus récent.

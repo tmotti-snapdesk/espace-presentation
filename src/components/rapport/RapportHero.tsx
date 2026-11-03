@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { formatMonthLabel, formatLongDate } from "@/types/rapport";
+import { formatMonthLabel, formatLongDate, RapportLink } from "@/types/rapport";
 
 interface RapportHeroProps {
   espaceName: string;
@@ -11,6 +11,7 @@ interface RapportHeroProps {
   marketingStartDate: string;
   ownerName: string;
   presentationUrl: string;
+  extraLinks?: RapportLink[];
 }
 
 export default function RapportHero({
@@ -20,7 +21,9 @@ export default function RapportHero({
   marketingStartDate,
   ownerName,
   presentationUrl,
+  extraLinks = [],
 }: RapportHeroProps) {
+  const links = extraLinks.filter((l) => l.url);
   const monthLabel = formatMonthLabel(month);
   const startLabel = formatLongDate(marketingStartDate);
 
@@ -97,12 +100,14 @@ export default function RapportHero({
               </p>
             )}
 
+            {(presentationUrl || links.length > 0) && (
+            <div className="flex flex-wrap items-center gap-3 mb-10">
             {presentationUrl && (
               <a
                 href={presentationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 px-6 py-3 mb-10 bg-luxury-champagne text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium rounded hover:bg-white transition-colors group"
+                className="inline-flex items-center gap-3 px-6 py-3 bg-luxury-champagne text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium rounded hover:bg-white transition-colors group"
               >
                 Voir la présentation commerciale
                 <svg
@@ -121,6 +126,34 @@ export default function RapportHero({
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
               </a>
+            )}
+            {links.map((link) => (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-6 py-3 border border-luxury-champagne/60 text-luxury-champagne text-sm uppercase tracking-[0.15em] font-medium rounded hover:bg-white/10 transition-colors group"
+              >
+                {link.label}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                >
+                  <path d="M7 17L17 7" />
+                  <polyline points="8 7 17 7 17 16" />
+                </svg>
+              </a>
+            ))}
+            </div>
             )}
 
             <div className="flex flex-wrap items-end gap-x-16 gap-y-6 pt-10 border-t border-white/10">

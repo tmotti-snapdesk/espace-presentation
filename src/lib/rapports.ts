@@ -8,6 +8,9 @@ import {
   RapportDistribution,
   RapportVisite,
   SimilarEspace,
+  RapportLink,
+  RapportMarketStudy,
+  MarketStudyFigure,
   emptyDistribution,
   sortMonthsDesc,
   sortVisitesDesc,
@@ -23,7 +26,6 @@ export function normalizeRapportMonth(body: Record<string, unknown>): RapportMon
   return {
     month: String(body.month || ""),
     monthlyBudget: (body.monthlyBudget as string) || "",
-    targetedEmailingCount: parseInt(String(body.targetedEmailingCount ?? "0")) || 0,
     matchingFormsCount: parseInt(String(body.matchingFormsCount ?? "0")) || 0,
     preselectionCount: parseInt(String(body.preselectionCount ?? "0")) || 0,
     brokersListingActive: Boolean(body.brokersListingActive),
@@ -40,6 +42,44 @@ export function normalizeRapportMonth(body: Record<string, unknown>): RapportMon
       : [],
     visites: Array.isArray(body.visites) ? (body.visites as RapportVisite[]) : [],
   };
+}
+
+function str(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * Liens libres : on ne garde que ceux qui ont une URL (le nom par défaut est
+ * « Lien »). Si le corps ne contient pas le champ, on conserve l'existant.
+ */
+function normalizeLinks(value: unknown, existing?: RapportLink[]): RapportLink[] {
+  if (!Array.isArray(value)) return existing || [];
+  return value
+    .map((l: Record<string, unknown>) => ({
+      id: str(l?.id) || `lnk-${Math.random().toString(36).slice(2, 9)}`,
+      label: str(l?.label) || "Lien",
+      url: str(l?.url),
+    }))
+    .filter((l) => l.url);
+}
+
+/** Étude de marché : si le corps ne contient pas le champ, on conserve l'existant. */
+function normalizeMarketStudy(
+  value: unknown,
+  existing?: RapportMarketStudy
+): RapportMarketStudy {
+  if (!value || typeof value !== "object") return existing || { summary: "", figures: [] };
+  const v = value as { summary?: unknown; figures?: unknown };
+  const figures: MarketStudyFigure[] = Array.isArray(v.figures)
+    ? v.figures
+        .map((f: Record<string, unknown>) => ({
+          id: str(f?.id) || `fig-${Math.random().toString(36).slice(2, 9)}`,
+          label: str(f?.label),
+          value: str(f?.value),
+        }))
+        .filter((f) => f.label || f.value)
+    : [];
+  return { summary: typeof v.summary === "string" ? v.summary.trim() : "", figures };
 }
 
 /** Normalizes a raw request body into the general (non-monthly) rapport fields. */
@@ -65,6 +105,8 @@ export function normalizeRapportGeneral(
       ? (body.similarEspaces as SimilarEspace[])
       : [],
     presentationUrl: (body.presentationUrl as string) || "",
+    extraLinks: normalizeLinks(body.extraLinks, existing?.extraLinks),
+    marketStudy: normalizeMarketStudy(body.marketStudy, existing?.marketStudy),
     hiddenSections: Array.isArray(body.hiddenSections)
       ? (body.hiddenSections as string[]).filter((s): s is string => typeof s === "string")
       : [],
@@ -130,7 +172,6 @@ function mergeLegacyRapports(legacy: LegacyRapportData[]): RapportData {
   const months: RapportMonthData[] = sorted.map((r) => ({
     month: r.month,
     monthlyBudget: r.monthlyBudget,
-    targetedEmailingCount: r.targetedEmailingCount,
     matchingFormsCount: r.matchingFormsCount,
     preselectionCount: r.preselectionCount,
     brokersListingActive: r.brokersListingActive,

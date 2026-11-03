@@ -8,12 +8,15 @@ import {
   RapportMonthFormData,
   RapportVisite,
   SimilarEspace,
+  RapportLink,
+  MarketStudyFigure,
   RapportDistribution,
   DISTRIBUTION_LABELS,
   formatMonthLabel,
   splitLines,
   joinLines,
   emptyDistribution,
+  emptyMarketStudy,
 } from "@/types/rapport";
 
 interface RapportFormProps {
@@ -53,6 +56,14 @@ function emptySimilar(): SimilarEspace {
   };
 }
 
+function emptyLink(): RapportLink {
+  return { id: uid("lnk"), label: "", url: "" };
+}
+
+function emptyFigure(): MarketStudyFigure {
+  return { id: uid("fig"), label: "", value: "" };
+}
+
 function defaultMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -69,7 +80,6 @@ function emptyMonthForm(month: string): RapportMonthFormData {
   return {
     month,
     monthlyBudget: "",
-    targetedEmailingCount: "",
     matchingFormsCount: "",
     preselectionCount: "",
     brokersListingActive: true,
@@ -86,7 +96,6 @@ function monthToForm(m: RapportData["months"][number]): RapportMonthFormData {
   return {
     month: m.month,
     monthlyBudget: m.monthlyBudget,
-    targetedEmailingCount: String(m.targetedEmailingCount ?? ""),
     matchingFormsCount: String(m.matchingFormsCount ?? ""),
     preselectionCount: String(m.preselectionCount ?? ""),
     brokersListingActive: m.brokersListingActive,
@@ -125,6 +134,14 @@ export default function RapportForm({
             ? initialData.similarEspaces
             : [emptySimilar()],
         presentationUrl: initialData.presentationUrl || "",
+        extraLinks: initialData.extraLinks || [],
+        marketStudy: {
+          summary: initialData.marketStudy?.summary || "",
+          figures:
+            initialData.marketStudy?.figures?.length
+              ? initialData.marketStudy.figures
+              : [emptyFigure()],
+        },
         hiddenSections: initialData.hiddenSections || [],
         months:
           initialData.months.length > 0
@@ -141,6 +158,8 @@ export default function RapportForm({
       recommendations: "",
       similarEspaces: [emptySimilar()],
       presentationUrl: "",
+      extraLinks: [],
+      marketStudy: { ...emptyMarketStudy(), figures: [emptyFigure()] },
       hiddenSections: [],
       months: [emptyMonthForm(defaultMonth())],
     };
@@ -242,6 +261,37 @@ export default function RapportForm({
     }));
   };
 
+  const updateLink = (id: string, patch: Partial<RapportLink>) => {
+    setForm((prev) => ({
+      ...prev,
+      extraLinks: prev.extraLinks.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+    }));
+  };
+
+  const removeLink = (id: string) => {
+    setForm((prev) => ({ ...prev, extraLinks: prev.extraLinks.filter((l) => l.id !== id) }));
+  };
+
+  const updateFigure = (id: string, patch: Partial<MarketStudyFigure>) => {
+    setForm((prev) => ({
+      ...prev,
+      marketStudy: {
+        ...prev.marketStudy,
+        figures: prev.marketStudy.figures.map((f) => (f.id === id ? { ...f, ...patch } : f)),
+      },
+    }));
+  };
+
+  const removeFigure = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      marketStudy: {
+        ...prev.marketStudy,
+        figures: prev.marketStudy.figures.filter((f) => f.id !== id),
+      },
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -259,6 +309,12 @@ export default function RapportForm({
         throw new Error("Chaque mois ne peut apparaître qu'une seule fois dans le rapport.");
       }
 
+      for (const l of form.extraLinks) {
+        if (l.label.trim() && !l.url.trim()) {
+          throw new Error(`Le lien « ${l.label.trim()} » n'a pas d'adresse (URL).`);
+        }
+      }
+
       const generalPayload = {
         espaceSlug,
         espaceName,
@@ -270,13 +326,19 @@ export default function RapportForm({
         recommendations: splitLines(form.recommendations),
         similarEspaces: form.similarEspaces.filter((s) => s.name.trim()),
         presentationUrl: form.presentationUrl.trim(),
+        extraLinks: form.extraLinks
+          .filter((l) => l.url.trim())
+          .map((l) => ({ ...l, label: l.label.trim() || "Lien", url: l.url.trim() })),
+        marketStudy: {
+          summary: form.marketStudy.summary.trim(),
+          figures: form.marketStudy.figures.filter((f) => f.label.trim() || f.value.trim()),
+        },
         hiddenSections: form.hiddenSections,
       };
 
       const monthsPayload = form.months.map((m) => ({
         month: m.month,
         monthlyBudget: m.monthlyBudget,
-        targetedEmailingCount: m.targetedEmailingCount,
         matchingFormsCount: m.matchingFormsCount,
         preselectionCount: m.preselectionCount,
         brokersListingActive: m.brokersListingActive,
@@ -398,6 +460,61 @@ export default function RapportForm({
               du rapport si l&apos;URL est renseignée.
             </p>
           </Field>
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <p className="text-sm font-medium text-luxury-charcoal">Liens complémentaires</p>
+              <button
+                type="button"
+                onClick={() => updateField("extraLinks", [...form.extraLinks, emptyLink()])}
+                className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
+              >
+                + Ajouter un lien
+              </button>
+            </div>
+            <p className="text-xs text-luxury-slate mb-3">
+              Chaque lien apparaîtra comme un bouton en haut du rapport, avec le nom
+              que vous lui donnez (ex : « Visite virtuelle », « Plan 3D », « Annonce Bureaux
+              Locaux »).
+            </p>
+            {form.extraLinks.length === 0 ? (
+              <p className="text-xs text-luxury-slate/70 italic">Aucun lien pour l&apos;instant.</p>
+            ) : (
+              <div className="space-y-3">
+                {form.extraLinks.map((l) => (
+                  <div
+                    key={l.id}
+                    className="grid md:grid-cols-[1fr_2fr_auto] gap-3 items-end p-4 border border-primary-200 rounded-lg bg-white"
+                  >
+                    <Field small label="Nom du bouton">
+                      <input
+                        type="text"
+                        value={l.label}
+                        onChange={(e) => updateLink(l.id, { label: e.target.value })}
+                        className={inputClsSmall}
+                        placeholder="ex: Visite virtuelle"
+                      />
+                    </Field>
+                    <Field small label="Adresse (URL)">
+                      <input
+                        type="url"
+                        value={l.url}
+                        onChange={(e) => updateLink(l.id, { url: e.target.value })}
+                        className={inputClsSmall}
+                        placeholder="https://..."
+                      />
+                    </Field>
+                    <button
+                      type="button"
+                      onClick={() => removeLink(l.id)}
+                      className="text-xs text-red-400 hover:text-red-600 transition-colors pb-2"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <Field
             label="Synthèse / introduction"
             full
@@ -486,16 +603,6 @@ export default function RapportForm({
               placeholder="ex: 1 250 €"
             />
           </Field>
-          <Field label="Contacts ayant reçu un emailing ciblé">
-            <input
-              type="number"
-              min={0}
-              value={activeMonth.targetedEmailingCount}
-              onChange={(e) => updateMonth("targetedEmailingCount", e.target.value)}
-              className={inputCls}
-              placeholder="0"
-            />
-          </Field>
           <Field label="Formulaires reçus avec cahier des charges correspondant">
             <input
               type="number"
@@ -506,7 +613,7 @@ export default function RapportForm({
               placeholder="0"
             />
           </Field>
-          <Field label="Prospects ayant reçu la présentation commerciale">
+          <Field label="Prospects auxquels l'offre a été présentée">
             <input
               type="number"
               min={0}
@@ -746,6 +853,78 @@ export default function RapportForm({
                   </button>
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+
+        <SectionTitle
+          hidden={isHidden("etude-marche")}
+          onToggle={() => toggleSection("etude-marche")}
+        >
+          Étude de marché
+        </SectionTitle>
+        <p className="text-xs text-luxury-slate -mt-3 mb-6">
+          Commune à tous les mois du rapport. Elle apparaît juste avant « Nos préconisations ».
+        </p>
+        <div className="mb-6">
+          <Field label="Analyse du marché" full>
+            <textarea
+              value={form.marketStudy.summary}
+              onChange={(e) =>
+                updateField("marketStudy", { ...form.marketStudy, summary: e.target.value })
+              }
+              rows={5}
+              className={inputCls + " resize-vertical"}
+              placeholder="ex: Le Marais reste l'un des quartiers les plus demandés par les studios créatifs. L'offre de bureaux opérés de 30 à 50 postes y est rare, ce qui soutient les loyers…"
+            />
+          </Field>
+        </div>
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <p className="text-sm font-medium text-luxury-charcoal">Chiffres clés</p>
+          <button
+            type="button"
+            onClick={() =>
+              updateField("marketStudy", {
+                ...form.marketStudy,
+                figures: [...form.marketStudy.figures, emptyFigure()],
+              })
+            }
+            className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
+          >
+            + Ajouter un chiffre
+          </button>
+        </div>
+        <div className="space-y-3 mb-12">
+          {form.marketStudy.figures.map((f) => (
+            <div
+              key={f.id}
+              className="grid md:grid-cols-[2fr_1fr_auto] gap-3 items-end p-4 border border-primary-200 rounded-lg bg-white"
+            >
+              <Field small label="Intitulé">
+                <input
+                  type="text"
+                  value={f.label}
+                  onChange={(e) => updateFigure(f.id, { label: e.target.value })}
+                  className={inputClsSmall}
+                  placeholder="ex: Loyer moyen du quartier"
+                />
+              </Field>
+              <Field small label="Valeur">
+                <input
+                  type="text"
+                  value={f.value}
+                  onChange={(e) => updateFigure(f.id, { value: e.target.value })}
+                  className={inputClsSmall}
+                  placeholder="ex: 650 €/poste"
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={() => removeFigure(f.id)}
+                className="text-xs text-red-400 hover:text-red-600 transition-colors pb-2"
+              >
+                Supprimer
+              </button>
             </div>
           ))}
         </div>

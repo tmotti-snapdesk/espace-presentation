@@ -23,6 +23,29 @@ export interface SimilarEspace {
   image: string;
 }
 
+/** Lien libre ajouté par un BizDev (affiché comme bouton en tête du rapport). */
+export interface RapportLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
+/** Chiffre clé de l'étude de marché, ex. « Loyer moyen du quartier » / « 650 €/poste ». */
+export interface MarketStudyFigure {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface RapportMarketStudy {
+  summary: string;
+  figures: MarketStudyFigure[];
+}
+
+export function emptyMarketStudy(): RapportMarketStudy {
+  return { summary: "", figures: [] };
+}
+
 export interface RapportDistribution {
   bureauxLocaux: boolean;
   ubiq: boolean;
@@ -35,7 +58,6 @@ export interface RapportMonthData {
   month: string;
 
   monthlyBudget: string;
-  targetedEmailingCount: number;
   matchingFormsCount: number;
   preselectionCount: number;
   brokersListingActive: boolean;
@@ -62,6 +84,9 @@ export interface RapportData {
   similarEspaces: SimilarEspace[];
 
   presentationUrl: string;
+  // Optionnels : absents des rapports créés avant leur ajout.
+  extraLinks?: RapportLink[];
+  marketStudy?: RapportMarketStudy;
 
   hiddenSections: string[];
 
@@ -75,7 +100,6 @@ export interface RapportMonthFormData {
   month: string;
 
   monthlyBudget: string;
-  targetedEmailingCount: string;
   matchingFormsCount: string;
   preselectionCount: string;
   brokersListingActive: boolean;
@@ -100,6 +124,8 @@ export interface RapportFormData {
   similarEspaces: SimilarEspace[];
 
   presentationUrl: string;
+  extraLinks: RapportLink[];
+  marketStudy: RapportMarketStudy;
 
   hiddenSections: string[];
 
@@ -128,7 +154,6 @@ export function emptyRapportMonth(month: string): RapportMonthData {
   return {
     month,
     monthlyBudget: "",
-    targetedEmailingCount: 0,
     matchingFormsCount: 0,
     preselectionCount: 0,
     brokersListingActive: true,

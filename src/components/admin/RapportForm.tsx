@@ -17,6 +17,9 @@ import {
   joinLines,
   emptyDistribution,
   emptyMarketStudy,
+  parseAmount,
+  median,
+  formatPricePerSqm,
 } from "@/types/rapport";
 
 interface RapportFormProps {
@@ -132,11 +135,12 @@ export default function RapportForm({
         presentationUrl: initialData.presentationUrl || "",
         extraLinks: initialData.extraLinks || [],
         marketStudy: {
+          ...emptyMarketStudy(),
+          ...(initialData.marketStudy || {}),
           ownAsset: {
             ...emptyMarketStudy().ownAsset,
             ...(initialData.marketStudy?.ownAsset || {}),
           },
-          comment: initialData.marketStudy?.comment || "",
         },
         hiddenSections: initialData.hiddenSections || [],
         months:
@@ -274,6 +278,17 @@ export default function RapportForm({
       marketStudy: { ...prev.marketStudy, ownAsset: { ...prev.marketStudy.ownAsset, ...patch } },
     }));
   };
+
+  const updateMarketStudy = (patch: Partial<RapportMarketStudy>) => {
+    setForm((prev) => ({ ...prev, marketStudy: { ...prev.marketStudy, ...patch } }));
+  };
+
+  // Médiane €/m²/an calculée à partir des offres comparables (aperçu dans l'admin).
+  const computedMedian = median(
+    form.similarEspaces
+      .map((s) => parseAmount(s.pricePerSqmYear))
+      .filter((n): n is number => n !== null)
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -849,6 +864,47 @@ export default function RapportForm({
           propriétaire puisse situer son espace. Commune à tous les mois du rapport.
         </p>
 
+        <div className="mb-8 p-5 border border-primary-200 rounded-lg bg-white">
+          <p className="text-sm font-medium text-luxury-charcoal mb-4">Le secteur</p>
+          <div className="grid md:grid-cols-3 gap-4">
+            <Field small label="Nom du secteur">
+              <input
+                type="text"
+                value={form.marketStudy.sectorName}
+                onChange={(e) => updateMarketStudy({ sectorName: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: Paris 3e – 4e"
+              />
+            </Field>
+            <Field small label="Offres disponibles sur le secteur">
+              <input
+                type="text"
+                value={form.marketStudy.sectorOfferCount}
+                onChange={(e) => updateMarketStudy({ sectorOfferCount: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: 32"
+              />
+            </Field>
+            <Field small label="Médiane (€/m²/an)">
+              <input
+                type="text"
+                value={form.marketStudy.medianOverride}
+                onChange={(e) => updateMarketStudy({ medianOverride: e.target.value })}
+                className={inputClsSmall}
+                placeholder={computedMedian !== null ? `Auto : ${Math.round(computedMedian)}` : "ex: 540"}
+              />
+            </Field>
+          </div>
+          <p className="text-xs text-luxury-slate mt-3">
+            Médiane : laissez vide pour la calculer automatiquement à partir des prix/m²/an des
+            offres ci-dessous
+            {computedMedian !== null
+              ? ` (actuellement ${formatPricePerSqm(computedMedian)})`
+              : ""}
+            , ou saisissez la médiane du secteur si vous la connaissez.
+          </p>
+        </div>
+
         <div className="mb-8 p-5 border border-luxury-gold/40 rounded-lg bg-luxury-champagne/20">
           <p className="text-sm font-medium text-luxury-charcoal mb-1">
             Votre espace — {espaceName}
@@ -856,7 +912,7 @@ export default function RapportForm({
           <p className="text-xs text-luxury-slate mb-4">
             Première ligne du tableau comparatif, mise en avant.
           </p>
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             <Field small label="Nombre de postes">
               <input
                 type="text"
@@ -891,6 +947,24 @@ export default function RapportForm({
                 onChange={(e) => updateOwnAsset({ pricePerWorkstation: e.target.value })}
                 className={inputClsSmall}
                 placeholder="ex: 450 €/poste"
+              />
+            </Field>
+            <Field small label="Prix (€/m²/an)">
+              <input
+                type="text"
+                value={form.marketStudy.ownAsset.pricePerSqmYear}
+                onChange={(e) => updateOwnAsset({ pricePerSqmYear: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: 520"
+              />
+            </Field>
+            <Field small label="Disponibilité">
+              <input
+                type="text"
+                value={form.marketStudy.ownAsset.availability}
+                onChange={(e) => updateOwnAsset({ availability: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: Immédiate"
               />
             </Field>
           </div>
@@ -929,7 +1003,7 @@ export default function RapportForm({
                   />
                 </Field>
               </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
+              <div className="grid md:grid-cols-3 gap-4 mb-4">
                 <Field small label="Nombre de postes">
                   <input
                     type="text"
@@ -966,6 +1040,24 @@ export default function RapportForm({
                     placeholder="ex: 425 €/poste"
                   />
                 </Field>
+                <Field small label="Prix (€/m²/an)">
+                  <input
+                    type="text"
+                    value={s.pricePerSqmYear || ""}
+                    onChange={(e) => updateSimilar(s.id, { pricePerSqmYear: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: 540"
+                  />
+                </Field>
+                <Field small label="Date de disponibilité">
+                  <input
+                    type="text"
+                    value={s.availability || ""}
+                    onChange={(e) => updateSimilar(s.id, { availability: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: Immédiate, janvier 2027"
+                  />
+                </Field>
               </div>
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <Field small label="Lien vers l'annonce (URL)">
@@ -987,7 +1079,7 @@ export default function RapportForm({
                   />
                 </Field>
               </div>
-              <Field small label="Description">
+              <Field small label="Description de l'offre">
                 <textarea
                   value={s.description}
                   onChange={(e) => updateSimilar(s.id, { description: e.target.value })}
@@ -1016,7 +1108,7 @@ export default function RapportForm({
             <textarea
               value={form.marketStudy.comment}
               onChange={(e) =>
-                updateField("marketStudy", { ...form.marketStudy, comment: e.target.value })
+                updateMarketStudy({ comment: e.target.value })
               }
               rows={4}
               className={inputCls + " resize-vertical"}

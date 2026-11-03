@@ -69,7 +69,7 @@ function normalizeMarketStudy(
   existing?: RapportMarketStudy
 ): RapportMarketStudy {
   if (!value || typeof value !== "object") return existing || emptyMarketStudy();
-  const v = value as { ownAsset?: Record<string, unknown>; comment?: unknown };
+  const v = value as Record<string, unknown> & { ownAsset?: Record<string, unknown> };
   const own = v.ownAsset || {};
   return {
     ownAsset: {
@@ -77,8 +77,13 @@ function normalizeMarketStudy(
       surface: str(own.surface),
       price: str(own.price),
       pricePerWorkstation: str(own.pricePerWorkstation),
+      pricePerSqmYear: str(own.pricePerSqmYear),
+      availability: str(own.availability),
     },
     comment: typeof v.comment === "string" ? v.comment.trim() : "",
+    sectorName: str(v.sectorName),
+    sectorOfferCount: str(v.sectorOfferCount),
+    medianOverride: str(v.medianOverride),
   };
 }
 

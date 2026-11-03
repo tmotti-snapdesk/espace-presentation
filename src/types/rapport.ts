@@ -25,6 +25,8 @@ export interface SimilarEspace {
   location?: string;
   surface?: string;
   pricePerWorkstation?: string;
+  pricePerSqmYear?: string; // € / m² / an, saisi en chiffres (sert au calcul de la médiane)
+  availability?: string; // date ou texte libre, ex. « Immédiate », « 2027-01-01 »
 }
 
 /** Lien libre ajouté par un BizDev (affiché comme bouton en tête du rapport). */
@@ -44,18 +46,69 @@ export interface MarketStudyOwnAsset {
   surface: string;
   price: string;
   pricePerWorkstation: string;
+  pricePerSqmYear: string;
+  availability: string;
 }
 
 export interface RapportMarketStudy {
   ownAsset: MarketStudyOwnAsset;
   comment: string;
+  /** Nom du secteur, ex. « Paris 3e – 4e ». */
+  sectorName: string;
+  /** Nombre d'offres disponibles sur le secteur. */
+  sectorOfferCount: string;
+  /** Médiane €/m²/an saisie à la main ; vide = calculée à partir des offres. */
+  medianOverride: string;
 }
 
 export function emptyMarketStudy(): RapportMarketStudy {
   return {
-    ownAsset: { workstations: "", surface: "", price: "", pricePerWorkstation: "" },
+    ownAsset: {
+      workstations: "",
+      surface: "",
+      price: "",
+      pricePerWorkstation: "",
+      pricePerSqmYear: "",
+      availability: "",
+    },
     comment: "",
+    sectorName: "",
+    sectorOfferCount: "",
+    medianOverride: "",
   };
+}
+
+/** Lit un nombre saisi librement (« 1 250,5 € » → 1250.5). Renvoie null si illisible. */
+export function parseAmount(value: string | undefined | null): number | null {
+  if (!value) return null;
+  const cleaned = value.replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
+  const match = cleaned.match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const n = parseFloat(match[0]);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+export function formatPricePerSqm(value: number): string {
+  return `${Math.round(value).toLocaleString("fr-FR")} €/m²/an`;
+}
+
+/** Affiche une disponibilité : une date AAAA-MM-JJ devient « 1 janvier 2027 », le reste tel quel. */
+export function formatAvailability(value: string | undefined): string {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const d = new Date(value + "T00:00:00");
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    }
+  }
+  return value;
 }
 
 export interface RapportDistribution {

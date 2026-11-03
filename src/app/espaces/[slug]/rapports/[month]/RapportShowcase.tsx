@@ -112,9 +112,8 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
         <RapportSimilarEspaces
           espaceName={rapport.espaceName}
           espaceAddress={rapport.espaceAddress}
-          ownAsset={rapport.marketStudy?.ownAsset}
+          marketStudy={rapport.marketStudy}
           similarEspaces={rapport.similarEspaces}
-          comment={rapport.marketStudy?.comment}
         />
       )}
       {isVisible("preconisations") && (

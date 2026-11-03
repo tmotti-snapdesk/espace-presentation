@@ -9,7 +9,7 @@ import {
   RapportVisite,
   SimilarEspace,
   RapportLink,
-  MarketStudyFigure,
+  RapportMarketStudy,
   RapportDistribution,
   DISTRIBUTION_LABELS,
   formatMonthLabel,
@@ -58,10 +58,6 @@ function emptySimilar(): SimilarEspace {
 
 function emptyLink(): RapportLink {
   return { id: uid("lnk"), label: "", url: "" };
-}
-
-function emptyFigure(): MarketStudyFigure {
-  return { id: uid("fig"), label: "", value: "" };
 }
 
 function defaultMonth(): string {
@@ -136,11 +132,11 @@ export default function RapportForm({
         presentationUrl: initialData.presentationUrl || "",
         extraLinks: initialData.extraLinks || [],
         marketStudy: {
-          summary: initialData.marketStudy?.summary || "",
-          figures:
-            initialData.marketStudy?.figures?.length
-              ? initialData.marketStudy.figures
-              : [emptyFigure()],
+          ownAsset: {
+            ...emptyMarketStudy().ownAsset,
+            ...(initialData.marketStudy?.ownAsset || {}),
+          },
+          comment: initialData.marketStudy?.comment || "",
         },
         hiddenSections: initialData.hiddenSections || [],
         months:
@@ -159,7 +155,7 @@ export default function RapportForm({
       similarEspaces: [emptySimilar()],
       presentationUrl: "",
       extraLinks: [],
-      marketStudy: { ...emptyMarketStudy(), figures: [emptyFigure()] },
+      marketStudy: emptyMarketStudy(),
       hiddenSections: [],
       months: [emptyMonthForm(defaultMonth())],
     };
@@ -272,23 +268,10 @@ export default function RapportForm({
     setForm((prev) => ({ ...prev, extraLinks: prev.extraLinks.filter((l) => l.id !== id) }));
   };
 
-  const updateFigure = (id: string, patch: Partial<MarketStudyFigure>) => {
+  const updateOwnAsset = (patch: Partial<RapportMarketStudy["ownAsset"]>) => {
     setForm((prev) => ({
       ...prev,
-      marketStudy: {
-        ...prev.marketStudy,
-        figures: prev.marketStudy.figures.map((f) => (f.id === id ? { ...f, ...patch } : f)),
-      },
-    }));
-  };
-
-  const removeFigure = (id: string) => {
-    setForm((prev) => ({
-      ...prev,
-      marketStudy: {
-        ...prev.marketStudy,
-        figures: prev.marketStudy.figures.filter((f) => f.id !== id),
-      },
+      marketStudy: { ...prev.marketStudy, ownAsset: { ...prev.marketStudy.ownAsset, ...patch } },
     }));
   };
 
@@ -329,10 +312,7 @@ export default function RapportForm({
         extraLinks: form.extraLinks
           .filter((l) => l.url.trim())
           .map((l) => ({ ...l, label: l.label.trim() || "Lien", url: l.url.trim() })),
-        marketStudy: {
-          summary: form.marketStudy.summary.trim(),
-          figures: form.marketStudy.figures.filter((f) => f.label.trim() || f.value.trim()),
-        },
+        marketStudy: form.marketStudy,
         hiddenSections: form.hiddenSections,
       };
 
@@ -857,76 +837,192 @@ export default function RapportForm({
           ))}
         </div>
 
-        <SectionTitle
-          hidden={isHidden("etude-marche")}
-          onToggle={() => toggleSection("etude-marche")}
-        >
-          Étude de marché
-        </SectionTitle>
-        <p className="text-xs text-luxury-slate -mt-3 mb-6">
-          Commune à tous les mois du rapport. Elle apparaît juste avant « Nos préconisations ».
-        </p>
-        <div className="mb-6">
-          <Field label="Analyse du marché" full>
-            <textarea
-              value={form.marketStudy.summary}
-              onChange={(e) =>
-                updateField("marketStudy", { ...form.marketStudy, summary: e.target.value })
-              }
-              rows={5}
-              className={inputCls + " resize-vertical"}
-              placeholder="ex: Le Marais reste l'un des quartiers les plus demandés par les studios créatifs. L'offre de bureaux opérés de 30 à 50 postes y est rare, ce qui soutient les loyers…"
-            />
-          </Field>
+        <div className="flex items-center justify-between gap-4 mb-3 pb-3 border-b border-primary-200">
+          <h2 className="font-serif text-2xl text-luxury-charcoal">Étude de marché</h2>
+          <VisibilitySwitch
+            hidden={isHidden("similaires")}
+            onToggle={() => toggleSection("similaires")}
+          />
         </div>
+        <p className="text-xs text-luxury-slate mb-6">
+          Une sélection d&apos;offres comparables actuellement commercialisées, pour que le
+          propriétaire puisse situer son espace. Commune à tous les mois du rapport.
+        </p>
+
+        <div className="mb-8 p-5 border border-luxury-gold/40 rounded-lg bg-luxury-champagne/20">
+          <p className="text-sm font-medium text-luxury-charcoal mb-1">
+            Votre espace — {espaceName}
+          </p>
+          <p className="text-xs text-luxury-slate mb-4">
+            Première ligne du tableau comparatif, mise en avant.
+          </p>
+          <div className="grid md:grid-cols-4 gap-4">
+            <Field small label="Nombre de postes">
+              <input
+                type="text"
+                value={form.marketStudy.ownAsset.workstations}
+                onChange={(e) => updateOwnAsset({ workstations: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: 40"
+              />
+            </Field>
+            <Field small label="Surface">
+              <input
+                type="text"
+                value={form.marketStudy.ownAsset.surface}
+                onChange={(e) => updateOwnAsset({ surface: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: 450 m²"
+              />
+            </Field>
+            <Field small label="Loyer">
+              <input
+                type="text"
+                value={form.marketStudy.ownAsset.price}
+                onChange={(e) => updateOwnAsset({ price: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: 18 000 € HT/mois"
+              />
+            </Field>
+            <Field small label="Prix par poste">
+              <input
+                type="text"
+                value={form.marketStudy.ownAsset.pricePerWorkstation}
+                onChange={(e) => updateOwnAsset({ pricePerWorkstation: e.target.value })}
+                className={inputClsSmall}
+                placeholder="ex: 450 €/poste"
+              />
+            </Field>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between gap-4 mb-3">
-          <p className="text-sm font-medium text-luxury-charcoal">Chiffres clés</p>
+          <p className="text-sm font-medium text-luxury-charcoal">Offres comparables</p>
           <button
             type="button"
-            onClick={() =>
-              updateField("marketStudy", {
-                ...form.marketStudy,
-                figures: [...form.marketStudy.figures, emptyFigure()],
-              })
-            }
+            onClick={() => updateField("similarEspaces", [...form.similarEspaces, emptySimilar()])}
             className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
           >
-            + Ajouter un chiffre
+            + Ajouter une offre
           </button>
         </div>
-        <div className="space-y-3 mb-12">
-          {form.marketStudy.figures.map((f) => (
-            <div
-              key={f.id}
-              className="grid md:grid-cols-[2fr_1fr_auto] gap-3 items-end p-4 border border-primary-200 rounded-lg bg-white"
-            >
-              <Field small label="Intitulé">
-                <input
-                  type="text"
-                  value={f.label}
-                  onChange={(e) => updateFigure(f.id, { label: e.target.value })}
-                  className={inputClsSmall}
-                  placeholder="ex: Loyer moyen du quartier"
+        <div className="space-y-4 mb-8">
+          {form.similarEspaces.map((s) => (
+            <div key={s.id} className="p-5 border border-primary-200 rounded-lg bg-white">
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <Field small label="Nom de l'espace">
+                  <input
+                    type="text"
+                    value={s.name}
+                    onChange={(e) => updateSimilar(s.id, { name: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: Le Sentier — Atelier"
+                  />
+                </Field>
+                <Field small label="Localisation">
+                  <input
+                    type="text"
+                    value={s.location || ""}
+                    onChange={(e) => updateSimilar(s.id, { location: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: Paris 2e — Sentier"
+                  />
+                </Field>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
+                <Field small label="Nombre de postes">
+                  <input
+                    type="text"
+                    value={s.workstations}
+                    onChange={(e) => updateSimilar(s.id, { workstations: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: 40"
+                  />
+                </Field>
+                <Field small label="Surface">
+                  <input
+                    type="text"
+                    value={s.surface || ""}
+                    onChange={(e) => updateSimilar(s.id, { surface: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: 420 m²"
+                  />
+                </Field>
+                <Field small label="Loyer">
+                  <input
+                    type="text"
+                    value={s.price}
+                    onChange={(e) => updateSimilar(s.id, { price: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: 17 000 € HT/mois"
+                  />
+                </Field>
+                <Field small label="Prix par poste">
+                  <input
+                    type="text"
+                    value={s.pricePerWorkstation || ""}
+                    onChange={(e) => updateSimilar(s.id, { pricePerWorkstation: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="ex: 425 €/poste"
+                  />
+                </Field>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <Field small label="Lien vers l'annonce (URL)">
+                  <input
+                    type="url"
+                    value={s.url}
+                    onChange={(e) => updateSimilar(s.id, { url: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="https://..."
+                  />
+                </Field>
+                <Field small label="Image (URL)">
+                  <input
+                    type="url"
+                    value={s.image}
+                    onChange={(e) => updateSimilar(s.id, { image: e.target.value })}
+                    className={inputClsSmall}
+                    placeholder="https://..."
+                  />
+                </Field>
+              </div>
+              <Field small label="Description">
+                <textarea
+                  value={s.description}
+                  onChange={(e) => updateSimilar(s.id, { description: e.target.value })}
+                  rows={2}
+                  className={inputClsSmall + " resize-vertical"}
+                  placeholder="Points forts / faibles par rapport à votre espace."
                 />
               </Field>
-              <Field small label="Valeur">
-                <input
-                  type="text"
-                  value={f.value}
-                  onChange={(e) => updateFigure(f.id, { value: e.target.value })}
-                  className={inputClsSmall}
-                  placeholder="ex: 650 €/poste"
-                />
-              </Field>
-              <button
-                type="button"
-                onClick={() => removeFigure(f.id)}
-                className="text-xs text-red-400 hover:text-red-600 transition-colors pb-2"
-              >
-                Supprimer
-              </button>
+              {form.similarEspaces.length > 1 && (
+                <div className="mt-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => removeSimilar(s.id)}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    Supprimer cette offre
+                  </button>
+                </div>
+              )}
             </div>
           ))}
+        </div>
+
+        <div className="mb-12">
+          <Field label="Notre lecture du marché (facultatif)" full>
+            <textarea
+              value={form.marketStudy.comment}
+              onChange={(e) =>
+                updateField("marketStudy", { ...form.marketStudy, comment: e.target.value })
+              }
+              rows={4}
+              className={inputCls + " resize-vertical"}
+              placeholder="ex: Votre espace se situe dans la moyenne basse du quartier en prix par poste, avec une surface par poste plus généreuse que les offres comparables."
+            />
+          </Field>
         </div>
 
         <SectionTitle
@@ -946,100 +1042,6 @@ export default function RapportForm({
         </Field>
 
         <div className="mb-12" />
-
-        <div className="flex items-center justify-between mb-6 pb-3 border-b border-primary-200">
-          <h2 className="font-serif text-2xl text-luxury-charcoal">
-            Espaces similaires sur le marché
-          </h2>
-          <div className="flex items-center gap-5">
-            <button
-              type="button"
-              onClick={() =>
-                updateField("similarEspaces", [...form.similarEspaces, emptySimilar()])
-              }
-              className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
-            >
-              + Ajouter un espace
-            </button>
-            <VisibilitySwitch
-              hidden={isHidden("similaires")}
-              onToggle={() => toggleSection("similaires")}
-            />
-          </div>
-        </div>
-        <div className="space-y-4 mb-12">
-          {form.similarEspaces.map((s) => (
-            <div key={s.id} className="p-5 border border-primary-200 rounded-lg bg-white">
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <Field small label="Nom de l'espace">
-                  <input
-                    type="text"
-                    value={s.name}
-                    onChange={(e) => updateSimilar(s.id, { name: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: Le Sentier — Atelier"
-                  />
-                </Field>
-                <Field small label="Lien (URL)">
-                  <input
-                    type="url"
-                    value={s.url}
-                    onChange={(e) => updateSimilar(s.id, { url: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="https://..."
-                  />
-                </Field>
-                <Field small label="Nombre de postes">
-                  <input
-                    type="text"
-                    value={s.workstations}
-                    onChange={(e) => updateSimilar(s.id, { workstations: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 40"
-                  />
-                </Field>
-                <Field small label="Loyer">
-                  <input
-                    type="text"
-                    value={s.price}
-                    onChange={(e) => updateSimilar(s.id, { price: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 17 000€ HT/mois"
-                  />
-                </Field>
-                <Field small label="Image (URL)" colSpan={2}>
-                  <input
-                    type="url"
-                    value={s.image}
-                    onChange={(e) => updateSimilar(s.id, { image: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="https://..."
-                  />
-                </Field>
-              </div>
-              <Field small label="Description">
-                <textarea
-                  value={s.description}
-                  onChange={(e) => updateSimilar(s.id, { description: e.target.value })}
-                  rows={2}
-                  className={inputClsSmall + " resize-vertical"}
-                  placeholder="Quelques mots pour situer l'espace."
-                />
-              </Field>
-              {form.similarEspaces.length > 1 && (
-                <div className="mt-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => removeSimilar(s.id)}
-                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                  >
-                    Supprimer cet espace
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
 
         <div className="text-center pt-8 border-t border-primary-200">
           <button

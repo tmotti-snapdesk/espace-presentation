@@ -10,8 +10,8 @@ import {
   SimilarEspace,
   RapportLink,
   RapportMarketStudy,
-  MarketStudyFigure,
   emptyDistribution,
+  emptyMarketStudy,
   sortMonthsDesc,
   sortVisitesDesc,
 } from "@/types/rapport";
@@ -68,18 +68,18 @@ function normalizeMarketStudy(
   value: unknown,
   existing?: RapportMarketStudy
 ): RapportMarketStudy {
-  if (!value || typeof value !== "object") return existing || { summary: "", figures: [] };
-  const v = value as { summary?: unknown; figures?: unknown };
-  const figures: MarketStudyFigure[] = Array.isArray(v.figures)
-    ? v.figures
-        .map((f: Record<string, unknown>) => ({
-          id: str(f?.id) || `fig-${Math.random().toString(36).slice(2, 9)}`,
-          label: str(f?.label),
-          value: str(f?.value),
-        }))
-        .filter((f) => f.label || f.value)
-    : [];
-  return { summary: typeof v.summary === "string" ? v.summary.trim() : "", figures };
+  if (!value || typeof value !== "object") return existing || emptyMarketStudy();
+  const v = value as { ownAsset?: Record<string, unknown>; comment?: unknown };
+  const own = v.ownAsset || {};
+  return {
+    ownAsset: {
+      workstations: str(own.workstations),
+      surface: str(own.surface),
+      price: str(own.price),
+      pricePerWorkstation: str(own.pricePerWorkstation),
+    },
+    comment: typeof v.comment === "string" ? v.comment.trim() : "",
+  };
 }
 
 /** Normalizes a raw request body into the general (non-monthly) rapport fields. */

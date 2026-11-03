@@ -21,6 +21,10 @@ export interface SimilarEspace {
   workstations: string;
   description: string;
   image: string;
+  // Champs de comparaison (étude de marché), absents des anciens rapports.
+  location?: string;
+  surface?: string;
+  pricePerWorkstation?: string;
 }
 
 /** Lien libre ajouté par un BizDev (affiché comme bouton en tête du rapport). */
@@ -30,20 +34,28 @@ export interface RapportLink {
   url: string;
 }
 
-/** Chiffre clé de l'étude de marché, ex. « Loyer moyen du quartier » / « 650 €/poste ». */
-export interface MarketStudyFigure {
-  id: string;
-  label: string;
-  value: string;
+/**
+ * Étude de marché : les offres comparables sont dans `similarEspaces` ; ici on
+ * stocke les caractéristiques de l'espace du propriétaire (pour la ligne
+ * « Votre espace » du tableau comparatif) et un commentaire facultatif.
+ */
+export interface MarketStudyOwnAsset {
+  workstations: string;
+  surface: string;
+  price: string;
+  pricePerWorkstation: string;
 }
 
 export interface RapportMarketStudy {
-  summary: string;
-  figures: MarketStudyFigure[];
+  ownAsset: MarketStudyOwnAsset;
+  comment: string;
 }
 
 export function emptyMarketStudy(): RapportMarketStudy {
-  return { summary: "", figures: [] };
+  return {
+    ownAsset: { workstations: "", surface: "", price: "", pricePerWorkstation: "" },
+    comment: "",
+  };
 }
 
 export interface RapportDistribution {

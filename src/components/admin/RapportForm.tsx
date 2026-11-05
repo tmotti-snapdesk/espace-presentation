@@ -1,25 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import {
   RapportData,
   RapportFormData,
   RapportMonthFormData,
   RapportVisite,
-  SimilarEspace,
   RapportLink,
-  RapportMarketStudy,
+  RapportPdf,
   RapportDistribution,
   DISTRIBUTION_LABELS,
   formatMonthLabel,
   splitLines,
   joinLines,
   emptyDistribution,
-  emptyMarketStudy,
-  parseAmount,
-  median,
-  formatPricePerSqm,
+  formatLongDate,
+  DEFAULT_CONTACT_BASE_COUNT,
 } from "@/types/rapport";
 
 interface RapportFormProps {
@@ -47,18 +45,6 @@ function emptyVisite(): RapportVisite {
   };
 }
 
-function emptySimilar(): SimilarEspace {
-  return {
-    id: uid("sim"),
-    name: "",
-    url: "",
-    price: "",
-    workstations: "",
-    description: "",
-    image: "",
-  };
-}
-
 function emptyLink(): RapportLink {
   return { id: uid("lnk"), label: "", url: "" };
 }
@@ -83,6 +69,9 @@ function emptyMonthForm(month: string): RapportMonthFormData {
     preselectionCount: "",
     brokersListingActive: true,
     brokersListingCount: "450",
+    // Activé par défaut sur les nouveaux mois uniquement.
+    contactBaseActive: true,
+    contactBaseCount: String(DEFAULT_CONTACT_BASE_COUNT),
     distribution: emptyDistribution(),
     otherMarketingActions: "",
     prospectionActions: "",
@@ -99,6 +88,8 @@ function monthToForm(m: RapportData["months"][number]): RapportMonthFormData {
     preselectionCount: String(m.preselectionCount ?? ""),
     brokersListingActive: m.brokersListingActive,
     brokersListingCount: String(m.brokersListingCount || 450),
+    contactBaseActive: m.contactBaseActive ?? false,
+    contactBaseCount: String(m.contactBaseCount || DEFAULT_CONTACT_BASE_COUNT),
     distribution: { ...emptyDistribution(), ...m.distribution },
     otherMarketingActions: joinLines(m.otherMarketingActions),
     prospectionActions: joinLines(m.prospectionActions),
@@ -128,20 +119,9 @@ export default function RapportForm({
         intro: initialData.intro,
         anonymizeVisitProspects: initialData.anonymizeVisitProspects ?? false,
         recommendations: joinLines(initialData.recommendations),
-        similarEspaces:
-          initialData.similarEspaces.length > 0
-            ? initialData.similarEspaces
-            : [emptySimilar()],
         presentationUrl: initialData.presentationUrl || "",
         extraLinks: initialData.extraLinks || [],
-        marketStudy: {
-          ...emptyMarketStudy(),
-          ...(initialData.marketStudy || {}),
-          ownAsset: {
-            ...emptyMarketStudy().ownAsset,
-            ...(initialData.marketStudy?.ownAsset || {}),
-          },
-        },
+        marketStudyPdf: initialData.marketStudyPdf || null,
         hiddenSections: initialData.hiddenSections || [],
         months:
           initialData.months.length > 0
@@ -156,10 +136,9 @@ export default function RapportForm({
       intro: "",
       anonymizeVisitProspects: false,
       recommendations: "",
-      similarEspaces: [emptySimilar()],
       presentationUrl: "",
       extraLinks: [],
-      marketStudy: emptyMarketStudy(),
+      marketStudyPdf: null,
       hiddenSections: [],
       months: [emptyMonthForm(defaultMonth())],
     };
@@ -245,22 +224,6 @@ export default function RapportForm({
     }));
   };
 
-  const updateSimilar = (id: string, patch: Partial<SimilarEspace>) => {
-    setForm((prev) => ({
-      ...prev,
-      similarEspaces: prev.similarEspaces.map((s) =>
-        s.id === id ? { ...s, ...patch } : s
-      ),
-    }));
-  };
-
-  const removeSimilar = (id: string) => {
-    setForm((prev) => ({
-      ...prev,
-      similarEspaces: prev.similarEspaces.filter((s) => s.id !== id),
-    }));
-  };
-
   const updateLink = (id: string, patch: Partial<RapportLink>) => {
     setForm((prev) => ({
       ...prev,
@@ -272,23 +235,35 @@ export default function RapportForm({
     setForm((prev) => ({ ...prev, extraLinks: prev.extraLinks.filter((l) => l.id !== id) }));
   };
 
-  const updateOwnAsset = (patch: Partial<RapportMarketStudy["ownAsset"]>) => {
-    setForm((prev) => ({
-      ...prev,
-      marketStudy: { ...prev.marketStudy, ownAsset: { ...prev.marketStudy.ownAsset, ...patch } },
-    }));
-  };
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
-  const updateMarketStudy = (patch: Partial<RapportMarketStudy>) => {
-    setForm((prev) => ({ ...prev, marketStudy: { ...prev.marketStudy, ...patch } }));
+  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setError("Le fichier de l'état du marché doit être un PDF.");
+      return;
+    }
+    setUploadingPdf(true);
+    setError(null);
+    try {
+      const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").toLowerCase();
+      const blob = await upload(`rapports/etude-marche/${espaceSlug}-${Date.now()}-${sanitized}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        contentType: "application/pdf",
+      });
+      const pdf: RapportPdf = { url: blob.url, name: file.name, uploadedAt: new Date().toISOString() };
+      updateField("marketStudyPdf", pdf);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur lors de l'envoi du PDF : ${msg}`);
+    } finally {
+      setUploadingPdf(false);
+    }
   };
-
-  // Médiane €/m²/an calculée à partir des offres comparables (aperçu dans l'admin).
-  const computedMedian = median(
-    form.similarEspaces
-      .map((s) => parseAmount(s.pricePerSqmYear))
-      .filter((n): n is number => n !== null)
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,12 +297,11 @@ export default function RapportForm({
         intro: form.intro,
         anonymizeVisitProspects: form.anonymizeVisitProspects,
         recommendations: splitLines(form.recommendations),
-        similarEspaces: form.similarEspaces.filter((s) => s.name.trim()),
         presentationUrl: form.presentationUrl.trim(),
         extraLinks: form.extraLinks
           .filter((l) => l.url.trim())
           .map((l) => ({ ...l, label: l.label.trim() || "Lien", url: l.url.trim() })),
-        marketStudy: form.marketStudy,
+        marketStudyPdf: form.marketStudyPdf,
         hiddenSections: form.hiddenSections,
       };
 
@@ -338,6 +312,8 @@ export default function RapportForm({
         preselectionCount: m.preselectionCount,
         brokersListingActive: m.brokersListingActive,
         brokersListingCount: m.brokersListingCount,
+        contactBaseActive: m.contactBaseActive,
+        contactBaseCount: m.contactBaseCount,
         distribution: m.distribution,
         otherMarketingActions: splitLines(m.otherMarketingActions),
         prospectionActions: splitLines(m.prospectionActions),
@@ -598,7 +574,7 @@ export default function RapportForm({
               placeholder="ex: 1 250 €"
             />
           </Field>
-          <Field label="Formulaires reçus avec cahier des charges correspondant">
+          <Field label="Entreprises en échange avec nous (recherche parfaitement compatible : taille, budget, localisation, agencement)">
             <input
               type="number"
               min={0}
@@ -608,7 +584,7 @@ export default function RapportForm({
               placeholder="0"
             />
           </Field>
-          <Field label="Prospects auxquels l'offre a été présentée">
+          <Field label="Décideurs ciblés (contacts CRM à qui la présentation complète a été envoyée)">
             <input
               type="number"
               min={0}
@@ -646,6 +622,41 @@ export default function RapportForm({
                     min={0}
                     value={activeMonth.brokersListingCount}
                     onChange={(e) => updateMonth("brokersListingCount", e.target.value)}
+                    className="w-28 px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold"
+                  />
+                </div>
+              )}
+            </div>
+          </label>
+        </div>
+
+        <div className="mb-8 p-5 border border-primary-200 rounded-lg bg-white">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={activeMonth.contactBaseActive}
+              onChange={(e) => updateMonth("contactBaseActive", e.target.checked)}
+              className="w-5 h-5 accent-luxury-gold mt-0.5"
+            />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-luxury-charcoal">
+                Mentionner la présentation à notre base de contacts
+              </span>
+              <p className="text-xs text-luxury-slate mt-1">
+                Affichera : « Chaque mois, votre espace est présenté à notre base de X contacts :
+                dirigeants, office managers et responsables immobiliers ». Activé par défaut
+                sur les nouveaux mois.
+              </p>
+              {activeMonth.contactBaseActive && (
+                <div className="mt-3 flex items-center gap-3">
+                  <label className="text-xs text-luxury-slate uppercase tracking-wider">
+                    Nombre de contacts
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={activeMonth.contactBaseCount}
+                    onChange={(e) => updateMonth("contactBaseCount", e.target.value)}
                     className="w-28 px-3 py-2 border border-primary-200 rounded focus:outline-none focus:border-luxury-gold"
                   />
                 </div>
@@ -853,268 +864,74 @@ export default function RapportForm({
         </div>
 
         <div className="flex items-center justify-between gap-4 mb-3 pb-3 border-b border-primary-200">
-          <h2 className="font-serif text-2xl text-luxury-charcoal">Étude de marché</h2>
+          <h2 className="font-serif text-2xl text-luxury-charcoal">État du marché</h2>
+          {/* L'interrupteur garde l'identifiant historique « similaires ». */}
           <VisibilitySwitch
             hidden={isHidden("similaires")}
             onToggle={() => toggleSection("similaires")}
           />
         </div>
         <p className="text-xs text-luxury-slate mb-6">
-          Une sélection d&apos;offres comparables actuellement commercialisées, pour que le
-          propriétaire puisse situer son espace. Commune à tous les mois du rapport.
+          Déposez le PDF de l&apos;étude de marché (3 slides). Une seule étude pour l&apos;espace,
+          commune à tous les mois du rapport. Sans fichier, le rapport affiche le visuel
+          « Étude de marché — {espaceName} ».
         </p>
-
-        <div className="mb-8 p-5 border border-primary-200 rounded-lg bg-white">
-          <p className="text-sm font-medium text-luxury-charcoal mb-4">Le secteur</p>
-          <div className="grid md:grid-cols-3 gap-4">
-            <Field small label="Nom du secteur">
-              <input
-                type="text"
-                value={form.marketStudy.sectorName}
-                onChange={(e) => updateMarketStudy({ sectorName: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: Paris 3e – 4e"
-              />
-            </Field>
-            <Field small label="Offres disponibles sur le secteur">
-              <input
-                type="text"
-                value={form.marketStudy.sectorOfferCount}
-                onChange={(e) => updateMarketStudy({ sectorOfferCount: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: 32"
-              />
-            </Field>
-            <Field small label="Médiane (€/m²/an)">
-              <input
-                type="text"
-                value={form.marketStudy.medianOverride}
-                onChange={(e) => updateMarketStudy({ medianOverride: e.target.value })}
-                className={inputClsSmall}
-                placeholder={computedMedian !== null ? `Auto : ${Math.round(computedMedian)}` : "ex: 540"}
-              />
-            </Field>
-          </div>
-          <p className="text-xs text-luxury-slate mt-3">
-            Médiane : laissez vide pour la calculer automatiquement à partir des prix/m²/an des
-            offres ci-dessous
-            {computedMedian !== null
-              ? ` (actuellement ${formatPricePerSqm(computedMedian)})`
-              : ""}
-            , ou saisissez la médiane du secteur si vous la connaissez.
-          </p>
-        </div>
-
-        <div className="mb-8 p-5 border border-luxury-gold/40 rounded-lg bg-luxury-champagne/20">
-          <p className="text-sm font-medium text-luxury-charcoal mb-1">
-            Votre espace — {espaceName}
-          </p>
-          <p className="text-xs text-luxury-slate mb-4">
-            Première ligne du tableau comparatif, mise en avant.
-          </p>
-          <div className="grid md:grid-cols-3 gap-4">
-            <Field small label="Nombre de postes">
-              <input
-                type="text"
-                value={form.marketStudy.ownAsset.workstations}
-                onChange={(e) => updateOwnAsset({ workstations: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: 40"
-              />
-            </Field>
-            <Field small label="Surface">
-              <input
-                type="text"
-                value={form.marketStudy.ownAsset.surface}
-                onChange={(e) => updateOwnAsset({ surface: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: 450 m²"
-              />
-            </Field>
-            <Field small label="Loyer">
-              <input
-                type="text"
-                value={form.marketStudy.ownAsset.price}
-                onChange={(e) => updateOwnAsset({ price: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: 18 000 € HT/mois"
-              />
-            </Field>
-            <Field small label="Prix par poste">
-              <input
-                type="text"
-                value={form.marketStudy.ownAsset.pricePerWorkstation}
-                onChange={(e) => updateOwnAsset({ pricePerWorkstation: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: 450 €/poste"
-              />
-            </Field>
-            <Field small label="Prix (€/m²/an)">
-              <input
-                type="text"
-                value={form.marketStudy.ownAsset.pricePerSqmYear}
-                onChange={(e) => updateOwnAsset({ pricePerSqmYear: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: 520"
-              />
-            </Field>
-            <Field small label="Disponibilité">
-              <input
-                type="text"
-                value={form.marketStudy.ownAsset.availability}
-                onChange={(e) => updateOwnAsset({ availability: e.target.value })}
-                className={inputClsSmall}
-                placeholder="ex: Immédiate"
-              />
-            </Field>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <p className="text-sm font-medium text-luxury-charcoal">Offres comparables</p>
-          <button
-            type="button"
-            onClick={() => updateField("similarEspaces", [...form.similarEspaces, emptySimilar()])}
-            className="text-sm text-luxury-gold hover:text-luxury-charcoal transition-colors"
-          >
-            + Ajouter une offre
-          </button>
-        </div>
-        <div className="space-y-4 mb-8">
-          {form.similarEspaces.map((s) => (
-            <div key={s.id} className="p-5 border border-primary-200 rounded-lg bg-white">
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <Field small label="Nom de l'espace">
-                  <input
-                    type="text"
-                    value={s.name}
-                    onChange={(e) => updateSimilar(s.id, { name: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: Le Sentier — Atelier"
-                  />
-                </Field>
-                <Field small label="Localisation">
-                  <input
-                    type="text"
-                    value={s.location || ""}
-                    onChange={(e) => updateSimilar(s.id, { location: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: Paris 2e — Sentier"
-                  />
-                </Field>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4 mb-4">
-                <Field small label="Nombre de postes">
-                  <input
-                    type="text"
-                    value={s.workstations}
-                    onChange={(e) => updateSimilar(s.id, { workstations: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 40"
-                  />
-                </Field>
-                <Field small label="Surface">
-                  <input
-                    type="text"
-                    value={s.surface || ""}
-                    onChange={(e) => updateSimilar(s.id, { surface: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 420 m²"
-                  />
-                </Field>
-                <Field small label="Loyer">
-                  <input
-                    type="text"
-                    value={s.price}
-                    onChange={(e) => updateSimilar(s.id, { price: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 17 000 € HT/mois"
-                  />
-                </Field>
-                <Field small label="Prix par poste">
-                  <input
-                    type="text"
-                    value={s.pricePerWorkstation || ""}
-                    onChange={(e) => updateSimilar(s.id, { pricePerWorkstation: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 425 €/poste"
-                  />
-                </Field>
-                <Field small label="Prix (€/m²/an)">
-                  <input
-                    type="text"
-                    value={s.pricePerSqmYear || ""}
-                    onChange={(e) => updateSimilar(s.id, { pricePerSqmYear: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: 540"
-                  />
-                </Field>
-                <Field small label="Date de disponibilité">
-                  <input
-                    type="text"
-                    value={s.availability || ""}
-                    onChange={(e) => updateSimilar(s.id, { availability: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="ex: Immédiate, janvier 2027"
-                  />
-                </Field>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <Field small label="Lien vers l'annonce (URL)">
-                  <input
-                    type="url"
-                    value={s.url}
-                    onChange={(e) => updateSimilar(s.id, { url: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="https://..."
-                  />
-                </Field>
-                <Field small label="Image (URL)">
-                  <input
-                    type="url"
-                    value={s.image}
-                    onChange={(e) => updateSimilar(s.id, { image: e.target.value })}
-                    className={inputClsSmall}
-                    placeholder="https://..."
-                  />
-                </Field>
-              </div>
-              <Field small label="Description de l'offre">
-                <textarea
-                  value={s.description}
-                  onChange={(e) => updateSimilar(s.id, { description: e.target.value })}
-                  rows={2}
-                  className={inputClsSmall + " resize-vertical"}
-                  placeholder="Points forts / faibles par rapport à votre espace."
-                />
-              </Field>
-              {form.similarEspaces.length > 1 && (
-                <div className="mt-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => removeSimilar(s.id)}
-                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                  >
-                    Supprimer cette offre
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
         <div className="mb-12">
-          <Field label="Notre lecture du marché (facultatif)" full>
-            <textarea
-              value={form.marketStudy.comment}
-              onChange={(e) =>
-                updateMarketStudy({ comment: e.target.value })
-              }
-              rows={4}
-              className={inputCls + " resize-vertical"}
-              placeholder="ex: Votre espace se situe dans la moyenne basse du quartier en prix par poste, avec une surface par poste plus généreuse que les offres comparables."
-            />
-          </Field>
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={handlePdfChange}
+            className="hidden"
+          />
+          {form.marketStudyPdf ? (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-white border border-primary-200 rounded-lg">
+              <div className="min-w-0">
+                <a
+                  href={form.marketStudyPdf.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-luxury-charcoal underline decoration-luxury-gold/50 hover:decoration-luxury-gold break-all"
+                >
+                  {form.marketStudyPdf.name}
+                </a>
+                <p className="text-xs text-luxury-slate mt-1">
+                  Déposé le {formatLongDate(form.marketStudyPdf.uploadedAt)}
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={uploadingPdf}
+                  className="px-4 py-2 text-sm border border-luxury-charcoal rounded-full hover:bg-luxury-charcoal hover:text-white transition-colors disabled:opacity-50"
+                >
+                  {uploadingPdf ? "Envoi…" : "Remplacer"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Retirer le PDF de l'état du marché ?")) updateField("marketStudyPdf", null);
+                  }}
+                  className="px-4 py-2 text-sm border border-red-200 text-red-500 rounded-full hover:bg-red-50 transition-colors"
+                >
+                  Retirer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => pdfInputRef.current?.click()}
+              disabled={uploadingPdf}
+              className="w-full p-8 border border-dashed border-primary-300 rounded-lg bg-white/60 text-sm text-luxury-slate hover:border-luxury-gold hover:text-luxury-charcoal transition-colors disabled:opacity-50"
+            >
+              {uploadingPdf ? "Envoi du PDF en cours…" : "Choisir le PDF de l'étude de marché"}
+            </button>
+          )}
+          <p className="text-xs text-luxury-slate/80 mt-2">
+            Pensez à enregistrer le rapport après le dépôt du fichier.
+          </p>
         </div>
 
         <SectionTitle

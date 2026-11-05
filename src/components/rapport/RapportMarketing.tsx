@@ -9,6 +9,8 @@ interface RapportMarketingProps {
   preselectionCount: number;
   brokersListingActive: boolean;
   brokersListingCount: number;
+  contactBaseActive?: boolean;
+  contactBaseCount?: number;
   distribution: RapportDistribution;
   otherMarketingActions: string[];
   showKpis?: boolean;
@@ -19,10 +21,12 @@ interface RapportMarketingProps {
 function KpiCard({
   label,
   value,
+  description,
   highlight,
 }: {
   label: string;
   value: string | number;
+  description: string;
   highlight?: boolean;
 }) {
   return (
@@ -45,6 +49,9 @@ function KpiCard({
       >
         {value}
       </p>
+      <p className="mt-4 pt-4 border-t border-primary-200 text-sm leading-relaxed text-luxury-slate">
+        {description}
+      </p>
     </div>
   );
 }
@@ -55,6 +62,8 @@ export default function RapportMarketing({
   preselectionCount,
   brokersListingActive,
   brokersListingCount,
+  contactBaseActive = false,
+  contactBaseCount = 15000,
   distribution,
   otherMarketingActions,
   showKpis = true,
@@ -84,21 +93,28 @@ export default function RapportMarketing({
 
         {showKpis && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-            <KpiCard label="Budget marketing du mois" value={monthlyBudget || "—"} highlight />
             <KpiCard
-              label="Formulaires reçus avec cahier des charges correspondant"
-              value={matchingFormsCount}
+              label="Budget marketing du mois"
+              value={monthlyBudget || "—"}
+              description="Investi pour aller chercher les dirigeants qui cherchent activement des bureaux, mais aussi ceux qui n'y pensaient pas encore et peuvent être séduits par une belle opportunité."
+              highlight
             />
             <KpiCard
-              label="Prospects auxquels l'offre a été présentée"
+              label="Entreprises en échange avec nous"
+              value={matchingFormsCount}
+              description="Des entreprises dont la recherche correspond parfaitement à votre espace : taille d'équipe, budget, localisation et agencement."
+            />
+            <KpiCard
+              label="Décideurs ciblés"
               value={preselectionCount}
+              description="Toutes les personnes de notre fichier susceptibles d'être intéressées par un bureau comme le vôtre, et à qui nous avons envoyé la présentation complète de l'espace."
             />
           </div>
         )}
 
         {brokersListingActive && (
           <motion.div
-            className="mb-12 p-6 md:p-8 bg-luxury-charcoal text-white rounded-lg flex flex-col md:flex-row items-start md:items-center gap-6"
+            className={`${contactBaseActive ? "mb-4" : "mb-12"} p-6 md:p-8 bg-luxury-charcoal text-white rounded-lg flex flex-col md:flex-row items-start md:items-center gap-6`}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -128,6 +144,45 @@ export default function RapportMarketing({
                 notre listing de{" "}
                 <span className="text-luxury-champagne">{brokersListingCount}</span>{" "}
                 brokers immobiliers.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {contactBaseActive && (
+          <motion.div
+            className="mb-12 p-6 md:p-8 bg-[#3a332b] text-white rounded-lg flex flex-col md:flex-row items-start md:items-center gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="text-luxury-gold shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <circle cx="9" cy="8" r="3.2" />
+                <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                <circle cx="17.5" cy="9" r="2.5" />
+                <path d="M15.5 14.3c.6-.2 1.3-.3 2-.3 2.5 0 4.5 2 4.5 4.5" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-luxury-champagne/80 mb-2">
+                Notre base de contacts
+              </p>
+              <p className="font-serif text-xl md:text-2xl leading-relaxed">
+                Chaque mois, votre espace est présenté à notre base de{" "}
+                <span className="text-luxury-champagne">
+                  {contactBaseCount.toLocaleString("fr-FR")}
+                </span>{" "}
+                contacts : dirigeants, office managers et responsables immobiliers.
               </p>
             </div>
           </motion.div>

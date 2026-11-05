@@ -29,6 +29,13 @@ export interface SimilarEspace {
   availability?: string; // date ou texte libre, ex. « Immédiate », « 2027-01-01 »
 }
 
+/** Fichier PDF déposé dans Vercel Blob. */
+export interface RapportPdf {
+  url: string;
+  name: string;
+  uploadedAt: string;
+}
+
 /** Lien libre ajouté par un BizDev (affiché comme bouton en tête du rapport). */
 export interface RapportLink {
   id: string;
@@ -127,6 +134,13 @@ export interface RapportMonthData {
   preselectionCount: number;
   brokersListingActive: boolean;
   brokersListingCount: number;
+  /**
+   * Présentation mensuelle de l'espace à la base de contacts Snapdesk.
+   * Absent des mois saisis avant l'ajout : traité comme désactivé, pour ne
+   * rien changer à l'affichage des mois passés.
+   */
+  contactBaseActive?: boolean;
+  contactBaseCount?: number;
   distribution: RapportDistribution;
   otherMarketingActions: string[];
 
@@ -135,6 +149,8 @@ export interface RapportMonthData {
 
   visites: RapportVisite[];
 }
+
+export const DEFAULT_CONTACT_BASE_COUNT = 15000;
 
 export interface RapportData {
   espaceSlug: string;
@@ -151,7 +167,14 @@ export interface RapportData {
   presentationUrl: string;
   // Optionnels : absents des rapports créés avant leur ajout.
   extraLinks?: RapportLink[];
+  /**
+   * Ancienne étude de marché (tableau comparatif + offres dans
+   * `similarEspaces`). N'est plus affichée ni éditée : conservée telle quelle
+   * dans les données, remplacée par le PDF `marketStudyPdf`.
+   */
   marketStudy?: RapportMarketStudy;
+  /** État du marché : un seul PDF pour l'espace, commun à tous les mois. */
+  marketStudyPdf?: RapportPdf | null;
 
   hiddenSections: string[];
 
@@ -169,6 +192,8 @@ export interface RapportMonthFormData {
   preselectionCount: string;
   brokersListingActive: boolean;
   brokersListingCount: string;
+  contactBaseActive: boolean;
+  contactBaseCount: string;
   distribution: RapportDistribution;
   otherMarketingActions: string;
 
@@ -186,11 +211,10 @@ export interface RapportFormData {
 
   anonymizeVisitProspects: boolean;
   recommendations: string;
-  similarEspaces: SimilarEspace[];
 
   presentationUrl: string;
   extraLinks: RapportLink[];
-  marketStudy: RapportMarketStudy;
+  marketStudyPdf: RapportPdf | null;
 
   hiddenSections: string[];
 
@@ -223,6 +247,8 @@ export function emptyRapportMonth(month: string): RapportMonthData {
     preselectionCount: 0,
     brokersListingActive: true,
     brokersListingCount: 450,
+    contactBaseActive: true,
+    contactBaseCount: DEFAULT_CONTACT_BASE_COUNT,
     distribution: emptyDistribution(),
     otherMarketingActions: [],
     prospectionActions: [],

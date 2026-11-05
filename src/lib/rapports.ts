@@ -10,6 +10,8 @@ import {
   SimilarEspace,
   RapportLink,
   RapportMarketStudy,
+  RapportPdf,
+  DEFAULT_CONTACT_BASE_COUNT,
   emptyDistribution,
   emptyMarketStudy,
   sortMonthsDesc,
@@ -30,6 +32,10 @@ export function normalizeRapportMonth(body: Record<string, unknown>): RapportMon
     preselectionCount: parseInt(String(body.preselectionCount ?? "0")) || 0,
     brokersListingActive: Boolean(body.brokersListingActive),
     brokersListingCount: parseInt(String(body.brokersListingCount ?? "450")) || 450,
+    contactBaseActive: Boolean(body.contactBaseActive),
+    contactBaseCount:
+      parseInt(String(body.contactBaseCount ?? DEFAULT_CONTACT_BASE_COUNT).replace(/\s/g, "")) ||
+      DEFAULT_CONTACT_BASE_COUNT,
     distribution: { ...emptyDistribution(), ...distributionBody },
     otherMarketingActions: Array.isArray(body.otherMarketingActions)
       ? (body.otherMarketingActions as string[]).filter(Boolean)
@@ -87,6 +93,23 @@ function normalizeMarketStudy(
   };
 }
 
+/**
+ * PDF de l'état du marché : `null` explicite = retiré ; champ absent = on
+ * conserve l'existant.
+ */
+function normalizePdf(value: unknown, existing?: RapportPdf | null): RapportPdf | null {
+  if (value === undefined) return existing ?? null;
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+  const url = str(v.url);
+  if (!/^https:\/\//.test(url)) return null;
+  return {
+    url,
+    name: str(v.name) || "etude-de-marche.pdf",
+    uploadedAt: str(v.uploadedAt) || new Date().toISOString(),
+  };
+}
+
 /** Normalizes a raw request body into the general (non-monthly) rapport fields. */
 export function normalizeRapportGeneral(
   body: Record<string, unknown>,
@@ -106,12 +129,15 @@ export function normalizeRapportGeneral(
     recommendations: Array.isArray(body.recommendations)
       ? (body.recommendations as string[]).filter(Boolean)
       : [],
+    // Ancienne étude de marché : plus éditée, on conserve l'existant si le
+    // formulaire ne l'envoie pas.
     similarEspaces: Array.isArray(body.similarEspaces)
       ? (body.similarEspaces as SimilarEspace[])
-      : [],
+      : existing?.similarEspaces || [],
     presentationUrl: (body.presentationUrl as string) || "",
     extraLinks: normalizeLinks(body.extraLinks, existing?.extraLinks),
     marketStudy: normalizeMarketStudy(body.marketStudy, existing?.marketStudy),
+    marketStudyPdf: normalizePdf(body.marketStudyPdf, existing?.marketStudyPdf),
     hiddenSections: Array.isArray(body.hiddenSections)
       ? (body.hiddenSections as string[]).filter((s): s is string => typeof s === "string")
       : [],

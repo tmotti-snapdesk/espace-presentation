@@ -10,7 +10,7 @@ import RapportProspection from "@/components/rapport/RapportProspection";
 import RapportUpcoming from "@/components/rapport/RapportUpcoming";
 import RapportVisites from "@/components/rapport/RapportVisites";
 import RapportRecommendations from "@/components/rapport/RapportRecommendations";
-import RapportSimilarEspaces from "@/components/rapport/RapportSimilarEspaces";
+import RapportMarketState from "@/components/rapport/RapportMarketState";
 import RapportFooter from "@/components/rapport/RapportFooter";
 
 interface RapportShowcaseProps {
@@ -35,8 +35,8 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
     { id: "marketing", label: "Investissements & diffusion", show: true },
     { id: "prospection", label: "Dernières actions menées", show: (month?.prospectionActions.length || 0) > 0 },
     { id: "actions-a-venir", label: "Actions à venir", show: upcomingActions.length > 0 },
-    // L'interrupteur admin de l'étude de marché garde son ancien nom « similaires ».
-    { id: "etude-marche", label: "Étude de marché", show: rapport.similarEspaces.length > 0 && isVisible("similaires") },
+    // L'interrupteur admin de l'état du marché garde son ancien nom « similaires ».
+    { id: "etude-marche", label: "État du marché", show: isVisible("similaires") },
     { id: "preconisations", label: "Nos préconisations", show: rapport.recommendations.length > 0 },
     { id: "visites", label: "Visites du mois", show: visites.length > 0 },
   ]
@@ -95,6 +95,8 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
           preselectionCount={month.preselectionCount}
           brokersListingActive={month.brokersListingActive}
           brokersListingCount={month.brokersListingCount}
+          contactBaseActive={month.contactBaseActive}
+          contactBaseCount={month.contactBaseCount}
           distribution={month.distribution}
           otherMarketingActions={month.otherMarketingActions}
           showKpis={isVisible("marketing.kpis")}
@@ -109,12 +111,7 @@ export default function RapportShowcase({ rapport, initialMonth }: RapportShowca
         <RapportUpcoming upcomingActions={upcomingActions} />
       )}
       {isVisible("similaires") && (
-        <RapportSimilarEspaces
-          espaceName={rapport.espaceName}
-          espaceAddress={rapport.espaceAddress}
-          marketStudy={rapport.marketStudy}
-          similarEspaces={rapport.similarEspaces}
-        />
+        <RapportMarketState espaceName={rapport.espaceName} pdf={rapport.marketStudyPdf || null} />
       )}
       {isVisible("preconisations") && (
         <RapportRecommendations recommendations={rapport.recommendations} />

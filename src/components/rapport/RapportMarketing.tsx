@@ -182,7 +182,7 @@ export default function RapportMarketing({
                 <span className="text-luxury-champagne">
                   {contactBaseCount.toLocaleString("fr-FR")}
                 </span>{" "}
-                contacts : dirigeants, office managers et responsables immobiliers.
+                contacts : dirigeants et office managers.
               </p>
             </div>
           </motion.div>

@@ -644,7 +644,7 @@ export default function RapportForm({
               </span>
               <p className="text-xs text-luxury-slate mt-1">
                 Affichera : « Chaque mois, votre espace est présenté à notre base de X contacts :
-                dirigeants, office managers et responsables immobiliers ». Activé par défaut
+                dirigeants et office managers ». Activé par défaut
                 sur les nouveaux mois.
               </p>
               {activeMonth.contactBaseActive && (

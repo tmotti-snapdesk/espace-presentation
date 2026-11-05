@@ -574,7 +574,7 @@ export default function RapportForm({
               placeholder="ex: 1 250 €"
             />
           </Field>
-          <Field label="Entreprises en échange avec nous (recherche parfaitement compatible : taille, budget, localisation, agencement)">
+          <Field label="Demandes qualifiées (entreprises en discussion dont la recherche correspond à l'espace)">
             <input
               type="number"
               min={0}
@@ -584,7 +584,7 @@ export default function RapportForm({
               placeholder="0"
             />
           </Field>
-          <Field label="Décideurs ciblés (contacts CRM à qui la présentation complète a été envoyée)">
+          <Field label="Décideurs sollicités (contacts CRM à qui la présentation complète a été envoyée)">
             <input
               type="number"
               min={0}

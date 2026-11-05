@@ -100,14 +100,14 @@ export default function RapportMarketing({
               highlight
             />
             <KpiCard
-              label="Entreprises en échange avec nous"
+              label="Demandes qualifiées"
               value={matchingFormsCount}
-              description="Des entreprises dont la recherche correspond parfaitement à votre espace : taille d'équipe, budget, localisation et agencement."
+              description="Entreprises en discussion avec nous dont la recherche correspond à votre espace : effectif, budget, localisation et agencement."
             />
             <KpiCard
-              label="Décideurs ciblés"
+              label="Décideurs sollicités"
               value={preselectionCount}
-              description="Toutes les personnes de notre fichier susceptibles d'être intéressées par un bureau comme le vôtre, et à qui nous avons envoyé la présentation complète de l'espace."
+              description="Dirigeants et décideurs de notre base, au profil adapté à votre espace, à qui nous avons envoyé sa présentation complète."
             />
           </div>
         )}

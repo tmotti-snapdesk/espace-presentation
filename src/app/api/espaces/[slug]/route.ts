@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { list, put, del } from "@vercel/blob";
-import { getEspaceBySlug } from "@/lib/espaces";
+import { resolveEspaceBySlug, pruneOrphanedMedia, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
+
+// Per-slug cache. Used by the admin edit page when loading the form.
+// Invalidated explicitly on PUT/DELETE via revalidateTag. Delegates the
+// actual Blob/local-fallback read to lib/espaces.ts so every page that
+// reads an espace (this route, the public landing, the broker fiche...)
+// goes through the exact same fetch logic and never drifts out of sync.
+const loadEspace = unstable_cache(
+  (slug: string): Promise<EspaceData | null> => resolveEspaceBySlug(slug),
+  ["espace-by-slug"],
+  { tags: ["espaces-list"], revalidate: 300 }
+);
 
 // GET a single espace
 export async function GET(
@@ -11,30 +23,22 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    // 1. Try Vercel Blob first (most up-to-date)
-    try {
-      const { blobs } = await list({ prefix: `espaces/${params.slug}` });
-      const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
-      if (jsonBlob) {
-        const res = await fetch(jsonBlob.url, { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          return NextResponse.json(data);
-        }
-      }
-    } catch {
-      // Blob not configured
-    }
-
-    // 2. Fallback to local filesystem
-    const localData = getEspaceBySlug(params.slug);
-    if (localData) return NextResponse.json(localData);
-
+    const data = await loadEspace(params.slug);
+    if (data) return NextResponse.json(data);
     return NextResponse.json({ error: "Espace non trouvé" }, { status: 404 });
   } catch (error) {
     console.error("Get espace error:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
+}
+
+// Invalidate every cache layer that may have stored data for `slug`.
+// Called after every successful write or delete so admins (and ISR-served
+// public pages) see fresh data immediately.
+function invalidate(slug: string) {
+  revalidateTag("espaces-list");
+  revalidatePath(`/espaces/${slug}`);
+  revalidatePath("/admin");
 }
 
 // UPDATE an espace
@@ -45,6 +49,9 @@ export async function PUT(
   try {
     const body = await request.json();
     const slug = params.slug;
+    // The edit form doesn't carry broker-directory visibility, so it's
+    // preserved from the current record unless the caller explicitly sends it.
+    const existing = await loadEspace(slug);
 
     const espaceData: EspaceData = {
       slug,
@@ -78,25 +85,55 @@ export async function PUT(
         { id: "roger", name: "Roger", role: "Responsable Maintenance Technique", email: "", phone: "", photo: "" },
       ],
       isLeadGen: body.isLeadGen || false,
+      leadGenMode: body.leadGenMode || "unlock",
+      leadGenDismissible: body.leadGenDismissible || false,
+      presentationLink: body.presentationLink || "",
+      brokerDirectoryVisible:
+        typeof body.brokerDirectoryVisible === "boolean"
+          ? body.brokerDirectoryVisible
+          : existing?.brokerDirectoryVisible ?? true,
+      template: body.template || "standard",
+      storyTitle: body.storyTitle || "",
+      storyText: body.storyText || "",
+      storyPhotos: body.storyPhotos || [],
+      highlightTitle: body.highlightTitle || "",
+      highlightText: body.highlightText || "",
+      highlightPhotos: body.highlightPhotos || [],
+      buildingSurface: body.buildingSurface || "",
+      buildingFloors: body.buildingFloors || "",
+      buildingYear: body.buildingYear || "",
+      buildingCertification: body.buildingCertification || "",
+      neighborhoodTitle: body.neighborhoodTitle || "",
+      neighborhoodText: body.neighborhoodText || "",
+      neighborhoodPhotos: body.neighborhoodPhotos || [],
+      testimonial: {
+        quote: body.testimonialQuote || "",
+        author: body.testimonialAuthor || "",
+        role: body.testimonialRole || "",
+      },
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
-    // Delete old blob if exists, then write new
-    try {
-      const { blobs } = await list({ prefix: `espaces/${slug}` });
-      const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
-      for (const blob of jsonBlobs) {
-        await del(blob.url);
-      }
-    } catch {
-      // OK if nothing to delete
-    }
-
+    // With allowOverwrite + addRandomSuffix: false, put() overwrites
+    // in place — no need to list+del first (saves 2 Blob ops per save).
     await put(`espaces/${slug}.json`, JSON.stringify(espaceData, null, 2), {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
     });
+
+    // Best-effort: delete any photo/video/floor-plan blob that this save
+    // just dropped, so removed or replaced media doesn't keep costing
+    // storage forever. Never fails the save itself.
+    try {
+      await pruneOrphanedMedia(existing, espaceData);
+    } catch (err) {
+      console.error("Prune orphaned media error:", err);
+    }
+
+    invalidate(slug);
 
     return NextResponse.json({
       success: true,
@@ -110,21 +147,135 @@ export async function PUT(
   }
 }
 
+// PATCH: partial update, used by the admin dashboard's broker-directory
+// visibility toggle so it doesn't have to resend the entire form payload.
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const body = await request.json();
+    const slug = params.slug;
+
+    const existing = await loadEspace(slug);
+    if (!existing) {
+      return NextResponse.json({ error: "Espace non trouvé" }, { status: 404 });
+    }
+
+    const updated: EspaceData = {
+      ...existing,
+      ...(typeof body.brokerDirectoryVisible === "boolean"
+        ? { brokerDirectoryVisible: body.brokerDirectoryVisible }
+        : {}),
+    };
+
+    await put(`espaces/${slug}.json`, JSON.stringify(updated, null, 2), {
+      access: "public",
+      contentType: "application/json",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
+    });
+
+    invalidate(slug);
+
+    return NextResponse.json({ success: true, slug, brokerDirectoryVisible: updated.brokerDirectoryVisible });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Update failed";
+    console.error("Patch espace error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+// DUPLICATE an espace
+export async function POST(
+  _request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    // 1. Resolve the source espace via the cached loader (handles both
+    //    Blob and the local-filesystem fallback).
+    const sourceData = await loadEspace(params.slug);
+
+    if (!sourceData) {
+      return NextResponse.json({ error: "Espace source non trouvé" }, { status: 404 });
+    }
+
+    // 2. Find next available slug suffix (-2, -3, ...) with a single
+    //    list() instead of one per attempted suffix.
+    const baseSlug = sourceData.slug.replace(/-\d+$/, "");
+    const existingSlugs = new Set<string>();
+    try {
+      const { blobs } = await list({ prefix: `espaces/${baseSlug}` });
+      for (const b of blobs) {
+        const match = b.pathname.match(/^espaces\/(.+)\.json$/);
+        if (match) existingSlugs.add(match[1]);
+      }
+    } catch {
+      // Blob not configured — assume no collisions
+    }
+
+    let suffix = 2;
+    let newSlug = `${baseSlug}-${suffix}`;
+    while (existingSlugs.has(newSlug)) {
+      suffix++;
+      newSlug = `${baseSlug}-${suffix}`;
+    }
+
+    // 3. Create the duplicate
+    const duplicateData: EspaceData = {
+      ...sourceData,
+      slug: newSlug,
+      name: sourceData.name,
+      createdAt: new Date().toISOString(),
+    };
+
+    await put(`espaces/${newSlug}.json`, JSON.stringify(duplicateData, null, 2), {
+      access: "public",
+      contentType: "application/json",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
+    });
+
+    invalidate(newSlug);
+
+    return NextResponse.json({
+      success: true,
+      slug: newSlug,
+      url: `/espaces/${newSlug}`,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Duplicate failed";
+    console.error("Duplicate espace error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 // DELETE an espace
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { slug: string } }
 ) {
   try {
-    // Delete JSON blob
+    // Delete the JSON blob and every media file uploaded under this
+    // espace's own folder. `list({ prefix })` matches by string prefix, so
+    // without the exact-boundary check below, deleting "marais" would also
+    // sweep up "marais-premium.json" and its photos — filter down to only
+    // this slug's own JSON file and its "<slug>/..." media folder.
     try {
       const { blobs } = await list({ prefix: `espaces/${params.slug}` });
-      for (const blob of blobs) {
-        await del(blob.url);
-      }
+      const ownBlobs = blobs.filter(
+        (blob) =>
+          blob.pathname === `espaces/${params.slug}.json` ||
+          blob.pathname.startsWith(`espaces/${params.slug}/`)
+      );
+      await Promise.allSettled(ownBlobs.map((blob) => del(blob.url)));
     } catch {
       // Blob not configured
     }
+
+    invalidate(params.slug);
 
     return NextResponse.json({ success: true });
   } catch (error) {

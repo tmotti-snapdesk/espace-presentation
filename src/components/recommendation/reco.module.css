@@ -1,0 +1,163 @@
+.app {
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(229, 144, 161, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(201, 169, 97, 0.05) 0%, transparent 40%);
+}
+
+.fraunces {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: "SOFT" 100;
+}
+
+.screen {
+  animation: slideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.stagger > * {
+  opacity: 0;
+  animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.15s; }
+.stagger > *:nth-child(3) { animation-delay: 0.25s; }
+.stagger > *:nth-child(4) { animation-delay: 0.35s; }
+.stagger > *:nth-child(5) { animation-delay: 0.45s; }
+.stagger > *:nth-child(6) { animation-delay: 0.55s; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.contactBlock {
+  animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.contactBlockLeaving {
+  opacity: 0;
+  transform: translateX(-12px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+/* Bonus card */
+.bonusCard {
+  background: linear-gradient(135deg, #FFF6E4 0%, #FAF1DD 100%);
+  border: 1px solid #E8D5A8;
+  position: relative;
+  overflow: hidden;
+}
+
+.bonusCard::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(201, 169, 97, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.bonusIcon {
+  box-shadow: 0 4px 12px -2px rgba(201, 169, 97, 0.4);
+}
+
+.accentStrong {
+  color: #1A1A1A;
+  font-weight: 600;
+  background: linear-gradient(180deg, transparent 60%, rgba(201, 169, 97, 0.25) 60%);
+  padding: 0 2px;
+}
+
+/* Stars */
+.starsDeco svg:nth-child(1) { animation: pop 0.4s 0.1s both; }
+.starsDeco svg:nth-child(2) { animation: pop 0.4s 0.2s both; }
+.starsDeco svg:nth-child(3) { animation: pop 0.4s 0.3s both; }
+.starsDeco svg:nth-child(4) { animation: pop 0.4s 0.4s both; }
+.starsDeco svg:nth-child(5) { animation: pop 0.4s 0.5s both; }
+
+@keyframes pop {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* Waiting card */
+.waitingCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.waitingCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #FBE7EC, transparent);
+  transform: translateX(-100%);
+  animation: shimmer 2.4s infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.waitingIcon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+/* Success */
+.successGlyph {
+  animation: glyphPop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.4);
+}
+
+@keyframes glyphPop {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* Progress segments */
+.progressSeg {
+  position: relative;
+  overflow: hidden;
+}
+.progressSeg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #1A1A1A;
+  transform: translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.progressSegActive::after { transform: translateX(0); }
+.progressSegDone::after { transform: translateX(0); background: #E590A1; }
+
+/* Focus ring on inputs */
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #1A1A1A;
+  box-shadow: 0 0 0 3px rgba(229, 144, 161, 0.22);
+}
+
+/* Button hover variants */
+.btnPrimary:hover:not(:disabled) {
+  background: #E590A1;
+  transform: translateY(-1px);
+}
+.btnGoogle:hover:not(:disabled) {
+  background: #C66E81;
+}
+.btnSecondary:hover:not(:disabled) {
+  background: #FAF7F2;
+  border-color: #1A1A1A;
+  transform: translateY(-1px);
+}

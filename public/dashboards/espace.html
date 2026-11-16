@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Suivi d'espace Snapdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Mêmes couleurs que la Tour de contrôle (marketing.html) */
+:root{
+  color-scheme: light;
+  --plane:#f2f4f1; --surface:#fcfcfb; --surface-2:#f7f8f4;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+  --grid:#e1e0d9; --rule:#c3c2b7; --hair:rgba(11,11,11,.10);
+  --accent:#2a78d6; --accent-wash:rgba(42,120,214,.10);
+  --good:#006300; --good-wash:rgba(12,163,12,.13); --crit:#d03b3b; --crit-wash:rgba(208,59,59,.12);
+  --muted-wash:rgba(137,135,129,.14);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#0c0d0c; --surface:#1a1a19; --surface-2:#141414;
+    --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+    --grid:#2c2c2a; --rule:#383835; --hair:rgba(255,255,255,.10);
+    --accent:#3987e5; --accent-wash:rgba(57,135,229,.16);
+    --good:#0ca30c; --good-wash:rgba(12,163,12,.18); --crit:#e05656; --crit-wash:rgba(208,59,59,.18);
+    --muted-wash:rgba(195,194,183,.14);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#0c0d0c; --surface:#1a1a19; --surface-2:#141414;
+  --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --grid:#2c2c2a; --rule:#383835; --hair:rgba(255,255,255,.10);
+  --accent:#3987e5; --accent-wash:rgba(57,135,229,.16);
+  --good:#0ca30c; --good-wash:rgba(12,163,12,.18); --crit:#e05656; --crit-wash:rgba(208,59,59,.18);
+  --muted-wash:rgba(195,194,183,.14);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:"Familjen Grotesk","IBM Plex Sans",system-ui,sans-serif; margin:0; text-wrap:balance}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+
+.topbar{position:sticky; top:0; z-index:40; background:color-mix(in srgb, var(--plane) 88%, transparent); backdrop-filter:saturate(1.4) blur(10px); border-bottom:1px solid var(--hair)}
+.topbar-in{max-width:1080px; margin:0 auto; padding:12px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.back{font-size:13px; color:var(--ink-2); text-decoration:none; border:1px solid var(--hair); border-radius:999px; padding:5px 12px; background:var(--surface)}
+.back:hover{border-color:var(--rule); color:var(--ink)}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand strong{font-family:"Familjen Grotesk",sans-serif; font-weight:700; font-size:17px}
+.brand span{font-size:12px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase}
+.sync{font-size:12.5px; color:var(--ink-2)}
+
+.wrap{max-width:1080px; margin:0 auto; padding:0 22px 80px}
+.head{padding:40px 0 24px; display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; border-bottom:1px solid var(--rule)}
+.eyebrow{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.head h1{font-size:clamp(30px,4.4vw,42px); font-weight:600; letter-spacing:-.025em; line-height:1.08; margin-top:4px}
+.period{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-2)}
+.period[hidden]{display:none}
+.period select{font:inherit; font-size:13.5px; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:8px; padding:6px 10px}
+
+.summary{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-top:22px}
+.tile{background:var(--surface); border:1px solid var(--hair); border-radius:12px; padding:15px 16px}
+.tile .lbl{font-size:12.5px; color:var(--ink-2)}
+.tile .val{font-family:"Familjen Grotesk",sans-serif; font-weight:600; font-size:30px; letter-spacing:-.02em; line-height:1.15; margin-top:6px}
+.tile .note{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+
+.groups{display:grid; gap:16px; margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); align-items:start}
+.card{background:var(--surface); border:1px solid var(--hair); border-radius:14px; padding:18px}
+.card h2{font-size:15.5px; font-weight:600; letter-spacing:-.01em; margin-bottom:6px}
+.items{list-style:none; margin:0; padding:0}
+.items li{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--grid); font-size:14px}
+.items li:first-child{border-top:none}
+.pill{flex:none; min-width:52px; text-align:center; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px; background:var(--muted-wash); color:var(--ink-3)}
+.pill.yes{background:var(--good-wash); color:var(--good)}
+.pill.no{background:var(--crit-wash); color:var(--crit)}
+.items li > div{min-width:0}
+.items .sub{display:block; font-size:12.5px; color:var(--ink-3); margin-top:1px}
+.card.muted{background:transparent; border-style:dashed}
+.card.muted h2{color:var(--ink-2)}
+.card.muted .items li{color:var(--ink-3)}
+.pill.count{background:var(--accent-wash); color:var(--accent); font-variant-numeric:tabular-nums}
+
+.banner{margin-top:22px; padding:12px 15px; border-radius:11px; font-size:13.5px; border:1px dashed var(--rule); color:var(--ink-2)}
+.banner b{color:var(--ink)}
+.banner[hidden]{display:none}
+.space-btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+.space-btn{display:inline-flex; gap:8px; text-decoration:none; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500}
+.space-btn:hover{border-color:var(--accent); color:var(--accent)}
+.space-btn::after{content:"→"; color:var(--ink-3)}
+/* compte rendu + origine des visites */
+.visits{display:grid; gap:16px; margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); align-items:start}
+.card .sub{font-size:12.5px; color:var(--ink-3); margin:-2px 0 12px}
+.cr{display:grid; gap:14px}
+.cr h3{font-family:"IBM Plex Sans",sans-serif; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin:0 0 6px}
+.cr h3.good{color:var(--good)} .cr h3.said{color:var(--accent)} .cr h3.todo{color:var(--crit)}
+.cr ul{margin:0; padding-left:18px; font-size:14px; line-height:1.5}
+.cr li{margin:3px 0}
+.bars{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.bars li{display:grid; grid-template-columns:minmax(90px,34%) 1fr auto; align-items:center; gap:10px; font-size:14px}
+.bars .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bars .track{height:12px; border-radius:999px; background:var(--grid); overflow:hidden}
+.bars .fill{display:block; height:100%; border-radius:999px; background:var(--accent)}
+.bars li.direct .fill{background:var(--good)}
+.bars .n{font-variant-numeric:tabular-nums; font-weight:600; min-width:44px; text-align:right}
+.bars .n small{font-weight:400; color:var(--ink-3)}
+.empty{font-size:13.5px; color:var(--ink-3)}
+footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--ink-3)}
+@media (max-width:700px){ .topbar{position:static} .period{margin-left:0} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="back" href="marketing.html#actions">← Tour de contrôle</a>
+    <div class="brand"><strong>Suivi d'espace</strong><span>Snapdesk</span></div>
+    <span class="sync" id="syncTxt">Chargement…</span>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="head">
+    <div>
+      <div class="eyebrow">Espace</div>
+      <h1 id="spaceName">—</h1>
+    </div>
+  </div>
+
+  <div class="banner" id="banner" hidden></div>
+  <div class="summary" id="summary"></div>
+  <div class="groups" id="groups"></div>
+  <div class="visits" id="visits"></div>
+  <div class="space-btns" id="otherSpaces"></div>
+
+  <footer id="foot">Sources : onglets « Copie du Pilotage » et « Copie Visite ».</footer>
+</main>
+
+<script src="actions-data.js?v=202609301525"></script>
+<script>
+"use strict";
+const SA = window.SnapActions;
+const $ = s => document.querySelector(s);
+function el(tag, attrs, kids) {
+  const n = document.createElement(tag);
+  for (const k in (attrs || {})) { const v = attrs[k]; if (v == null) continue; if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v); }
+  (kids || []).forEach(c => n.appendChild(c));
+  return n;
+}
+function banner(strong, rest) {
+  const b = $("#banner"); b.textContent = "";
+  if (!strong) { b.hidden = true; return; }
+  b.appendChild(el("b", { text: strong + " " })); if (rest) b.appendChild(document.createTextNode(rest));
+  b.hidden = false;
+}
+const nf = new Intl.NumberFormat("fr-FR");
+const id = new URLSearchParams(location.search).get("e");
+
+function tileNode(lbl, val) {
+  return el("div", { class: "tile" }, [el("div", { class: "lbl", text: lbl }), el("div", { class: "val", text: val })]);
+}
+const show = v => (v == null || v === "") ? "—" : String(v);
+
+/* Uniquement les colonnes demandées, affichées telles qu'écrites dans le Sheet :
+   A jours · D visites · G nom · I prix · R responsable · W X Y AA dates · AK panneau */
+function render(sp) {
+  const sum = $("#summary"); sum.textContent = "";
+  sum.appendChild(tileNode("Jours sur le marché", sp && sp.jours != null ? nf.format(sp.jours) + " j" : "—"));
+  /* Visites = nombre de clients différents venus visiter depuis janvier 2026 (1re visite de chaque client) */
+  const vt = tileNode("Visites depuis janv. 2026", visitsTileText()); vt.id = "visitsTile";
+  sum.appendChild(vt);
+  sum.appendChild(tileNode("Prix", show(sp && sp.prix)));
+  sum.appendChild(tileNode("Responsable", show(sp && sp.responsable)));
+
+  const host = $("#groups"); host.textContent = "";
+  const labels = { mailLeads: "Dernier mail leads", mailjet: "Dernier mail Mailjet", linkedin: "Campagne LinkedIn", broker: "Diffusion broker" };
+  const yesNo = (label, b, raw) => el("li", {}, [el("span", { text: label }),
+    el("span", { class: "pill" + (b === true ? " yes" : b === false ? " no" : ""), text: b === true ? "Oui" : b === false ? "Non" : show(raw) })]);
+  const ul = el("ul", { class: "items" });
+  SA.DATED_ACTIONS.forEach(a => {
+    const v = sp ? sp.dated[a.key].raw : "";
+    /* une date s'affiche en bleu ; « oui » / « non » écrits à la place d'une date en vert / rouge */
+    const yn = /^(oui|done)$/i.test(v) ? true : /^non$/i.test(v) ? false : null;
+    if (yn != null) ul.appendChild(yesNo(labels[a.key], yn, v));
+    else ul.appendChild(el("li", {}, [el("span", { text: labels[a.key] }), el("span", { class: "pill" + (v ? " count" : ""), text: show(v) })]));
+    /* Campagne Instagram (colonne « Campagne Meta ads ») : oui / non, juste après LinkedIn */
+    if (a.key === "linkedin") ul.appendChild(yesNo("Campagne Instagram", sp ? sp.instagram : null, sp && sp.instagramRaw));
+  });
+  host.appendChild(el("section", { class: "card" }, [el("h2", { text: "Dernières actions" }), ul]));
+
+  const pan = sp ? sp.panneau : null;
+  const panTxt = pan === true ? "Oui" : pan === false ? "Non" : show(sp && sp.panneauRaw);
+  const pl = el("ul", { class: "items" }, [el("li", {}, [el("span", { text: "Panneau" }),
+    el("span", { class: "pill" + (pan === true ? " yes" : pan === false ? " no" : ""), text: panTxt })])]);
+  host.appendChild(el("section", { class: "card" }, [el("h2", { text: "Visibilité" }), pl]));
+}
+
+/* ---- Compte rendu général + origine des visites (onglet « Copie Visite », depuis janvier 2026) ---- */
+let lastVisitsSig = "", lastReport = null, reportFor = "";
+const REPORT_ERRORS = {
+  not_configured: "Le résumé automatique n'est pas encore activé : la clé Gemini (GEMINI_API_KEY) doit être renseignée dans Vercel.",
+  gemini_error: "Le résumé automatique n'a pas pu être rédigé pour le moment. Nouvel essai à la prochaine mise à jour.",
+  sheet_error: "L'onglet « Copie Visite » n'a pas pu être lu.",
+  network: "Le résumé automatique est momentanément indisponible."
+};
+async function renderVisits(sp) {
+  const host = $("#visits");
+  if (!sp) { host.textContent = ""; lastVisitsSig = ""; lastReport = null; lastV = null; return; }
+  if (reportFor !== sp.nom) { lastReport = null; reportFor = sp.nom; }
+  let v = null, err = false;
+  try { v = await SA.loadVisits(sp.nom); } catch (e) { err = true; }
+  if (err && lastVisitsSig) return;             /* coupure passagère : on garde l'affichage */
+  /* Résumé : si un premier résumé doit être rédigé, on affiche d'abord le graphique */
+  if (!lastReport) draw(v, err, { pending: true });
+  let rep;
+  try { rep = await SA.loadReport(sp.nom); lastReport = rep; }
+  catch (e) { rep = lastReport || { error: (e && e.code) || "network" }; }
+  draw(v, err, rep);
+}
+let lastV = null;
+const visitsTileText = () => lastV && lastV.total != null ? nf.format(lastV.total) : "—";
+function draw(v, err, rep) {
+  if (v) { lastV = v; const tv = $("#visitsTile .val"); if (tv) tv.textContent = visitsTileText(); }
+  const sig = JSON.stringify([v, err, rep]);
+  if (sig === lastVisitsSig) return;
+  lastVisitsSig = sig;
+  const host = $("#visits");
+  host.textContent = "";
+
+  /* Compte rendu général (automatique) */
+  const crCard = el("section", { class: "card" }, [el("h2", { text: "Compte rendu des visites" })]);
+  const s = rep && rep.summary;
+  if (rep && rep.pending) {
+    crCard.appendChild(el("p", { class: "empty", text: v && v.total ? "Rédaction du compte rendu à partir des commentaires de visite…" : "Aucune visite depuis janvier 2026." }));
+  } else if (s) {
+    const when = rep.generatedAt ? new Date(rep.generatedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+    let sub = "Résumé automatique de " + rep.visites + " compte" + (rep.visites > 1 ? "s" : "") + " rendu" + (rep.visites > 1 ? "s" : "") + " de visite depuis janvier 2026" + (when ? ", mis à jour le " + when : "");
+    if (rep.stale) sub += " · mise à jour en attente";
+    crCard.appendChild(el("p", { class: "sub", text: sub }));
+    const block = (cls, title, items) => el("div", {}, [el("h3", { class: cls, text: title }), el("ul", {}, (items || []).map(x => el("li", { text: x })))]);
+    crCard.appendChild(el("div", { class: "cr" }, [
+      block("good", "Ce qui va bien", s.forts),
+      block("said", "Ce qu'ont dit les clients", s.clients),
+      block("todo", "À améliorer", s.ameliorer)
+    ]));
+  } else if (rep && rep.error) {
+    crCard.appendChild(el("p", { class: "empty", text: REPORT_ERRORS[rep.error] || REPORT_ERRORS.network }));
+  } else {
+    crCard.appendChild(el("p", { class: "empty", text: "Aucun compte rendu de visite depuis janvier 2026." }));
+  }
+  host.appendChild(crCard);
+
+  /* Origine des visites */
+  const oCard = el("section", { class: "card" }, [el("h2", { text: "Origine des visites" })]);
+  if (err) oCard.appendChild(el("p", { class: "empty", text: "L'onglet « Copie Visite » n'a pas pu être lu." }));
+  else if (!v.total) oCard.appendChild(el("p", { class: "empty", text: "Aucune visite depuis janvier 2026." }));
+  else {
+    const direct = v.byBroker.filter(b => b.name === "Direct").reduce((s, b) => s + b.count, 0);
+    oCard.appendChild(el("p", { class: "sub", text: v.total + " client" + (v.total > 1 ? "s" : "") + " depuis janvier 2026 (1re visite de chaque client) · " + direct + " en direct, " + (v.total - direct) + " via broker" }));
+    const max = v.byBroker[0].count;
+    const ul = el("ul", { class: "bars", role: "list" });
+    v.byBroker.forEach(b => {
+      const fill = el("span", { class: "fill" }); fill.style.width = (b.count / max * 100) + "%";
+      const n = el("span", { class: "n" }); n.appendChild(document.createTextNode(b.count + " "));
+      n.appendChild(el("small", { text: Math.round(b.count / v.total * 100) + " %" }));
+      ul.appendChild(el("li", { class: b.name === "Direct" ? "direct" : "", "aria-label": b.name + " : " + b.count + " visites" },
+        [el("span", { class: "name", text: b.name, title: b.name }), el("span", { class: "track" }, [fill]), n]));
+    });
+    oCard.appendChild(ul);
+  }
+  host.appendChild(oCard);
+}
+
+function renderOthers(spaces, current) {
+  const host = $("#otherSpaces"); host.textContent = "";
+  spaces.filter(s => s !== current).forEach(s => host.appendChild(el("a", { class: "space-btn", href: SA.espaceUrl(s), text: s.label })));
+}
+const ERRORS = {
+  denied: ["Le Sheet n'est plus lisible par lien.", "Partager → Accès général → « Tout le monde avec le lien », rôle Lecteur."],
+  missing_tab: ["L'onglet « Copie du Pilotage » est introuvable.", "Il a été supprimé ou recréé."],
+  format: ["La colonne « Espace » est introuvable.", "Vérifiez l'en-tête de l'onglet « Copie du Pilotage »."],
+  missing: ["Le Sheet est introuvable.", "Il a été supprimé, ou son identifiant a changé."],
+  network: ["Le Sheet est injoignable.", "Nouvelle tentative automatique dans une minute."]
+};
+async function boot() {
+  render(null);
+  let res;
+  try { res = await SA.loadSpaces(); }
+  catch (e) {
+    const c = ERRORS[e && e.code] || ERRORS.network;
+    $("#syncTxt").textContent = "Lecture impossible";
+    $("#spaceName").textContent = "—";
+    banner(c[0], c[1]);
+    return;
+  }
+  $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const f = $("#foot"); f.textContent = "Sources : ";
+  f.appendChild(el("a", { href: SA.sheetUrl(), target: "_blank", rel: "noopener noreferrer", text: "onglet « Copie du Pilotage »" }));
+  f.appendChild(document.createTextNode(" · comptes rendus et origine des visites : onglet « Copie Visite », depuis janvier 2026"));
+  const sp = id ? res.spaces.find(s => s.id === id) : null;
+  renderOthers(res.spaces, sp);
+  if (!sp) {
+    $("#spaceName").textContent = id ? "Espace introuvable" : "Choisissez un espace";
+    banner(id ? "Cet espace n'est plus dans le Sheet." : "Aucun espace sélectionné.", "Choisissez-en un ci-dessous.");
+    return;
+  }
+  $("#spaceName").textContent = sp.label;
+  document.title = sp.nom + " · Suivi Snapdesk";
+  render(sp);
+  renderVisits(sp);
+}
+boot().then(() => {
+  /* Lecture en continu : toutes les minutes, et dès qu'on revient sur l'onglet.
+     Une coupure passagère laisse les dernières données valides affichées. */
+  let sig = "", last = Date.now();
+  const tick = async () => {
+    let res;
+    try { res = await SA.refresh(); } catch (e) { return; }
+    last = Date.now();
+    $("#syncTxt").textContent = "À jour · " + res.readAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const sp = id ? res.spaces.find(s => s.id === id) : null;
+    const next = JSON.stringify({ sp: sp, all: res.spaces.map(s => s.id + s.nom) });
+    if (sp) renderVisits(sp);            /* nouveaux comptes rendus : graphique et résumé suivent */
+    if (next === sig) return;
+    if (sig && sp) { banner(null); $("#spaceName").textContent = sp.label; render(sp); renderOthers(res.spaces, sp); }
+    else if (sig) boot();
+    sig = next;
+  };
+  tick();
+  setInterval(() => { if (!document.hidden) tick(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - last > 15000) tick(); });
+});
+</script>
+</body>
+</html>

@@ -1,6 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
+import {
+  LayoutGrid,
+  Presentation as PresentationIcon,
+  UtensilsCrossed,
+  ChefHat,
+  Fence,
+  Umbrella,
+  Snowflake,
+  Bike,
+  Check,
+  type LucideIcon,
+} from "lucide-react";
 import { EspaceData } from "@/types/espace";
 
 interface PresentationProps {
@@ -13,12 +25,12 @@ const fadeInUp = {
 };
 
 function FeatureCard({
-  icon,
+  icon: Icon,
   label,
   value,
   delay,
 }: {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   value: string;
   delay: number;
@@ -32,7 +44,7 @@ function FeatureCard({
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6, delay }}
     >
-      <span className="text-4xl mb-4 block">{icon}</span>
+      <Icon className="w-7 h-7 mx-auto mb-4 text-luxury-charcoal" strokeWidth={1.25} />
       <p className="text-2xl font-serif text-luxury-charcoal mb-2">{value}</p>
       <p className="text-sm text-luxury-slate uppercase tracking-wider">{label}</p>
     </motion.div>
@@ -41,25 +53,25 @@ function FeatureCard({
 
 export default function Presentation({ espace }: PresentationProps) {
   const features = [
-    { icon: "◻", label: "Open Spaces", value: `${espace.openSpaces}` },
-    { icon: "▣", label: "Salles de réunion", value: `${espace.meetingRooms}` },
+    { icon: LayoutGrid, label: "Open Spaces", value: `${espace.openSpaces}` },
+    { icon: PresentationIcon, label: "Salles de réunion", value: `${espace.meetingRooms}` },
     ...(espace.hasLunchArea
-      ? [{ icon: "◈", label: "Espace déjeuner", value: "Inclus" }]
+      ? [{ icon: UtensilsCrossed, label: "Espace déjeuner", value: "Inclus" }]
       : []),
     ...(espace.hasEquippedKitchen
-      ? [{ icon: "◇", label: "Cuisine équipée", value: "Incluse" }]
+      ? [{ icon: ChefHat, label: "Cuisine équipée", value: "Incluse" }]
       : []),
     ...(espace.hasBalconFilant
-      ? [{ icon: "▭", label: "Balcon filant", value: "Inclus" }]
+      ? [{ icon: Fence, label: "Balcon filant", value: "Inclus" }]
       : []),
     ...(espace.hasTerrace
-      ? [{ icon: "▢", label: "Terrasse", value: "Incluse" }]
+      ? [{ icon: Umbrella, label: "Terrasse", value: "Incluse" }]
       : []),
     ...(espace.hasAirConditioning
-      ? [{ icon: "❆", label: "Climatisation", value: "Incluse" }]
+      ? [{ icon: Snowflake, label: "Climatisation", value: "Incluse" }]
       : []),
     ...(espace.hasBikeRack
-      ? [{ icon: "⬡", label: "Rack à vélos", value: "Inclus" }]
+      ? [{ icon: Bike, label: "Rack à vélos", value: "Inclus" }]
       : []),
   ];
 
@@ -106,8 +118,9 @@ export default function Presentation({ espace }: PresentationProps) {
               {espace.amenities.map((amenity) => (
                 <span
                   key={amenity}
-                  className="px-6 py-3 border border-primary-200 text-sm text-luxury-slate tracking-wide"
+                  className="inline-flex items-center gap-2 px-6 py-3 border border-primary-200 text-sm text-luxury-slate tracking-wide"
                 >
+                  <Check className="w-3.5 h-3.5 text-luxury-gold shrink-0" strokeWidth={2} />
                   {amenity}
                 </span>
               ))}

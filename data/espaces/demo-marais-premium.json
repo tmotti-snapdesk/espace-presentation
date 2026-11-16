@@ -28,6 +28,8 @@
   "photos": [],
   "floorPlanImage": "",
   "isLeadGen": true,
+  "leadGenMode": "unlock",
+  "presentationLink": "",
   "contacts": [
     { "id": "manon", "name": "Manon", "role": "Chief Customer Officer", "email": "", "phone": "", "photo": "" },
     { "id": "roger", "name": "Roger", "role": "Responsable Maintenance Technique", "email": "", "phone": "", "photo": "" }

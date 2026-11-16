@@ -1,0 +1,277 @@
+export interface RapportVisite {
+  id: string;
+  date: string;
+  prospect: string;
+  activity: string;
+  workstations: string;
+  feedback: string;
+  outcome: string;
+  // Visites remontées automatiquement depuis le Google Sheet des BizDev et
+  // reformulées par Gemini restent "pending" tant qu'un admin ne les a pas
+  // validées : elles ne doivent jamais s'afficher sur le rapport public.
+  status?: "pending" | "published";
+  rawNotes?: string;
+}
+
+export interface SimilarEspace {
+  id: string;
+  name: string;
+  url: string;
+  price: string;
+  workstations: string;
+  description: string;
+  image: string;
+  // Champs de comparaison (étude de marché), absents des anciens rapports.
+  location?: string;
+  surface?: string;
+  pricePerWorkstation?: string;
+  pricePerSqmYear?: string; // € / m² / an, saisi en chiffres (sert au calcul de la médiane)
+  availability?: string; // date ou texte libre, ex. « Immédiate », « 2027-01-01 »
+}
+
+/** Lien libre ajouté par un BizDev (affiché comme bouton en tête du rapport). */
+export interface RapportLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
+/**
+ * Étude de marché : les offres comparables sont dans `similarEspaces` ; ici on
+ * stocke les caractéristiques de l'espace du propriétaire (pour la ligne
+ * « Votre espace » du tableau comparatif) et un commentaire facultatif.
+ */
+export interface MarketStudyOwnAsset {
+  workstations: string;
+  surface: string;
+  price: string;
+  pricePerWorkstation: string;
+  pricePerSqmYear: string;
+  availability: string;
+}
+
+export interface RapportMarketStudy {
+  ownAsset: MarketStudyOwnAsset;
+  comment: string;
+  /** Nom du secteur, ex. « Paris 3e – 4e ». */
+  sectorName: string;
+  /** Nombre d'offres disponibles sur le secteur. */
+  sectorOfferCount: string;
+  /** Médiane €/m²/an saisie à la main ; vide = calculée à partir des offres. */
+  medianOverride: string;
+}
+
+export function emptyMarketStudy(): RapportMarketStudy {
+  return {
+    ownAsset: {
+      workstations: "",
+      surface: "",
+      price: "",
+      pricePerWorkstation: "",
+      pricePerSqmYear: "",
+      availability: "",
+    },
+    comment: "",
+    sectorName: "",
+    sectorOfferCount: "",
+    medianOverride: "",
+  };
+}
+
+/** Lit un nombre saisi librement (« 1 250,5 € » → 1250.5). Renvoie null si illisible. */
+export function parseAmount(value: string | undefined | null): number | null {
+  if (!value) return null;
+  const cleaned = value.replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
+  const match = cleaned.match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const n = parseFloat(match[0]);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+export function formatPricePerSqm(value: number): string {
+  return `${Math.round(value).toLocaleString("fr-FR")} €/m²/an`;
+}
+
+/** Affiche une disponibilité : une date AAAA-MM-JJ devient « 1 janvier 2027 », le reste tel quel. */
+export function formatAvailability(value: string | undefined): string {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const d = new Date(value + "T00:00:00");
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    }
+  }
+  return value;
+}
+
+export interface RapportDistribution {
+  bureauxLocaux: boolean;
+  ubiq: boolean;
+  spliit: boolean;
+  flashoffice: boolean;
+  placeImmobilier: boolean;
+}
+
+export interface RapportMonthData {
+  month: string;
+
+  monthlyBudget: string;
+  matchingFormsCount: number;
+  preselectionCount: number;
+  brokersListingActive: boolean;
+  brokersListingCount: number;
+  distribution: RapportDistribution;
+  otherMarketingActions: string[];
+
+  prospectionActions: string[];
+  upcomingActions: string[];
+
+  visites: RapportVisite[];
+}
+
+export interface RapportData {
+  espaceSlug: string;
+  espaceName: string;
+  espaceAddress: string;
+  marketingStartDate: string;
+  ownerName: string;
+  intro: string;
+
+  anonymizeVisitProspects: boolean;
+  recommendations: string[];
+  similarEspaces: SimilarEspace[];
+
+  presentationUrl: string;
+  // Optionnels : absents des rapports créés avant leur ajout.
+  extraLinks?: RapportLink[];
+  marketStudy?: RapportMarketStudy;
+
+  hiddenSections: string[];
+
+  createdAt: string;
+  updatedAt: string;
+
+  months: RapportMonthData[];
+}
+
+export interface RapportMonthFormData {
+  month: string;
+
+  monthlyBudget: string;
+  matchingFormsCount: string;
+  preselectionCount: string;
+  brokersListingActive: boolean;
+  brokersListingCount: string;
+  distribution: RapportDistribution;
+  otherMarketingActions: string;
+
+  prospectionActions: string;
+  upcomingActions: string;
+
+  visites: RapportVisite[];
+}
+
+export interface RapportFormData {
+  ownerName: string;
+  espaceAddress: string;
+  marketingStartDate: string;
+  intro: string;
+
+  anonymizeVisitProspects: boolean;
+  recommendations: string;
+  similarEspaces: SimilarEspace[];
+
+  presentationUrl: string;
+  extraLinks: RapportLink[];
+  marketStudy: RapportMarketStudy;
+
+  hiddenSections: string[];
+
+  months: RapportMonthFormData[];
+}
+
+export const DISTRIBUTION_LABELS: Record<keyof RapportDistribution, string> = {
+  bureauxLocaux: "Bureaux Locaux",
+  ubiq: "Ubiq",
+  spliit: "Spliit",
+  flashoffice: "Flashoffice",
+  placeImmobilier: "La Place de l'Immobilier",
+};
+
+export function emptyDistribution(): RapportDistribution {
+  return {
+    bureauxLocaux: false,
+    ubiq: false,
+    spliit: false,
+    flashoffice: false,
+    placeImmobilier: false,
+  };
+}
+
+export function emptyRapportMonth(month: string): RapportMonthData {
+  return {
+    month,
+    monthlyBudget: "",
+    matchingFormsCount: 0,
+    preselectionCount: 0,
+    brokersListingActive: true,
+    brokersListingCount: 450,
+    distribution: emptyDistribution(),
+    otherMarketingActions: [],
+    prospectionActions: [],
+    upcomingActions: [],
+    visites: [],
+  };
+}
+
+export function findRapportMonth(
+  rapport: Pick<RapportData, "months">,
+  month: string
+): RapportMonthData | null {
+  return rapport.months.find((m) => m.month === month) || null;
+}
+
+export function sortMonthsDesc(months: RapportMonthData[]): RapportMonthData[] {
+  return [...months].sort((a, b) => b.month.localeCompare(a.month));
+}
+
+/** Visites les plus récentes en premier ; une visite sans date passe en dernier. */
+export function sortVisitesDesc(visites: RapportVisite[]): RapportVisite[] {
+  return [...visites].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
+export function formatMonthLabel(month: string): string {
+  if (!/^\d{4}-\d{2}$/.test(month)) return month;
+  const [year, monthNum] = month.split("-");
+  const date = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
+  return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
+export function formatLongDate(value: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export function splitLines(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-•\s]+/, "").trim())
+    .filter(Boolean);
+}
+
+export function joinLines(items: string[]): string {
+  return items.join("\n");
+}

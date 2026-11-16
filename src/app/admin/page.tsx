@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { EspaceData } from "@/types/espace";
+import AdminNav from "@/components/admin/AdminNav";
 
 export default function AdminDashboard() {
   const [espaces, setEspaces] = useState<EspaceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
 
   const fetchEspaces = async () => {
     try {
@@ -27,6 +30,42 @@ export default function AdminDashboard() {
     fetchEspaces();
   }, []);
 
+  const handleDuplicate = async (slug: string) => {
+    setDuplicating(slug);
+    try {
+      const res = await fetch(`/api/espaces/${slug}`, { method: "POST" });
+      if (res.ok) {
+        await fetchEspaces();
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setDuplicating(null);
+    }
+  };
+
+  const handleToggleVisibility = async (slug: string, nextVisible: boolean) => {
+    setTogglingVisibility(slug);
+    setEspaces((prev) =>
+      prev.map((e) => (e.slug === slug ? { ...e, brokerDirectoryVisible: nextVisible } : e))
+    );
+    try {
+      const res = await fetch(`/api/espaces/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brokerDirectoryVisible: nextVisible }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Revert on failure
+      setEspaces((prev) =>
+        prev.map((e) => (e.slug === slug ? { ...e, brokerDirectoryVisible: !nextVisible } : e))
+      );
+    } finally {
+      setTogglingVisibility(null);
+    }
+  };
+
   const handleDelete = async (slug: string) => {
     if (!confirm(`Supprimer l'espace "${slug}" ? Cette action est irréversible.`)) return;
     setDeleting(slug);
@@ -44,21 +83,14 @@ export default function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-luxury-cream">
-      {/* Header */}
-      <div className="bg-luxury-charcoal text-white py-8 px-6 md:px-12">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="luxury-label text-luxury-gold mb-1">Snapdesk</p>
-            <h1 className="font-serif text-2xl">Dashboard</h1>
-          </div>
-          <Link
-            href="/admin/nouveau"
-            className="luxury-btn text-sm"
-          >
+      <AdminNav
+        title="Dashboard"
+        actions={
+          <Link href="/admin/nouveau" className="luxury-btn text-sm">
             + Créer un espace
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-5xl mx-auto py-12 px-6 md:px-12">
         {loading ? (
@@ -91,6 +123,33 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleToggleVisibility(espace.slug, !(espace.brokerDirectoryVisible !== false))
+                  }
+                  disabled={togglingVisibility === espace.slug}
+                  title="Visibilité sur l'annuaire brokers (/espaces)"
+                  className={`shrink-0 flex items-center gap-2 px-3 py-2 text-xs rounded border transition-colors disabled:opacity-50 ${
+                    espace.brokerDirectoryVisible !== false
+                      ? "border-luxury-gold/40 bg-luxury-champagne/20 text-luxury-charcoal"
+                      : "border-primary-200 text-luxury-slate"
+                  }`}
+                >
+                  <span
+                    className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+                      espace.brokerDirectoryVisible !== false ? "bg-luxury-gold" : "bg-primary-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        espace.brokerDirectoryVisible !== false ? "translate-x-3.5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </span>
+                  {espace.brokerDirectoryVisible !== false ? "Visible annuaire" : "Masqué annuaire"}
+                </button>
+
                 <div className="flex items-center gap-3 shrink-0">
                   <a
                     href={`/espaces/${espace.slug}`}
@@ -100,12 +159,33 @@ export default function AdminDashboard() {
                   >
                     Voir
                   </a>
+                  <a
+                    href={`/espaces/${espace.slug}/fiche`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
+                  >
+                    Fiche broker
+                  </a>
                   <Link
                     href={`/admin/${espace.slug}`}
                     className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded"
                   >
                     Modifier
                   </Link>
+                  <Link
+                    href={`/admin/${espace.slug}/rapports`}
+                    className="px-4 py-2 text-sm border border-luxury-gold/40 text-luxury-charcoal bg-luxury-champagne/30 hover:bg-luxury-champagne/60 transition-colors rounded"
+                  >
+                    Rapports
+                  </Link>
+                  <button
+                    onClick={() => handleDuplicate(espace.slug)}
+                    disabled={duplicating === espace.slug}
+                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded disabled:opacity-50"
+                  >
+                    {duplicating === espace.slug ? "..." : "Dupliquer"}
+                  </button>
                   <button
                     onClick={() => handleDelete(espace.slug)}
                     disabled={deleting === espace.slug}

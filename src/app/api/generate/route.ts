@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { put } from "@vercel/blob";
-import { slugify } from "@/lib/espaces";
+import { slugify, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 const DEFAULT_CONTACTS = [
@@ -59,6 +60,29 @@ export async function POST(request: NextRequest) {
       floorPlanImage: body.floorPlanImage || "",
       contacts: DEFAULT_CONTACTS,
       isLeadGen: body.isLeadGen || false,
+      leadGenMode: body.leadGenMode || "unlock",
+      leadGenDismissible: body.leadGenDismissible || false,
+      presentationLink: body.presentationLink || "",
+      brokerDirectoryVisible: true,
+      template: body.template || "standard",
+      storyTitle: body.storyTitle || "",
+      storyText: body.storyText || "",
+      storyPhotos: body.storyPhotos || [],
+      highlightTitle: body.highlightTitle || "",
+      highlightText: body.highlightText || "",
+      highlightPhotos: body.highlightPhotos || [],
+      buildingSurface: body.buildingSurface || "",
+      buildingFloors: body.buildingFloors || "",
+      buildingYear: body.buildingYear || "",
+      buildingCertification: body.buildingCertification || "",
+      neighborhoodTitle: body.neighborhoodTitle || "",
+      neighborhoodText: body.neighborhoodText || "",
+      neighborhoodPhotos: body.neighborhoodPhotos || [],
+      testimonial: {
+        quote: body.testimonialQuote || "",
+        author: body.testimonialAuthor || "",
+        role: body.testimonialRole || "",
+      },
       createdAt: new Date().toISOString(),
     };
 
@@ -66,7 +90,15 @@ export async function POST(request: NextRequest) {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge: ESPACE_JSON_CACHE_MAX_AGE,
     });
+
+    // Invalidate caches so the dashboard and the new public page reflect
+    // the freshly created espace immediately.
+    revalidateTag("espaces-list");
+    revalidatePath(`/espaces/${slug}`);
+    revalidatePath("/admin");
 
     return NextResponse.json({
       success: true,

@@ -1,0 +1,173 @@
+// ── Landing Page data model ────────────────────────────────────────────────
+// Stored as espaces/<slug>.json → lp/<slug>.json in Vercel Blob.
+// All fields beyond the hero are optional so that Step-1 data stays valid
+// once later sections are added.
+
+export interface LpMissionCard {
+  icon: string;        // emoji used as icon — fallback when no image is set
+  iconImage?: string;  // optional Blob URL of a custom picto image
+  title: string;
+  text: string;
+}
+
+export interface LpLogo {
+  url: string;    // Blob URL of the logo image
+  alt: string;
+}
+
+export interface LpProcessStep {
+  title: string;
+  text: string;
+  iconImage?: string;  // optional Blob URL — when set, replaces the step number with a picto
+}
+
+export interface LpFaqItem {
+  question: string;
+  answer: string;
+}
+
+export type LpFormFieldType = "text" | "email" | "tel" | "number" | "date" | "textarea" | "select" | "checkbox" | "multi-checkbox";
+
+export interface LpFormField {
+  // HubSpot internal name (e.g. "email", "firstname", "phone").
+  // Picked from the catalog or "custom" then `customName` is used.
+  hubspotName: string;
+  label: string;            // placeholder / label visible to the visitor
+  type: LpFormFieldType;
+  required?: boolean;
+  options?: string[];       // for `select`
+  halfWidth?: boolean;      // when true, sits in a 2-column grid with its neighbour
+  // When set on a `select` field, the value starting with "Oui" flips
+  // HubSpot's `declare_etre_en_recherche` boolean to true (legacy mapping
+  // for the "projet_de_bureau" field).
+  mapToSearchingForOffice?: boolean;
+}
+
+export interface LpTestimonialItem {
+  quote: string;
+  authorName?: string;
+  authorCompany?: string;
+  authorRole?: string;
+  authorPhoto?: string;   // Blob URL of the author's portrait
+}
+
+export interface LandingPageData {
+  slug: string;
+  internalTitle: string;  // shown only in admin (e.g. "Campagne Office Manager Q2")
+  createdAt: string;
+
+  // ── Hero ──────────────────────────────────────────────────────────────────
+  heroVideoUrl: string;
+  // Optional WebP/JPEG/PNG background. When set, takes precedence over the
+  // video and unlocks a word-by-word reveal of the hero title.
+  heroImageUrl?: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroCtaText: string;      // text of the CTA button (anchors to #form)
+
+  // ── Notre métier (Step 2) ─────────────────────────────────────────────────
+  missionLabel?: string;    // small all-caps label above the title
+  missionTitle?: string;
+  missionSubtitle?: string;
+  missionCards?: LpMissionCard[];
+  missionPhotos?: string[];  // optional carousel shown to the right of the cards
+
+  // ── Process / Comment ça marche (optional, between Mission and Social proof)
+  processLabel?: string;
+  processTitle?: string;
+  processSubtitle?: string;
+  processSteps?: LpProcessStep[];
+
+  // ── Urgency (optional, displayed before the lead form to drive conversion)
+  // Steps on the left, countdown ticking down to `urgencyDeadline` on the right.
+  urgencyLabel?: string;
+  urgencyTitle?: string;
+  urgencySubtitle?: string;
+  urgencySteps?: LpProcessStep[];
+  urgencyDeadline?: string;   // ISO datetime, e.g. "2026-06-30T23:59:00+02:00"
+  urgencyExpiredText?: string; // shown once the deadline is past
+
+  // ── Social proof (Step 3) ─────────────────────────────────────────────────
+  socialProofTitle?: string;
+  socialProofLogos?: LpLogo[];
+  socialProofShowGoogleRating?: boolean;  // when true, renders a "4,8/5 Google" block before the logos
+
+  // ── Testimonials (optional quote block, slider when more than one) ───────
+  testimonials?: LpTestimonialItem[];
+
+  // Legacy single-testimonial fields — still read for back-compat with LPs
+  // saved before the slider was introduced. New saves use `testimonials`.
+  testimonialQuote?: string;
+  testimonialAuthorName?: string;
+  testimonialAuthorCompany?: string;
+  testimonialAuthorRole?: string;
+  testimonialAuthorPhoto?: string;
+
+  // ── FAQ (optional, displayed just before the form) ────────────────────────
+  faqLabel?: string;
+  faqTitle?: string;
+  faqSubtitle?: string;
+  faqItems?: LpFaqItem[];
+
+  // ── Form (Step 4) ─────────────────────────────────────────────────────────
+  formTitle?: string;
+  formLabel?: string;
+  formCtaText?: string;
+  formHubspotFormId?: string;   // GUID of the HubSpot form for this campaign
+  // When set and non-empty, replaces the legacy 7-field form with a fully
+  // configurable list of fields (preserves back-compat for older LPs).
+  formFields?: LpFormField[];
+  // When true, the form reveals its fields 3 rows at a time as the
+  // visitor fills them in. Defaults to false (classic display, every
+  // field visible upfront) — progressive must be opted in per LP.
+  formProgressive?: boolean;
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  // Order in which the reorderable blocks are rendered between the Hero and
+  // the floating sticky CTA. When unset, `DEFAULT_LP_SECTION_ORDER` is used.
+  // Unknown keys are ignored; known keys missing from the array are appended
+  // in their default position so newly-introduced sections still appear on
+  // older LPs.
+  sectionOrder?: LpSectionKey[];
+}
+
+// Keys of the blocks the admin can reorder. Hero is always first, the
+// floating sticky CTA is always last — neither is part of the order.
+export type LpSectionKey =
+  | "mission"
+  | "process"
+  | "testimonial"
+  | "socialProof"
+  | "urgency"
+  | "form"
+  | "faq";
+
+export const DEFAULT_LP_SECTION_ORDER: LpSectionKey[] = [
+  "mission",
+  "process",
+  "testimonial",
+  "socialProof",
+  "urgency",
+  "form",
+  "faq",
+];
+
+export const LP_SECTION_LABELS: Record<LpSectionKey, string> = {
+  mission: "Notre métier",
+  process: "Comment ça marche",
+  testimonial: "Témoignages clients",
+  socialProof: "Social proof",
+  urgency: "Urgence + compte à rebours",
+  form: "Formulaire",
+  faq: "FAQ",
+};
+
+// Returns the effective order: `sectionOrder` when set, with any default
+// keys missing from it appended in their default position so a newly
+// added block doesn't vanish for LPs saved before it existed.
+export function resolveSectionOrder(saved?: LpSectionKey[]): LpSectionKey[] {
+  if (!saved || saved.length === 0) return DEFAULT_LP_SECTION_ORDER;
+  const known = saved.filter((k) => DEFAULT_LP_SECTION_ORDER.includes(k));
+  const missing = DEFAULT_LP_SECTION_ORDER.filter((k) => !known.includes(k));
+  return [...known, ...missing];
+}

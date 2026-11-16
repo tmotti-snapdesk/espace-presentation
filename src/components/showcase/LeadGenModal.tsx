@@ -2,13 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LeadGenMode } from "@/types/espace";
 
 interface LeadGenModalProps {
   espaceName: string;
   espaceSlug: string;
+  leadGenMode?: LeadGenMode;
+  presentationLink?: string;
+  dismissible?: boolean;
 }
 
-export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalProps) {
+export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "unlock", presentationLink = "", dismissible = false }: LeadGenModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenDismissed, setHasBeenDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,8 +23,18 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
   const [form, setForm] = useState({
     email: "",
     company: "",
-    headcount: "",
+    searchingForOffice: false,
   });
+
+  const dismissalKey = `leadgen-dismissed:${espaceSlug}`;
+
+  // Restore dismissal from sessionStorage so the modal doesn't reopen mid-visit.
+  useEffect(() => {
+    if (!dismissible || typeof window === "undefined") return;
+    if (sessionStorage.getItem(dismissalKey) === "1") {
+      setHasBeenDismissed(true);
+    }
+  }, [dismissible, dismissalKey]);
 
   // Trigger modal on scroll (when the trigger div enters viewport)
   useEffect(() => {
@@ -44,7 +58,21 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
   const handleClose = () => {
     setIsOpen(false);
     setHasBeenDismissed(true);
+    if (dismissible && typeof window !== "undefined") {
+      sessionStorage.setItem(dismissalKey, "1");
+    }
   };
+
+  // ESC key closes the modal in dismissible mode
+  useEffect(() => {
+    if (!dismissible || !isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dismissible, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,8 +95,14 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
 
       if (!res.ok) throw new Error("Erreur lors de l'envoi");
 
-      setIsSubmitted(true);
-      setTimeout(() => setIsOpen(false), 2500);
+      if (leadGenMode === "redirect" && presentationLink) {
+        window.open(presentationLink, "_blank");
+        setIsSubmitted(true);
+        setTimeout(() => setIsOpen(false), 2500);
+      } else {
+        setIsSubmitted(true);
+        setTimeout(() => setIsOpen(false), 2500);
+      }
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
@@ -86,27 +120,40 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+              className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-50 ${dismissible ? "cursor-pointer" : ""}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onClick={dismissible ? handleClose : undefined}
             />
 
             {/* Modal */}
             <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="bg-white w-full max-w-2xl relative"
+                className="bg-white w-full max-w-2xl relative pointer-events-auto"
                 initial={{ opacity: 0, y: 30, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.97 }}
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()}
               >
+                {dismissible && !isSubmitted && (
+                  <button
+                    type="button"
+                    aria-label="Fermer"
+                    onClick={handleClose}
+                    className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center text-luxury-slate hover:text-luxury-charcoal transition-colors z-10"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <path d="M3 3l12 12M15 3L3 15" />
+                    </svg>
+                  </button>
+                )}
                 <div className="p-10 md:p-16">
                   {isSubmitted ? (
                     <motion.div
@@ -121,7 +168,11 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                         Merci !
                       </h3>
                       <p className="text-luxury-slate font-light">
-                        Vous allez recevoir la présentation complète par email.
+                        {leadGenMode === "voir_suite"
+                          ? "Bonne découverte de l'espace !"
+                          : leadGenMode === "redirect"
+                            ? "La présentation s'ouvre dans un nouvel onglet."
+                            : "Vous allez recevoir la présentation complète par email."}
                       </p>
                     </motion.div>
                   ) : (
@@ -157,21 +208,27 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                             placeholder="Entreprise *"
                           />
                         </div>
-                        <div>
-                          <select
-                            value={form.headcount}
-                            onChange={(e) => setForm((f) => ({ ...f, headcount: e.target.value }))}
-                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm text-luxury-slate appearance-none bg-white"
+                        <label
+                          className={`flex items-center gap-3 px-5 py-4 border cursor-pointer transition-colors text-sm ${
+                            form.searchingForOffice
+                              ? "border-luxury-gold bg-luxury-champagne/20 text-luxury-charcoal"
+                              : "border-primary-200 text-luxury-slate"
+                          }`}
+                          onClick={() => setForm((f) => ({ ...f, searchingForOffice: !f.searchingForOffice }))}
+                        >
+                          <div
+                            className={`w-10 h-6 rounded-full relative transition-colors shrink-0 ${
+                              form.searchingForOffice ? "bg-luxury-gold" : "bg-primary-200"
+                            }`}
                           >
-                            <option value="">Nombre de postes recherchés (facultatif)</option>
-                            <option value="Entre 1 à 5">Entre 1 à 5</option>
-                            <option value="5 à 10 postes">5 à 10 postes</option>
-                            <option value="10 à 20 postes">10 à 20 postes</option>
-                            <option value="20 à 50 postes">20 à 50 postes</option>
-                            <option value="50 à 100 postes">50 à 100 postes</option>
-                            <option value="> à 100 postes">&gt; à 100 postes</option>
-                          </select>
-                        </div>
+                            <div
+                              className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                                form.searchingForOffice ? "translate-x-5" : "translate-x-1"
+                              }`}
+                            />
+                          </div>
+                          <span>Je recherche actuellement des bureaux</span>
+                        </label>
 
                         {error && (
                           <p className="text-red-500 text-sm text-center">{error}</p>
@@ -186,7 +243,9 @@ export default function LeadGenModal({ espaceName, espaceSlug }: LeadGenModalPro
                         >
                           {isSubmitting
                             ? "Envoi en cours..."
-                            : "Recevoir la présentation complète"}
+                            : leadGenMode === "voir_suite"
+                              ? "Voir la suite"
+                              : "Recevoir la présentation complète"}
                         </button>
                       </form>
                     </>

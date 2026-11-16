@@ -1,10 +1,23 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
-import { getEspaceBySlug, getAllEspaces } from "@/lib/espaces";
-import { EspaceData } from "@/types/espace";
-import { list } from "@vercel/blob";
+import { resolveEspaceBySlug } from "@/lib/espaces";
 import ShowcasePage from "./ShowcasePage";
 
-export const dynamic = "force-dynamic";
+// Nominally caches the rendered HTML for up to an hour, but
+// resolveEspaceBySlug() reads the espace JSON with cache: "no-store" (see
+// src/lib/espaces.ts), which opts every request into a fresh render anyway
+// — otherwise an edit could stay invisible for up to this window. Kept at
+// 3600 rather than removed so a future switch back to a cached fetch (e.g.
+// once revalidateTag covers this read) regains the traffic-cost benefit
+// without a second change here.
+export const revalidate = 3600;
+
+// Dedupe Blob calls between generateMetadata() and the page component
+// during the same render pass, and delegate the actual read to
+// lib/espaces.ts so this page, the admin API, and the broker-facing pages
+// (fiche, rapports, directory) all resolve an espace's photos through the
+// exact same Blob/local-fallback logic — one fix there covers every page.
+const resolveEspace = cache((slug: string) => resolveEspaceBySlug(slug));
 
 export async function generateMetadata({
   params,
@@ -22,28 +35,6 @@ export async function generateMetadata({
       description: `${espace.workstations} postes - ${espace.address}, ${espace.city}`,
     },
   };
-}
-
-async function resolveEspace(slug: string): Promise<EspaceData | null> {
-  // 1. Try Vercel Blob first (for dynamically created/edited espaces)
-  try {
-    const { blobs } = await list({ prefix: `espaces/${slug}` });
-    const jsonBlob = blobs.find((b) => b.pathname.endsWith(".json"));
-    if (jsonBlob) {
-      const res = await fetch(jsonBlob.url, { cache: "no-store" });
-      if (res.ok) {
-        return (await res.json()) as EspaceData;
-      }
-    }
-  } catch {
-    // Blob not configured or not found — fall through
-  }
-
-  // 2. Fallback to local filesystem (for demo/bundled data)
-  const localData = getEspaceBySlug(slug);
-  if (localData) return localData;
-
-  return null;
 }
 
 export default async function EspacePage({

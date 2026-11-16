@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Geist:wght@300;400;500;600&display=swap');
 
 @layer base {
   html {
@@ -80,4 +81,44 @@
 /* Map container */
 .map-container {
   filter: grayscale(30%) contrast(1.1);
+}
+
+/* Print — used for rapport PDF export */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Force framer-motion elements (and others) to their final visible state */
+  .rapport-printable *,
+  .rapport-printable *::before,
+  .rapport-printable *::after {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Keep visual breaks between sections clean */
+  .rapport-printable section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .rapport-printable a {
+    text-decoration: none;
+    color: inherit;
+  }
 }

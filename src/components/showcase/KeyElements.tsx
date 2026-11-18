@@ -44,7 +44,7 @@ export default function KeyElements({ espace }: KeyElementsProps) {
               <p className="text-3xl md:text-4xl font-serif text-luxury-champagne mb-3">
                 {el.value}
               </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+              <p className="text-xs font-medium uppercase tracking-[2px] text-white/65">
                 {el.label}
               </p>
             </motion.div>

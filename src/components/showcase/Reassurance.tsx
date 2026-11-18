@@ -23,7 +23,7 @@ export default function Reassurance() {
             <p className="luxury-label mb-4">À propos</p>
             <h2 className="luxury-heading text-luxury-charcoal mb-6">
               Snapdesk,<br />
-              <span className="text-luxury-gold italic">l&apos;excellence</span><br />
+              <span className="text-luxury-gold">l&apos;excellence</span><br />
               au service de<br />
               vos bureaux
             </h2>
@@ -71,7 +71,7 @@ export default function Reassurance() {
 
       {/* Footer */}
       <div className="max-w-7xl mx-auto mt-24 pt-12 border-t border-primary-100 text-center">
-        <p className="text-luxury-gold font-serif text-2xl italic mb-2">Snapdesk</p>
+        <p className="text-luxury-gold font-serif text-2xl font-semibold mb-2">Snapdesk</p>
         <p className="text-sm text-luxury-slate">
           L&apos;excellence au service de vos espaces de travail
         </p>

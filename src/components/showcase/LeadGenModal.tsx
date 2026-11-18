@@ -194,7 +194,7 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
                             required
                             value={form.email}
                             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+                            className="w-full px-5 py-4 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors text-sm"
                             placeholder="Email professionnel *"
                           />
                         </div>
@@ -204,12 +204,12 @@ export default function LeadGenModal({ espaceName, espaceSlug, leadGenMode = "un
                             required
                             value={form.company}
                             onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                            className="w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+                            className="w-full px-5 py-4 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors text-sm"
                             placeholder="Entreprise *"
                           />
                         </div>
                         <label
-                          className={`flex items-center gap-3 px-5 py-4 border cursor-pointer transition-colors text-sm ${
+                          className={`flex items-center gap-3 px-5 py-4 border rounded-lg cursor-pointer transition-colors text-sm ${
                             form.searchingForOffice
                               ? "border-luxury-gold bg-luxury-champagne/20 text-luxury-charcoal"
                               : "border-primary-200 text-luxury-slate"

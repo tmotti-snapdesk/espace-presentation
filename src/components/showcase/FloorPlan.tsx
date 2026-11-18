@@ -39,7 +39,7 @@ export default function FloorPlan({ floorPlanImage }: FloorPlanProps) {
             alt="Plan d'aménagement"
             width={1200}
             height={800}
-            className="w-full h-auto"
+            className="w-full h-auto rounded-lg"
           />
         </motion.div>
       </div>

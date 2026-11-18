@@ -34,7 +34,7 @@ export default function PhotoGallery({ photos, name }: PhotoGalleryProps) {
             return (
               <motion.div
                 key={photo}
-                className={`relative overflow-hidden ${
+                className={`relative overflow-hidden rounded-lg ${
                   isLarge ? "md:col-span-2 aspect-[21/9]" : "aspect-[4/3]"
                 }`}
                 initial={{ opacity: 0, y: 20 }}

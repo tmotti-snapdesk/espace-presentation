@@ -55,10 +55,6 @@ const config: Config = {
         fraunces: ["Fraunces", "Georgia", "serif"],
         geist: ["Geist", "Inter", "system-ui", "sans-serif"],
       },
-      borderRadius: {
-        DEFAULT: "4px",
-        lg: "4px",
-      },
       animation: {
         "fade-in": "fadeIn 1s ease-out",
         "slide-up": "slideUp 0.8s ease-out",

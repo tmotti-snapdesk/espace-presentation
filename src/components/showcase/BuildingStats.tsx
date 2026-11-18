@@ -20,13 +20,13 @@ export default function BuildingStats({ surface, floors, year, certification }: 
   if (stats.length === 0) return null;
 
   return (
-    <section className="py-16 bg-luxury-charcoal">
+    <section className="py-16 bg-luxury-cream">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-        <div className={`grid grid-cols-2 md:grid-cols-${stats.length} gap-px bg-white/10`}>
+        <div className={`grid grid-cols-2 md:grid-cols-${stats.length} gap-4`}>
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              className="bg-luxury-charcoal py-12 text-center"
+              className="bg-white rounded-lg py-12 text-center shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -35,7 +35,7 @@ export default function BuildingStats({ surface, floors, year, certification }: 
               <p className="text-3xl md:text-4xl font-serif text-luxury-champagne mb-3">
                 {stat.value}
               </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+              <p className="text-xs uppercase tracking-[0.2em] text-luxury-charcoal/70">
                 {stat.label}
               </p>
             </motion.div>

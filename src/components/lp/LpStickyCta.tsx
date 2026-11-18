@@ -45,7 +45,7 @@ export default function LpStickyCta({ text }: LpStickyCtaProps) {
         >
           <a
             href="#form"
-            className="block w-full md:w-auto px-6 py-4 bg-luxury-gold text-luxury-charcoal text-center text-sm uppercase tracking-[0.15em] font-medium shadow-lg hover:bg-luxury-champagne transition-colors"
+            className="block w-full md:w-auto px-6 py-4 bg-luxury-gold text-white text-center text-sm uppercase tracking-[0.06em] font-bold rounded-full shadow-lg hover:bg-luxury-gold-dark transition-colors"
           >
             {text}
           </a>

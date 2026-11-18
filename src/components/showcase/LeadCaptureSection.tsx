@@ -53,7 +53,7 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
   };
 
   return (
-    <section className="section-padding bg-luxury-charcoal">
+    <section className="section-padding bg-luxury-cream">
       <div className="max-w-3xl mx-auto px-6">
         <motion.div
           className="text-center mb-12"
@@ -63,7 +63,7 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
           transition={{ duration: 0.6 }}
         >
           <p className="luxury-label text-luxury-gold mb-4">Vous êtes intéressé ?</p>
-          <h2 className="luxury-heading text-white mb-4">
+          <h2 className="luxury-heading text-luxury-charcoal mb-4">
             Recevez le dossier<br />ou visitez l&apos;espace
           </h2>
           <div className="luxury-divider mx-auto" />
@@ -75,11 +75,11 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-luxury-gold flex items-center justify-center">
               <span className="text-white text-2xl">&#10003;</span>
             </div>
-            <h3 className="font-serif text-2xl text-white mb-3">Merci !</h3>
-            <p className="text-white/70 font-light">
+            <h3 className="font-serif text-2xl text-luxury-charcoal mb-3">Merci !</h3>
+            <p className="text-luxury-charcoal/80 font-light">
               {requestType === "visite"
                 ? "Nous revenons vers vous rapidement pour organiser la visite."
                 : "Vous allez recevoir le dossier complet par email."}
@@ -102,10 +102,10 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
                     key={type}
                     type="button"
                     onClick={() => setRequestType(type)}
-                    className={`px-5 py-4 border text-sm uppercase tracking-[0.15em] transition-colors ${
+                    className={`px-5 py-4 border-[2.5px] rounded-full text-sm font-bold uppercase tracking-[0.06em] transition-colors ${
                       active
-                        ? "border-luxury-gold bg-luxury-gold text-luxury-charcoal"
-                        : "border-white/30 text-white hover:border-luxury-gold"
+                        ? "border-luxury-gold bg-luxury-gold text-white"
+                        : "border-luxury-gold bg-transparent text-primary-950 hover:bg-luxury-gold hover:text-white"
                     }`}
                   >
                     {REQUEST_LABELS[type]}
@@ -119,7 +119,7 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
               required
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full px-5 py-4 bg-white border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+              className="w-full px-5 py-4 bg-white border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors text-sm"
               placeholder="Email professionnel *"
             />
             <input
@@ -127,7 +127,7 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
               required
               value={form.company}
               onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-              className="w-full px-5 py-4 bg-white border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm"
+              className="w-full px-5 py-4 bg-white border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors text-sm"
               placeholder="Entreprise *"
             />
 
@@ -136,7 +136,7 @@ export default function LeadCaptureSection({ espaceName, espaceSlug }: LeadCaptu
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full px-8 py-5 bg-luxury-gold text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium transition-colors hover:bg-luxury-champagne ${
+              className={`w-full px-8 py-5 bg-luxury-gold text-white text-sm uppercase tracking-[0.06em] font-bold rounded-full transition-colors hover:bg-luxury-gold-dark ${
                 isSubmitting ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >

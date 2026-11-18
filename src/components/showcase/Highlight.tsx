@@ -43,7 +43,7 @@ export default function Highlight({ title, text, photos }: HighlightProps) {
             {photos.slice(0, 3).map((photo, i) => (
               <motion.div
                 key={photo}
-                className={`relative overflow-hidden ${
+                className={`relative overflow-hidden rounded-lg ${
                   i === 0 && photos.length >= 3 ? "md:col-span-2 md:row-span-2 aspect-square" : "aspect-[4/3]"
                 }`}
                 initial={{ opacity: 0, y: 20 }}

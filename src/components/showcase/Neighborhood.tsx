@@ -29,7 +29,7 @@ export default function Neighborhood({ title, text, photos }: NeighborhoodProps)
               {photos.slice(0, 3).map((photo, i) => (
                 <div
                   key={photo}
-                  className={`relative overflow-hidden ${i === 0 ? "aspect-[16/10]" : "aspect-[16/9]"}`}
+                  className={`relative overflow-hidden rounded-lg ${i === 0 ? "aspect-[16/10]" : "aspect-[16/9]"}`}
                 >
                   <Image
                     src={photo}

@@ -128,7 +128,7 @@ export default function LpLeadForm({
   };
 
   const inputClass =
-    "w-full px-5 py-4 border border-primary-200 focus:outline-none focus:border-luxury-gold transition-colors text-sm bg-white";
+    "w-full px-5 py-4 border border-primary-200 rounded-lg focus:outline-none focus:border-luxury-gold transition-colors text-sm bg-white";
 
   // Group consecutive `halfWidth` fields into rows of 2; full-width fields
   // (textareas, checkboxes, multi-checkboxes) sit on their own row.
@@ -264,7 +264,7 @@ export default function LpLeadForm({
     const wrap = (control: React.ReactNode) =>
       labelAbove ? (
         <div key={f.hubspotName}>
-          <label className="block text-xs uppercase tracking-[0.15em] text-white/70 mb-2 font-light">
+          <label className="block text-xs uppercase tracking-[0.15em] text-luxury-charcoal/70 mb-2 font-light">
             {f.label}{requiredHint}
           </label>
           {control}
@@ -306,7 +306,7 @@ export default function LpLeadForm({
       return (
         <label
           key={f.hubspotName}
-          className="flex items-start gap-3 text-white/80 text-sm font-light cursor-pointer"
+          className="flex items-start gap-3 text-luxury-charcoal/80 text-sm font-light cursor-pointer"
         >
           <input
             type="checkbox"
@@ -330,7 +330,7 @@ export default function LpLeadForm({
       };
       return (
         <div key={f.hubspotName}>
-          <label className="block text-xs uppercase tracking-[0.15em] text-white/70 mb-3 font-light">
+          <label className="block text-xs uppercase tracking-[0.15em] text-luxury-charcoal/70 mb-3 font-light">
             {f.label}{f.required ? " *" : ""}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -341,8 +341,8 @@ export default function LpLeadForm({
                   key={o}
                   className={`flex items-center gap-2 px-3 py-2 border text-sm cursor-pointer transition-colors ${
                     checked
-                      ? "border-luxury-gold bg-luxury-gold/10 text-white"
-                      : "border-primary-200/30 text-white/70 hover:border-luxury-gold/50"
+                      ? "border-luxury-gold bg-luxury-gold/10 text-luxury-charcoal"
+                      : "border-primary-200 bg-white text-luxury-charcoal/80 hover:border-luxury-gold/50"
                   }`}
                 >
                   <input
@@ -373,13 +373,13 @@ export default function LpLeadForm({
   };
 
   return (
-    <section id="form" className="bg-luxury-charcoal section-padding">
+    <section id="form" className="bg-luxury-cream section-padding">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           {label && <p className="luxury-label text-luxury-gold mb-4">{label}</p>}
           {title && (
             <motion.h2
-              className="luxury-subheading text-white mb-2"
+              className="luxury-subheading text-luxury-charcoal mb-2"
               initial={{ y: 20 }}
               whileInView={{ y: 0 }}
               viewport={{ once: true, amount: 0.1 }}
@@ -397,11 +397,11 @@ export default function LpLeadForm({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-luxury-gold flex items-center justify-center">
               <span className="text-white text-2xl">✓</span>
             </div>
-            <h3 className="font-serif text-2xl text-white mb-3">Merci !</h3>
-            <p className="text-white/70 font-light">
+            <h3 className="font-serif text-2xl text-luxury-charcoal mb-3">Merci !</h3>
+            <p className="text-luxury-charcoal/80 font-light">
               Nous avons bien reçu votre demande et reviendrons vers vous rapidement.
             </p>
           </motion.div>
@@ -434,7 +434,7 @@ export default function LpLeadForm({
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: "easeOut" }}
-                className={`w-full px-8 py-5 bg-luxury-gold text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-luxury-champagne ${
+                className={`w-full px-8 py-5 bg-luxury-gold text-white text-sm uppercase tracking-[0.06em] font-bold rounded-full transition-all duration-300 hover:bg-luxury-gold-dark ${
                   isSubmitting ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
@@ -442,7 +442,7 @@ export default function LpLeadForm({
               </motion.button>
             )}
 
-            <p className="text-center text-xs text-white/40 pt-2">
+            <p className="text-center text-xs text-luxury-charcoal/50 pt-2">
               Données traitées conformément à notre politique de confidentialité.
             </p>
           </form>

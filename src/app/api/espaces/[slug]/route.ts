@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { list, put, del } from "@vercel/blob";
-import { resolveEspaceBySlug, pruneOrphanedMedia, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
+import { resolveEspaceBySlug, pruneOrphanedMedia, listEspaceBlobs, ESPACE_JSON_CACHE_MAX_AGE } from "@/lib/espaces";
 import { EspaceData } from "@/types/espace";
 
 export const dynamic = "force-dynamic";
@@ -269,21 +269,26 @@ export async function DELETE(
   { params }: { params: { slug: string } }
 ) {
   try {
-    // Delete the JSON blob and every media file uploaded under this
-    // espace's own folder. `list({ prefix })` matches by string prefix, so
-    // without the exact-boundary check below, deleting "marais" would also
-    // sweep up "marais-premium.json" and its photos — filter down to only
-    // this slug's own JSON file and its "<slug>/..." media folder.
+    // Delete the JSON blob, any stray JSON copy carrying the same slug, and
+    // every media file under this espace's own folder (see listEspaceBlobs:
+    // exact-boundary match, so deleting "marais" leaves "marais-premium").
+    // A failed delete is reported instead of silently returning success,
+    // otherwise the card vanishes from the dashboard and comes back on reload.
+    let ownBlobs: { url: string; pathname: string }[] = [];
     try {
-      const { blobs } = await list({ prefix: `espaces/${params.slug}` });
-      const ownBlobs = blobs.filter(
-        (blob) =>
-          blob.pathname === `espaces/${params.slug}.json` ||
-          blob.pathname.startsWith(`espaces/${params.slug}/`)
-      );
-      await Promise.allSettled(ownBlobs.map((blob) => del(blob.url)));
+      ownBlobs = await listEspaceBlobs(params.slug);
     } catch {
       // Blob not configured
+    }
+    const results = await Promise.allSettled(ownBlobs.map((blob) => del(blob.url)));
+    const failed = ownBlobs.filter((_, i) => results[i].status === "rejected");
+    if (failed.length > 0) {
+      console.error("Delete espace: failed to delete", failed.map((b) => b.pathname));
+      invalidate(params.slug);
+      return NextResponse.json(
+        { error: `Suppression incomplète (${failed.length} fichier(s) non supprimé(s))` },
+        { status: 500 }
+      );
     }
 
     invalidate(params.slug);

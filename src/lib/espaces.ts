@@ -69,6 +69,47 @@ export async function resolveAllEspaces(): Promise<EspaceData[]> {
   return espaces;
 }
 
+/**
+ * Every Blob file belonging to `slug`: its canonical JSON, any stray JSON copy
+ * saved under another file name but carrying the same slug, and its media
+ * folder. Used by DELETE so a stray copy can't bring a deleted espace back.
+ */
+export async function listEspaceBlobs(slug: string): Promise<{ url: string; pathname: string }[]> {
+  type BlobRef = { url: string; pathname: string };
+  // list() returns at most 1000 entries per call: follow the cursor.
+  const listAll = async (prefix: string, mode: "expanded" | "folded"): Promise<BlobRef[]> => {
+    const all: BlobRef[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix, mode, cursor });
+      all.push(...page.blobs);
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+    return all;
+  };
+
+  // Media folder of this espace.
+  const owned = await listAll(`espaces/${slug}/`, "expanded");
+
+  // Top-level JSON files (folded mode skips every media folder): the
+  // canonical file, plus any copy saved under another name with this slug.
+  for (const blob of await listAll("espaces/", "folded")) {
+    if (!blob.pathname.endsWith(".json")) continue;
+    if (blob.pathname === `espaces/${slug}.json`) {
+      owned.push(blob);
+      continue;
+    }
+    try {
+      const res = await fetch(blob.url, { cache: "no-store" });
+      if (res.ok && ((await res.json()) as EspaceData).slug === slug) owned.push(blob);
+    } catch {
+      // unreadable file: not ours to delete
+    }
+  }
+
+  return owned;
+}
+
 export function getEspaceBySlug(slug: string): EspaceData | null {
   const filePath = path.join(DATA_DIR, `${slug}.json`);
   if (!fs.existsSync(filePath)) return null;

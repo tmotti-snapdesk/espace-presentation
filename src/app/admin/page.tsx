@@ -114,9 +114,13 @@ export default function AdminDashboard() {
       const res = await fetch(`/api/espaces/${slug}`, { method: "DELETE" });
       if (res.ok) {
         setEspaces((prev) => prev.filter((e) => e.slug !== slug));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "La suppression a échoué. Réessayez.");
+        await fetchEspaces();
       }
     } catch {
-      // silently fail
+      alert("La suppression a échoué. Réessayez.");
     } finally {
       setDeleting(null);
     }

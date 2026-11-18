@@ -11,6 +11,28 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState<string | null>(null);
+  const [view, setView] = useState<"actifs" | "archives">("actifs");
+
+  // L'onglet est gardé dans l'URL (?vue=archives) pour revenir au même endroit
+  // après « Modifier » ou un rechargement.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("vue") === "archives") {
+      setView("archives");
+    }
+  }, []);
+
+  const changeView = (next: "actifs" | "archives") => {
+    setView(next);
+    const url = new URL(window.location.href);
+    if (next === "archives") url.searchParams.set("vue", "archives");
+    else url.searchParams.delete("vue");
+    window.history.replaceState(null, "", url.toString());
+  };
+
+  const activeEspaces = espaces.filter((e) => !e.archived);
+  const archivedEspaces = espaces.filter((e) => e.archived);
+  const shownEspaces = view === "archives" ? archivedEspaces : activeEspaces;
 
   const fetchEspaces = async () => {
     try {
@@ -66,6 +88,25 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleArchive = async (slug: string, nextArchived: boolean) => {
+    setArchiving(slug);
+    setEspaces((prev) => prev.map((e) => (e.slug === slug ? { ...e, archived: nextArchived } : e)));
+    try {
+      const res = await fetch(`/api/espaces/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: nextArchived }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Revert on failure
+      setEspaces((prev) => prev.map((e) => (e.slug === slug ? { ...e, archived: !nextArchived } : e)));
+      alert("L'espace n'a pas pu être déplacé. Réessayez.");
+    } finally {
+      setArchiving(null);
+    }
+  };
+
   const handleDelete = async (slug: string) => {
     if (!confirm(`Supprimer l'espace "${slug}" ? Cette action est irréversible.`)) return;
     setDeleting(slug);
@@ -105,13 +146,47 @@ export default function AdminDashboard() {
             </Link>
           </div>
         ) : (
+          <>
+          <div
+            className="inline-flex p-1 mb-8 rounded-full bg-white border border-primary-200"
+            role="tablist"
+            aria-label="Espaces actifs ou archivés"
+          >
+            {([
+              ["actifs", "Espaces", activeEspaces.length],
+              ["archives", "Archives", archivedEspaces.length],
+            ] as const).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={view === key}
+                onClick={() => changeView(key)}
+                className={`px-5 py-2 text-sm rounded-full transition-colors ${
+                  view === key
+                    ? "bg-luxury-gold text-white font-semibold"
+                    : "text-luxury-charcoal hover:bg-primary-50"
+                }`}
+              >
+                {label} <span className={view === key ? "text-white/80" : "text-luxury-muted"}>({count})</span>
+              </button>
+            ))}
+          </div>
+
+          {shownEspaces.length === 0 ? (
+            <p className="text-center text-luxury-slate py-16">
+              {view === "archives"
+                ? "Aucun espace archivé. Utilisez « Archiver » sur un espace pour le ranger ici."
+                : "Tous les espaces sont archivés."}
+            </p>
+          ) : (
           <div className="grid gap-4">
-            {espaces.map((espace) => (
+            {shownEspaces.map((espace) => (
               <div
                 key={espace.slug}
-                className="bg-white border border-primary-100 rounded-lg p-6 flex items-center justify-between gap-6 transition-shadow hover:shadow-md"
+                className="bg-white border border-primary-100 rounded-lg p-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 transition-shadow hover:shadow-md"
               >
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[260px] flex-1">
                   <h2 className="font-serif text-xl text-luxury-charcoal mb-1 truncate">
                     {espace.name}
                   </h2>
@@ -150,7 +225,7 @@ export default function AdminDashboard() {
                   {espace.brokerDirectoryVisible !== false ? "Visible annuaire" : "Masqué annuaire"}
                 </button>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-wrap items-center gap-3">
                   <a
                     href={`/espaces/${espace.slug}`}
                     target="_blank"
@@ -187,6 +262,13 @@ export default function AdminDashboard() {
                     {duplicating === espace.slug ? "..." : "Dupliquer"}
                   </button>
                   <button
+                    onClick={() => handleToggleArchive(espace.slug, !espace.archived)}
+                    disabled={archiving === espace.slug}
+                    className="px-4 py-2 text-sm border border-primary-200 text-luxury-charcoal hover:bg-primary-50 transition-colors rounded disabled:opacity-50"
+                  >
+                    {archiving === espace.slug ? "..." : espace.archived ? "Désarchiver" : "Archiver"}
+                  </button>
+                  <button
                     onClick={() => handleDelete(espace.slug)}
                     disabled={deleting === espace.slug}
                     className="px-4 py-2 text-sm border border-red-200 text-red-500 hover:bg-red-50 transition-colors rounded disabled:opacity-50"
@@ -197,6 +279,8 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
+          )}
+          </>
         )}
       </div>
     </main>

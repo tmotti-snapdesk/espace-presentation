@@ -55,6 +55,10 @@ export interface EspaceData {
   // Visibility on the public /espaces broker directory. Existing espaces
   // predating this field are treated as visible (see filtering logic).
   brokerDirectoryVisible: boolean;
+  // Rangé dans l'onglet « Archives » du dashboard admin. Purement
+  // organisationnel : la page publique et l'annuaire ne changent pas.
+  // Absent sur les espaces antérieurs = non archivé.
+  archived?: boolean;
   // Prestige template fields
   template: Template;
   storyTitle: string;

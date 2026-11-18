@@ -92,6 +92,8 @@ export async function PUT(
         typeof body.brokerDirectoryVisible === "boolean"
           ? body.brokerDirectoryVisible
           : existing?.brokerDirectoryVisible ?? true,
+      // Le formulaire d'édition n'envoie pas ce champ : on garde l'état actuel.
+      archived: typeof body.archived === "boolean" ? body.archived : existing?.archived ?? false,
       template: body.template || "standard",
       storyTitle: body.storyTitle || "",
       storyText: body.storyText || "",
@@ -148,7 +150,8 @@ export async function PUT(
 }
 
 // PATCH: partial update, used by the admin dashboard's broker-directory
-// visibility toggle so it doesn't have to resend the entire form payload.
+// visibility toggle and archive button so they don't have to resend the
+// entire form payload.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { slug: string } }
@@ -167,6 +170,7 @@ export async function PATCH(
       ...(typeof body.brokerDirectoryVisible === "boolean"
         ? { brokerDirectoryVisible: body.brokerDirectoryVisible }
         : {}),
+      ...(typeof body.archived === "boolean" ? { archived: body.archived } : {}),
     };
 
     await put(`espaces/${slug}.json`, JSON.stringify(updated, null, 2), {
@@ -179,7 +183,12 @@ export async function PATCH(
 
     invalidate(slug);
 
-    return NextResponse.json({ success: true, slug, brokerDirectoryVisible: updated.brokerDirectoryVisible });
+    return NextResponse.json({
+      success: true,
+      slug,
+      brokerDirectoryVisible: updated.brokerDirectoryVisible,
+      archived: updated.archived ?? false,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Update failed";
     console.error("Patch espace error:", message);
@@ -228,6 +237,8 @@ export async function POST(
       slug: newSlug,
       name: sourceData.name,
       createdAt: new Date().toISOString(),
+      // Une copie repart dans les espaces actifs, même si l'original est archivé.
+      archived: false,
     };
 
     await put(`espaces/${newSlug}.json`, JSON.stringify(duplicateData, null, 2), {

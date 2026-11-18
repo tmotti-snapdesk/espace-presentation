@@ -24,8 +24,12 @@ export function getAllEspaces(): EspaceData[] {
 
 /** Resolves every espace, checking Blob (production) then the local fallback. */
 export async function resolveAllEspaces(): Promise<EspaceData[]> {
-  const espaces: EspaceData[] = [];
-  const seenSlugs = new Set<string>();
+  // One entry per slug. Two Blob files can carry the same slug (e.g. a stray
+  // copy saved under another file name); every route reads and writes
+  // `espaces/<slug>.json`, so that file wins and the copy is ignored.
+  // Duplicate slugs also broke the admin list (React keys), leaving ghost
+  // cards in the Archives tab.
+  const bySlug = new Map<string, { data: EspaceData; canonical: boolean }>();
 
   try {
     const { blobs } = await list({ prefix: "espaces/" });
@@ -41,16 +45,25 @@ export async function resolveAllEspaces(): Promise<EspaceData[]> {
       const res = await fetch(blob.url, { cache: "no-store" });
       if (res.ok) {
         const data = (await res.json()) as EspaceData;
-        espaces.push(data);
-        seenSlugs.add(data.slug);
+        const canonical = blob.pathname === `espaces/${data.slug}.json`;
+        const existing = bySlug.get(data.slug);
+        if (!existing || (canonical && !existing.canonical)) {
+          if (existing) {
+            console.warn(`Duplicate espace slug "${data.slug}": ignoring a non-canonical copy`);
+          }
+          bySlug.set(data.slug, { data, canonical });
+        } else {
+          console.warn(`Duplicate espace slug "${data.slug}": ignoring ${blob.pathname}`);
+        }
       }
     }
   } catch {
     // Blob not configured
   }
 
+  const espaces = Array.from(bySlug.values()).map((entry) => entry.data);
   for (const local of getAllEspaces()) {
-    if (!seenSlugs.has(local.slug)) espaces.push(local);
+    if (!bySlug.has(local.slug)) espaces.push(local);
   }
 
   return espaces;

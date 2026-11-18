@@ -1,16 +1,12 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Josefin_Sans } from "next/font/google";
+// Police du site snapdesk.co, auto-hébergée (aucun appel à Google Fonts au build)
+import "@fontsource/josefin-sans/300.css";
+import "@fontsource/josefin-sans/500.css";
+import "@fontsource/josefin-sans/600.css";
+import "@fontsource/josefin-sans/700.css";
+import "@fontsource/josefin-sans/700-italic.css";
 import "./globals.css";
-
-// Police du site snapdesk.co
-const josefin = Josefin_Sans({
-  subsets: ["latin"],
-  weight: ["300", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-  variable: "--font-josefin",
-});
 
 export const metadata: Metadata = {
   title: "Snapdesk | Espaces de bureaux",
@@ -23,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={josefin.variable}>
+    <html lang="fr">
       <body>
         <noscript>
           <iframe

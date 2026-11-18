@@ -8,6 +8,10 @@
    crème #f8f5f0, boutons rectangulaires en capitales. */
 
 @layer base {
+  :root {
+    --font-josefin: "Josefin Sans";
+  }
+
   html {
     scroll-behavior: smooth;
   }

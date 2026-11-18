@@ -12,7 +12,7 @@ interface EspaceDirectoryProps {
 export default function EspaceDirectory({ espaces }: EspaceDirectoryProps) {
   return (
     <main className="min-h-screen bg-luxury-cream">
-      <section className="bg-luxury-charcoal text-white section-padding !pb-16">
+      <section className="bg-luxury-cream text-luxury-charcoal section-padding !pb-16">
         <div className="max-w-7xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <Image
@@ -27,7 +27,7 @@ export default function EspaceDirectory({ espaces }: EspaceDirectoryProps) {
             <h1 className="font-serif text-4xl md:text-6xl font-medium mb-4 tracking-tight">
               Nos espaces disponibles
             </h1>
-            <p className="text-white/70 text-lg font-light max-w-2xl">
+            <p className="text-luxury-charcoal/80 text-lg font-light max-w-2xl">
               Parcourez l&apos;ensemble de nos espaces et accédez en un clic à leur fiche : éléments clés, présentation commerciale et photos.
             </p>
           </motion.div>

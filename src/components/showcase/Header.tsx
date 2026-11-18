@@ -49,25 +49,25 @@ export default function Header({ espace }: HeaderProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.3 }}
         >
-          <p className="luxury-label text-luxury-champagne mb-4">Snapdesk présente</p>
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-medium text-white mb-8 tracking-tight">
+          <p className="luxury-label text-white/80 mb-4">Snapdesk présente</p>
+          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold italic uppercase leading-none text-white mb-8 drop-shadow-lg">
             {espace.name}
           </h1>
           <div className="flex flex-wrap gap-8 md:gap-16 text-white/90">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-luxury-champagne/70 mb-1">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-1">
                 Postes
               </p>
               <p className="text-2xl md:text-3xl font-serif">{espace.workstations}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-luxury-champagne/70 mb-1">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-1">
                 Localisation
               </p>
               <p className="text-2xl md:text-3xl font-serif">{espace.city}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-luxury-champagne/70 mb-1">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-1">
                 Disponibilité
               </p>
               <p className="text-2xl md:text-3xl font-serif">{espace.availability}</p>

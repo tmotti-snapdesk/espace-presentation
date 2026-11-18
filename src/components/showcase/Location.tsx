@@ -2,16 +2,13 @@
 
 import { motion } from "framer-motion";
 import { EspaceData } from "@/types/espace";
+import LocationMap from "./LocationMap";
 
 interface LocationProps {
   espace: EspaceData;
 }
 
 export default function Location({ espace }: LocationProps) {
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(
-    `${espace.address}, ${espace.postalCode} ${espace.city}`
-  )}&zoom=15&maptype=roadmap`;
-
   return (
     <section className="section-padding bg-white">
       <div className="max-w-7xl mx-auto">
@@ -35,21 +32,15 @@ export default function Location({ espace }: LocationProps) {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Map */}
           <motion.div
-            className="lg:col-span-2 aspect-[16/10] map-container"
+            className="lg:col-span-2 aspect-[16/10] min-h-[320px]"
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <iframe
-              src={mapUrl}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Localisation de l'espace"
+            <LocationMap
+              address={`${espace.address}, ${espace.postalCode} ${espace.city}`}
+              name={espace.name}
             />
           </motion.div>
 

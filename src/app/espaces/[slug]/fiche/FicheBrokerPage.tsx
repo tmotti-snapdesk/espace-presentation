@@ -30,7 +30,7 @@ export default function FicheBrokerPage({ espace, presentationUrl }: FicheBroker
   return (
     <main className="min-h-screen bg-luxury-cream">
       {/* Hero */}
-      <section className="bg-luxury-charcoal text-white section-padding !pb-16">
+      <section className="bg-luxury-cream text-luxury-charcoal section-padding !pb-16">
         <div className="max-w-5xl mx-auto">
           <motion.div initial="hidden" animate="visible" variants={fadeInUp} transition={{ duration: 0.7 }}>
             <Image
@@ -45,7 +45,7 @@ export default function FicheBrokerPage({ espace, presentationUrl }: FicheBroker
             <h1 className="font-serif text-4xl md:text-6xl font-medium mb-4 tracking-tight">
               {espace.name}
             </h1>
-            <p className="text-white/70 text-lg font-light mb-8">
+            <p className="text-luxury-charcoal/80 text-lg font-light mb-8">
               {espace.address}, {espace.postalCode} {espace.city}
             </p>
 
@@ -55,7 +55,7 @@ export default function FicheBrokerPage({ espace, presentationUrl }: FicheBroker
                   href={presentationUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-luxury-champagne text-luxury-charcoal text-sm uppercase tracking-[0.15em] font-medium rounded hover:bg-white transition-colors"
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-luxury-gold text-white text-sm uppercase tracking-[0.06em] font-bold rounded-full hover:bg-luxury-gold-dark transition-colors"
                 >
                   Voir la présentation commerciale
                 </a>
@@ -64,7 +64,7 @@ export default function FicheBrokerPage({ espace, presentationUrl }: FicheBroker
                 href={`/espaces/${espace.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 px-6 py-3 border border-white/30 text-white/90 text-sm uppercase tracking-[0.15em] font-medium rounded hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-3 px-6 py-3 border-[2.5px] border-luxury-gold text-primary-950 text-sm uppercase tracking-[0.06em] font-bold rounded-full hover:bg-luxury-gold hover:text-white transition-colors"
               >
                 Voir le mini-site complet
               </a>

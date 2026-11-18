@@ -31,7 +31,7 @@ export default function LpMissionCarousel({ photos, intervalMs = 2500 }: LpMissi
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-primary-50">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-primary-50">
         <AnimatePresence>
           <motion.div
             key={safeIndex}

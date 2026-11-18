@@ -63,7 +63,7 @@ export default function LpUrgency({
   const showExpired = hasValidDeadline && remaining && remaining.expired;
 
   return (
-    <section className="bg-luxury-charcoal text-white section-padding">
+    <section className="bg-luxury-cream text-luxury-charcoal section-padding">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
         {/* Left: header + steps */}
         <motion.div
@@ -77,7 +77,7 @@ export default function LpUrgency({
             <h2 className="luxury-subheading mb-4">{title}</h2>
           )}
           {subtitle && (
-            <p className="text-white/70 font-light leading-relaxed mb-8">
+            <p className="text-luxury-charcoal/80 font-light leading-relaxed mb-8">
               {subtitle}
             </p>
           )}
@@ -109,12 +109,12 @@ export default function LpUrgency({
                     </span>
                   )}
                   {step.title && (
-                    <h3 className="font-serif text-lg text-white mb-2">
+                    <h3 className="font-serif text-lg text-luxury-charcoal mb-2">
                       {step.title}
                     </h3>
                   )}
                   {step.text && (
-                    <p className="text-sm text-white/70 font-light leading-relaxed">
+                    <p className="text-sm text-luxury-charcoal/80 font-light leading-relaxed">
                       {step.text}
                     </p>
                   )}
@@ -167,11 +167,11 @@ export default function LpUrgency({
 
 function CountdownCell({ value, label }: { value: number; label: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 px-2 py-5 sm:py-6 text-center">
+    <div className="bg-white border border-primary-200 rounded-lg px-2 py-5 sm:py-6 text-center">
       <p className="font-serif text-4xl sm:text-5xl text-luxury-champagne tabular-nums">
         {pad(value)}
       </p>
-      <p className="mt-2 text-[10px] sm:text-xs uppercase tracking-[0.2em] text-white/60">
+      <p className="mt-2 text-[10px] sm:text-xs uppercase tracking-[0.2em] text-luxury-charcoal/70">
         {label}
       </p>
     </div>

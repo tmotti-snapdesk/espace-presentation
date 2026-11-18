@@ -46,7 +46,7 @@ export default function BrokerGallery({ photos, name }: BrokerGalleryProps) {
           {photos.map((photo, index) => (
             <motion.div
               key={photo}
-              className="relative aspect-[4/3] overflow-hidden group"
+              className="relative aspect-[4/3] overflow-hidden rounded-lg group"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}

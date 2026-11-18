@@ -53,7 +53,7 @@ export default function EspaceDirectoryCard({ espace }: EspaceDirectoryCardProps
           className="absolute inset-0 opacity-[0.15]"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, #c5a572 1px, transparent 0)",
+              "radial-gradient(circle at 1px 1px, #e590a1 1px, transparent 0)",
             backgroundSize: "24px 24px",
           }}
         />

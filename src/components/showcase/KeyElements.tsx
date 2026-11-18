@@ -17,7 +17,7 @@ export default function KeyElements({ espace }: KeyElementsProps) {
   ];
 
   return (
-    <section className="section-padding bg-luxury-charcoal text-white">
+    <section className="section-padding bg-luxury-cream text-luxury-charcoal">
       <div className="max-w-7xl mx-auto">
         <motion.div
           className="text-center mb-20"
@@ -31,11 +31,11 @@ export default function KeyElements({ espace }: KeyElementsProps) {
           <div className="luxury-divider mx-auto" />
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-px bg-white/10">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {elements.map((el, i) => (
             <motion.div
               key={el.label}
-              className="bg-luxury-charcoal p-8 text-center"
+              className="bg-white rounded-lg p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -44,7 +44,7 @@ export default function KeyElements({ espace }: KeyElementsProps) {
               <p className="text-3xl md:text-4xl font-serif text-luxury-champagne mb-3">
                 {el.value}
               </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+              <p className="text-xs font-medium uppercase tracking-[2px] text-luxury-charcoal/70">
                 {el.label}
               </p>
             </motion.div>

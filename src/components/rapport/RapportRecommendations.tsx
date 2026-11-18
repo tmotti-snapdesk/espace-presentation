@@ -12,7 +12,7 @@ export default function RapportRecommendations({
   if (recommendations.length === 0) return null;
 
   return (
-    <section id="preconisations" className="section-padding bg-luxury-charcoal text-white scroll-mt-8">
+    <section id="preconisations" className="section-padding bg-luxury-cream text-luxury-charcoal scroll-mt-8">
       <div className="max-w-5xl mx-auto">
         <motion.div
           className="mb-14"
@@ -30,7 +30,7 @@ export default function RapportRecommendations({
           {recommendations.map((reco, i) => (
             <motion.li
               key={i}
-              className="flex gap-6 p-6 border border-white/10 bg-white/5 rounded-lg backdrop-blur-sm"
+              className="flex gap-6 p-6 border border-primary-200 bg-white rounded-lg"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -39,7 +39,7 @@ export default function RapportRecommendations({
               <span className="font-serif text-3xl md:text-4xl text-luxury-gold leading-none shrink-0">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <p className="text-white/90 text-base md:text-lg leading-relaxed font-light whitespace-pre-line">
+              <p className="text-luxury-charcoal text-base md:text-lg leading-relaxed font-light whitespace-pre-line">
                 {reco}
               </p>
             </motion.li>

@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+// Police du site snapdesk.co, auto-hébergée (aucun appel à Google Fonts au build)
+import "@fontsource/josefin-sans/300.css";
+import "@fontsource/josefin-sans/500.css";
+import "@fontsource/josefin-sans/600.css";
+import "@fontsource/josefin-sans/700.css";
+import "@fontsource/josefin-sans/700-italic.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

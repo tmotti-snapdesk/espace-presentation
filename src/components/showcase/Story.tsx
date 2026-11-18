@@ -49,7 +49,7 @@ export default function Story({ title, text, photos }: StoryProps) {
               {photos.slice(0, 2).map((photo, i) => (
                 <div
                   key={photo}
-                  className={`relative overflow-hidden ${i === 0 ? "aspect-[4/3]" : "aspect-[16/9]"}`}
+                  className={`relative overflow-hidden rounded-lg ${i === 0 ? "aspect-[4/3]" : "aspect-[16/9]"}`}
                 >
                   <Image
                     src={photo}

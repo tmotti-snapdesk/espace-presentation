@@ -38,7 +38,7 @@ export default function RapportHero({
           className="absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, #c5a572 1px, transparent 0)",
+              "radial-gradient(circle at 1px 1px, #e590a1 1px, transparent 0)",
             backgroundSize: "32px 32px",
           }}
         />

@@ -9,26 +9,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // DA du site snapdesk.co (repo Web-Site-SK, styles/tokens.css)
         primary: {
-          50: "#faf8f5",
-          100: "#f0ebe3",
-          200: "#e0d5c5",
-          300: "#c9b89e",
-          400: "#b39a78",
-          500: "#a3855f",
-          600: "#957353",
-          700: "#7c5d45",
-          800: "#664d3d",
-          900: "#544033",
-          950: "#2d211a",
+          50: "#f7f8f8",
+          100: "#f8f5f0",
+          200: "#dce0e0",
+          300: "#c9cfcf",
+          400: "#a1a7a8",
+          500: "#e590a1",
+          600: "#d7758a",
+          700: "#3f4247",
+          800: "#33363a",
+          900: "#2a2c30",
+          950: "#1f2124",
         },
         luxury: {
-          gold: "#c5a572",
-          champagne: "#f7e7ce",
-          charcoal: "#2c2c2c",
-          slate: "#4a4a4a",
-          cream: "#faf8f5",
-          dark: "#1a1a1a",
+          gold: "#e590a1", // rose Snapdesk (accent)
+          "gold-dark": "#d7758a", // survol des boutons
+          champagne: "#e590a1",
+          charcoal: "#3f4247", // texte / sections sombres
+          slate: "#3f4247",
+          muted: "#a1a7a8",
+          cream: "#f8f5f0",
+          surface: "#f7f8f8",
+          border: "#dce0e0",
+          sage: "#a9bcb7",
+          dark: "#33363a",
         },
         reco: {
           bg: "#FAF7F2",
@@ -44,10 +50,14 @@ const config: Config = {
         },
       },
       fontFamily: {
-        serif: ["Georgia", "Playfair Display", "serif"],
-        sans: ["Inter", "Helvetica Neue", "sans-serif"],
+        serif: ["var(--font-josefin)", "Josefin Sans", "system-ui", "sans-serif"],
+        sans: ["var(--font-josefin)", "Josefin Sans", "system-ui", "sans-serif"],
         fraunces: ["Fraunces", "Georgia", "serif"],
         geist: ["Geist", "Inter", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        DEFAULT: "4px",
+        lg: "4px",
       },
       animation: {
         "fade-in": "fadeIn 1s ease-out",
